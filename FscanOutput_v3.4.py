@@ -622,6 +622,18 @@ def product_scan_export(datalist):
                 
     for host in unique_dic:
         for key in unique_dic[host]:
+            if host.endswith('/') and unique_dic.get(host.rstrip('/')):
+                a_list = next(iter(unique_dic[host].values()))
+                b_list = next(iter(unique_dic.get(host.rstrip('/')).values()))
+                if a_list == b_list:
+                    continue
+                else:
+                    if a_list[1] == '302':
+                        b_list[3] +=  ', ' + a_list[3] 
+                        b_list[3] = ", ".join(list(set(b_list[3].split(', '))))
+                        b_list = list(set(b_list))
+                        unique_dic[host.rstrip('/')] = b_list
+                        continue
             sheetList.append(unique_dic[host][key])
         
     OutPut('Product', sheetList)
