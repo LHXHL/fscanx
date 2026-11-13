@@ -13,3 +13,12 @@ result*
 *.xml
 *.xlsx
 .idea
+fscanx_386
+fscanx_arm
+fscanx_mac
+fscanx_mips
+fscanx64
+fx
+qqwry.dat
+masscan_linux
+.claude/skills/project-control-plane/scripts/__pycache__/check-sync.cpython-310.pyc
