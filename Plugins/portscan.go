@@ -136,7 +136,7 @@ func PortScanBatchTaskWithList(hostslist []string, ports string) {
 			_addr := ""
 			defer func() {
 				if err := recover(); err != nil {
-					fmt.Printf("[-] scan %s error: %v\n", _addr, err)
+					common.Printf("[-] scan %s error: %v\n", _addr, err)
 				}
 			}()
 			for addr := range Addrs {
@@ -218,7 +218,7 @@ func PortScanBatchTaskWithChan(ipWithPortChan chan string) {
 			defer func() {
 				wg.Done()
 				if err := recover(); err != nil {
-					fmt.Printf("[-] PortScanBatchTaskByChan error: %v\n", err)
+					common.Printf("[-] PortScanBatchTaskByChan error: %v\n", err)
 				}
 			}()
 			for ipAndPort := range ipWithPortChan {

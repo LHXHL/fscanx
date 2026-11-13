@@ -66,51 +66,53 @@ func SaveLog() {
 		if fl == nil && IsSave {
 			fl, ferr = os.OpenFile(Outputfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 			if ferr != nil {
-				fmt.Printf("Create %s error, %v\n", Outputfile, ferr)
+				Printf("Create %s error, %v\n", Outputfile, ferr)
 			}
 		}
 		if !Silent {
-			if Nocolor {
-				fmt.Println(*result)
-			} else {
-				if strings.HasPrefix(*result, "[+] InfoScan") {
-					color.Green(*result)
-				} else if strings.HasPrefix(*result, "[+] Product") || strings.HasPrefix(*result, "[*] JUMP") {
-					// fmt.Println(*result)
-					// color.Cyan(*result)
-					if colorFlag == true {
-						//color.HiYellow(*result)
-						if strings.HasPrefix(*result, "[+] Product") {
-							slice := strings.Split(*result, "\t")
-							preTextStyle.Print(slice[0] + "\t" + slice[1] + "\t")
-							yeStyleHi.Print(slice[2] + "\t")
-							whiteStyle.Println(strings.Join(slice[3:], "\t"))
-						} else {
-							color.White(*result)
-						}
-
-						colorFlag = false
-					} else {
-						if strings.HasPrefix(*result, "[+] Product") {
-							slice := strings.Split(*result, "\t")
-							preTextStyle.Print(slice[0] + "\t" + slice[1] + "\t")
-							yeStyleHi.Print(slice[2] + "\t")
-							cyanStyle.Println(strings.Join(slice[3:], "\t"))
-						} else {
-							color.Cyan(*result)
-						}
-
-						colorFlag = true
-					}
-
-				} else if strings.Index(*result, "rdpscan") != -1 {
-					color.Yellow(*result)
-				} else if strings.HasPrefix(*result, "[+]") {
-					color.Red(*result)
-				} else {
+			withProgress(func() {
+				if Nocolor {
 					fmt.Println(*result)
+				} else {
+					if strings.HasPrefix(*result, "[+] InfoScan") {
+						color.Green(*result)
+					} else if strings.HasPrefix(*result, "[+] Product") || strings.HasPrefix(*result, "[*] JUMP") {
+						// fmt.Println(*result)
+						// color.Cyan(*result)
+						if colorFlag == true {
+							//color.HiYellow(*result)
+							if strings.HasPrefix(*result, "[+] Product") {
+								slice := strings.Split(*result, "\t")
+								preTextStyle.Print(slice[0] + "\t" + slice[1] + "\t")
+								yeStyleHi.Print(slice[2] + "\t")
+								whiteStyle.Println(strings.Join(slice[3:], "\t"))
+							} else {
+								color.White(*result)
+							}
+
+							colorFlag = false
+						} else {
+							if strings.HasPrefix(*result, "[+] Product") {
+								slice := strings.Split(*result, "\t")
+								preTextStyle.Print(slice[0] + "\t" + slice[1] + "\t")
+								yeStyleHi.Print(slice[2] + "\t")
+								cyanStyle.Println(strings.Join(slice[3:], "\t"))
+							} else {
+								color.Cyan(*result)
+							}
+
+							colorFlag = true
+						}
+
+					} else if strings.Index(*result, "rdpscan") != -1 {
+						color.Yellow(*result)
+					} else if strings.HasPrefix(*result, "[+]") {
+						color.Red(*result)
+					} else {
+						fmt.Println(*result)
+					}
 				}
-			}
+			})
 		}
 		if IsSave {
 			WriteFile(*result, fl)
@@ -125,7 +127,7 @@ func SaveLog() {
 func WriteFile(result string, fl *os.File) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("[CRITICAL] WriteFile panic: %v\n", r)
+			Printf("[CRITICAL] WriteFile panic: %v\n", r)
 		}
 	}()
 	var err error
@@ -152,14 +154,14 @@ func WriteFile(result string, fl *os.File) {
 		}
 		jsonData, err := json.Marshal(jsonText)
 		if err != nil {
-			fmt.Println(err)
+			Println(err)
 			jsonText = JsonText{
 				Type: "msg",
 				Text: result,
 			}
 			jsonData, err = json.Marshal(jsonText)
 			if err != nil {
-				fmt.Println(err)
+				Println(err)
 				jsonData = []byte(result)
 			}
 		}
@@ -170,7 +172,7 @@ func WriteFile(result string, fl *os.File) {
 	}
 	err = fl.Sync()
 	if err != nil {
-		fmt.Printf("Write log error, %v\n", err)
+		Printf("Write log error, %v\n", err)
 	}
 }
 

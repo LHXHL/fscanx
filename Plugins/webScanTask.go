@@ -43,7 +43,7 @@ func init() {
 	// 创建finger引擎实例
 	engineNew, err := fingers.NewEngine(use_engine...)
 	if err != nil {
-		fmt.Printf("Failed to create engine: %v\n", err)
+		common.Printf("Failed to create engine: %v\n", err)
 		os.Exit(1)
 	}
 	Engine = engineNew

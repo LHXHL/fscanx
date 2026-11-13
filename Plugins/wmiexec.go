@@ -21,7 +21,7 @@ func init() {
 	}
 	clientHost, err := os.Hostname()
 	if err != nil {
-		fmt.Println(err)
+		common.Println(err)
 	}
 	ClientHost = clientHost
 	flag = true

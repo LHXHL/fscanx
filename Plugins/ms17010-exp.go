@@ -47,7 +47,7 @@ func MS17010EXP(info *common.HostInfo) {
 	}
 
 	if len(sc) < 20 {
-		fmt.Println("[-] no such sc")
+		common.Println("[-] no such sc")
 		return
 	}
 

@@ -225,6 +225,16 @@ fscanx   -hf  url.txt   -tn  200
 
 masscan   --rate 200  -p  80,443  192.168.0.0/16  |  fscanx  -std  -nmap -t 200
 
+**（4.1）由 fscanx 自己拉起 masscan（-msc，推荐）**。不再用管道，避免两个程序抢终端输出；masscan 的原始输出会被隐藏，进度显示在终端底部：
+
+fscanx.exe  -msc  -h  192.168.0.0/16  -p  80,443  -mr  600
+
+- `-mr`：masscan 发包速率，默认 600。
+- `-mp`：手动指定 masscan 路径；不填则按 PATH → 当前目录 → fscanx 所在目录自动查找，并按文件头识别系统/架构，多个候选会依次试跑。
+- `-margs`：只放 fscanx 未托管的额外 masscan 参数（如 `--wait 3`、`--adapter-ip 1.2.3.4`、`--banners`）。端口、速率、目标、排除分别用 `-p`、`-mr`、`-h/-hf`、`-hn`；在 `-margs` 里再写 `-p/--rate/-iL/--exclude` 会被拒绝，避免绕过端口转换、`-pn` 相减和排除逻辑。
+- `-hf` 目标文件只读，不会被改写；`-hn` 用于排除网段。
+- 进度行在 stdout 重定向或 `-silent` 时自动关闭。Ctrl+C 一次停止 masscan 并等待在飞扫描结束，连续两次强制清理临时文件后退出。
+
 **（5）代理模式**下，高架炮远程扫描目标内网的192 B段。
 
 fscanx  -socks5  socks5://127.0.0.1:1080   -h  192.168.1.1/16  -auto

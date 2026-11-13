@@ -132,14 +132,14 @@ func Expoilt(realhost string, conn net.Conn) error {
 		if common.RedisFile != "" {
 			writeok, text, err := writekey(conn, common.RedisFile)
 			if err != nil {
-				fmt.Println(fmt.Sprintf("[-] %v SSH write key errer: %v", realhost, text))
+				common.Println(fmt.Sprintf("[-] %v SSH write key errer: %v", realhost, text))
 				return err
 			}
 			if writeok {
 				result := fmt.Sprintf("[+] Redis %v SSH public key was written successfully", realhost)
 				common.LogSuccess(result)
 			} else {
-				fmt.Println("[-] Redis ", realhost, "SSHPUB write failed", text)
+				common.Println("[-] Redis ", realhost, "SSHPUB write failed", text)
 			}
 		}
 	}
@@ -156,7 +156,7 @@ func Expoilt(realhost string, conn net.Conn) error {
 				result := fmt.Sprintf("[+] Redis %v /var/spool/cron/root was written successfully", realhost)
 				common.LogSuccess(result)
 			} else {
-				fmt.Println("[-] Redis ", realhost, "cron write failed", text)
+				common.Println("[-] Redis ", realhost, "cron write failed", text)
 			}
 		}
 	}

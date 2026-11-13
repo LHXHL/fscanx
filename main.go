@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/killmonday/fscanx/Plugins"
@@ -41,6 +43,21 @@ func main() {
 	start := time.Now()
 	common.Flag(&Info)
 	common.Parse(&Info)
+
+	// 检查是否有 --msc 参数（通过flag）
+	if common.MasscanMode {
+		err := Plugins.ScanWithMasscan(Info.Host)
+		if err == nil {
+			common.LogSuccess("[*] scan done! cost: %s\n", time.Since(start))
+		}
+		common.LogWG.Wait() //等待所有日志打印和写入文件等等事件
+		close(common.Results)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "[-] masscan mode failed:", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	// 检查是否有 --std 参数（通过flag）
 	if common.ScanWithStdInput {

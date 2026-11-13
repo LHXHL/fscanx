@@ -70,7 +70,7 @@ func RdpScan(info *common.HostInfo) (tmperr error) {
 		status, rdpErr := login.RdpConn(host, common.Domain, "", "", common.TcpTimeout, x224.PROTOCOL_SSL)
 		if status == true {
 			//fmt.Printf("[+] RDP %v, domain:%v, user:%v pass:%v\n", host, common.Domain, "", "")
-			fmt.Printf("[+] RDP:%v:%v %v\n", host, "<any>", "<any>")
+			common.Printf("[+] RDP:%v:%v %v\n", host, "<any>", "<any>")
 			return
 		} else {
 			errlog := fmt.Sprintf("[-] rdp %v, user:%v pass:%v  err:%v", host, "", "", rdpErr)

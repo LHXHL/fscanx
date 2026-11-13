@@ -3,11 +3,12 @@ package common
 import (
 	"flag"
 	"fmt"
-	"github.com/alitto/pond"
-	"github.com/bits-and-blooms/bloom/v3"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/alitto/pond"
+	"github.com/bits-and-blooms/bloom/v3"
 
 	"github.com/killmonday/fscanx/mylib/grdp/login"
 	_ "github.com/projectdiscovery/fdmax/autofdmax" //自动增加当前go程序的文件描述符的最大数量
@@ -89,6 +90,10 @@ func Flag(Info *HostInfo) {
 	flag.IntVar(&WebScanThreadNum, "tn", 60, "Web(http/https only) scan Thread nums") //own add
 	flag.BoolVar(&IsScreenShot, "screen", false, "make and save rdp screenshot")      //own add
 	flag.BoolVar(&ScanWithStdInput, "std", false, "read ip:port from stdin, one per line")
+	flag.BoolVar(&MasscanMode, "msc", false, "let fscanx launch masscan and scan its output, instead of masscan | fscanx -std")
+	flag.IntVar(&MasscanRate, "mr", 600, "masscan rate (packets per second) in -msc mode")
+	flag.StringVar(&MasscanPath, "mp", "", "path to masscan binary, auto-detected if empty")
+	flag.StringVar(&MasscanArgs, "margs", "", "extra masscan arguments, space separated (managed options rejected)")
 	flag.BoolVar(&AutoScanBigCidr, "auto", false, "auto scan big cidr")
 	flag.StringVar(&AutoScanProtocols, "am", "tcp,icmp", "auto scan with which protocol, default: tcp,icmp")
 	flag.StringVar(&AutoScanPorts, "ap", "80", "which port need to scan with autoscan task, default: 80")
@@ -99,8 +104,10 @@ func Flag(Info *HostInfo) {
 
 	flag.Parse()
 
-	if ScanWithStdInput {
-		// 在-std模式下，http扫描的速率设置和端口扫描速率一样，使用-t参数控制，这样简单点
+	ValidateMasscanMode(Info.Host)
+
+	if usesStdinLikePipeline() {
+		// 在-std/-msc模式下，http扫描的速率设置和端口扫描速率一样，使用-t参数控制，这样简单点
 		WebScanRateCtrlCh = make(chan struct{}, PortScanThreadNum)
 	} else {
 		WebScanRateCtrlCh = make(chan struct{}, WebScanThreadNum)
@@ -127,7 +134,7 @@ func Flag(Info *HostInfo) {
 	}
 
 	initDialer(time.Duration(TcpTimeout) * time.Second)
-	if (AutoScanBigCidr && strings.Contains(AutoScanProtocols, "icmp")) || (NoPing != true && ScanWithStdInput == false) {
+	if (AutoScanBigCidr && strings.Contains(AutoScanProtocols, "icmp")) || (NoPing != true && !usesStdinLikePipeline()) {
 		BloomFilter = bloom.NewWithEstimates(16780000, 0.01)
 	}
 }

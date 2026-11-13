@@ -38,7 +38,7 @@ func SmbScan(info *common.HostInfo) (tmperr error) {
 		// 尝试列出所有共享目录
 		shares, err := s.ListSharenames()
 		if err != nil {
-			fmt.Printf("can not list shares: %v\n", err)
+			common.Printf("can not list shares: %v\n", err)
 			return
 		} else {
 			//fmt.Println(shares)
@@ -78,7 +78,7 @@ func SmbScan(info *common.HostInfo) (tmperr error) {
 				return nil
 			})
 			if err != nil {
-				fmt.Println(err)
+				common.Println(err)
 			}
 		}
 		common.LogSuccess(res)

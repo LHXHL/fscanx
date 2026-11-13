@@ -7,6 +7,7 @@ import (
 	"github.com/killmonday/fscanx/common"
 	"github.com/killmonday/fscanx/mylib/gonmap"
 	"github.com/remeh/sizedwaitgroup"
+	"io"
 	"net"
 	"os"
 	"reflect"
@@ -27,8 +28,13 @@ func init() {
 	Czdb, _ = NewQQwry("qqwry.dat")
 }
 
-// 从标准输入读取目标并探测。目前支持输入为url、ip:port、masscan输出文件内容、masscan屏幕输出内容、纯域名
+// ScanFromStdin 从标准输入读取目标并探测。
 func ScanFromStdin() {
+	ScanFromReader(os.Stdin, "stdin")
+}
+
+// ScanFromReader 从任意输入流读取目标并探测。目前支持输入为url、ip:port、masscan输出文件内容、masscan屏幕输出内容、纯域名
+func ScanFromReader(r io.Reader, targetLabel string) {
 	//fmt.Println("[debug] call ScanFromStdin")
 	defer func() {
 		gonmap.Clear()
@@ -40,11 +46,11 @@ func ScanFromStdin() {
 	if common.UseNmap {
 		gonmap.SetFilter(9)
 	}
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(r)
 	targetInputCh := make(chan Addr, common.PortScanThreadNum)
 	nowStr := time.Now().Format("2006-01-02 15:04:05")
-	common.LogSuccess(fmt.Sprintf("===================new task===================\n%s\nargs: %s\ntarget: stdin", nowStr, strings.Join(os.Args[1:], " ")))
-	fmt.Println("start infoscan")
+	common.LogSuccess(fmt.Sprintf("===================new task===================\n%s\nargs: %s\ntarget: %s", nowStr, strings.Join(os.Args[1:], " "), targetLabel))
+	common.Println("start infoscan")
 	lib.Inithttp()
 
 	add_task_done := sync.WaitGroup{}
@@ -414,7 +420,7 @@ ScanUrl:
 	alivePortPrint = fmt.Sprintf(alivePortPrint, count)
 	alivePortPrint = strings.TrimRight(alivePortPrint, ",")
 	common.LogSuccess(alivePortPrint)
-	fmt.Printf("\n[*] ok: 1/1\n")
+	common.Printf("\n[*] ok: 1/1\n")
 
 	return
 }
@@ -430,7 +436,7 @@ func CallScanTaskByPortAsync(scantype string, info *common.HostInfo, wg *sync.Wa
 			wg.Done()
 			<-common.PluginTaskRateCtrlCh
 			if r := recover(); r != nil {
-				fmt.Printf("[ERROR] Goroutine CallScanTaskByPortAsync panic: %v\n", r)
+				common.Printf("[ERROR] Goroutine CallScanTaskByPortAsync panic: %v\n", r)
 			}
 		}()
 		ScanFunc(&scantype, info)
@@ -446,7 +452,7 @@ func CallScanTaskByProtocolAsync(protocol string, info *common.HostInfo, wg *syn
 			wg.Done()
 			<-common.PluginTaskRateCtrlCh
 			if r := recover(); r != nil {
-				fmt.Printf("[ERROR] Goroutine CallScanTaskByProtocolAsync panic: %v\n", r)
+				common.Printf("[ERROR] Goroutine CallScanTaskByProtocolAsync panic: %v\n", r)
 				debug.PrintStack()
 			}
 		}()
@@ -469,7 +475,7 @@ func CallScanTaskWithStd(scantype string, info *common.HostInfo) {
 func ScanFunc(name *string, info *common.HostInfo) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("[-] %v:%v scan error: %v\n", info.Host, info.Ports, err)
+			common.Printf("[-] %v:%v scan error: %v\n", info.Host, info.Ports, err)
 		}
 	}()
 	f := reflect.ValueOf(PluginList[*name])

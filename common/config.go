@@ -145,6 +145,10 @@ var (
 	WebScanThreadNum   int     //own add
 	IsScreenShot       bool    //own add
 	ScanWithStdInput   bool    // 是否从标准输入读取
+	MasscanMode        bool    // 是否由 fscanx 自己启动 masscan 并消费其输出
+	MasscanRate        int     // masscan 发包速率（packets per second）
+	MasscanPath        string  // 手动指定的 masscan 程序路径，空则自动查找
+	MasscanArgs        string  // 追加给 masscan 的额外参数（空格分隔）
 	AutoScanBigCidr    bool
 	AutoScanProtocols  string
 	AutoScanPorts      string

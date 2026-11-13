@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-11-13
+
+- 新增 masscan 内嵌联动模式 `-msc`（BL-MSC-001）：fscanx 自动查找并启动 masscan，stdout 流式复用 `--std` 扫描管线，stderr 解析进度并在终端底部原位刷新；新增 `-mr/-mp/-margs`，目标支持 `-h/-hf/-hn` 与域名解析，端口支持端口组/区间/`-pn` 相减
+- 抽出 `ScanFromReader` 并统一扫描路径直接打印到输出协调层，进度行与日志不再交错；非 TTY 或 `-silent` 自动关闭进度
+- 新增单测：文件头识别、目标/端口转换、masscan 状态行解析、托管参数拒绝、进度擦除/重绘顺序、临时文件只读/清理；`--std` 行为保持不变
+- masscan 模式失败/中断不再打印“scan done”成功行；参数组合错误改到 stderr；第二次 Ctrl+C 强制清理临时文件并退出；`-hf` 容忍行内注释/空格、URL 大小写不敏感、反向区间提前拒绝
+- 文档校验脚本 check-sync.py 支持本项目三种 item 编号（BL-001 / BL-MEM-001 / BL-MSC-001），修复原正则只认 BL-数字-数字导致的“0 item”空跑
+- BL-MSC-001、BL-MEM-001、BL-MEM-002 用户验收通过，验收状态置已验收并从控制台移除；BL-001 仍待验收
+
 ## 2026-09-23
 
 - 修复 ReadRawWithSize 池污染数据竞争（BL-MEM-001，P0）：所有返回路径拷贝后返回、defer 调整为先 Reset 后 Put、删除 DoWebScan 对共享 client.Timeout 的冗余赋值（兼数据竞争）
