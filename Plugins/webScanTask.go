@@ -289,19 +289,24 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 		}
 	}
 	// 发送http请求，识别web产品
-	err, reurl := DoWebScan(targetInfo, 1, "")
+	origUrl := targetInfo.Url             // 目录扫描注册用原始入口 URL（下方跳转会改写 Url）
+	presents := make(map[string]struct{}) // 首页扫描链呈现集合（全链并集，差集判定用，BL-DIR-001）
+	err, reurl, ps := DoWebScan(targetInfo, 1, "")
+	mergePresents(presents, ps)
 	if err != nil {
 		return err
 	}
 	// 如果reurl是https，判断原始url是否就是https，如果不是则用https协议探测一遍
 	if reurl == "https" {
 		targetInfo.Url = strings.Replace(targetInfo.Url, "http://", "https://", 1)
-		err, reurl = DoWebScan(targetInfo, 1, "")
+		err, reurl, ps = DoWebScan(targetInfo, 1, "")
+		mergePresents(presents, ps)
 		//还有跳转
 		if strings.Contains(reurl, "://") {
 			firstUrl := targetInfo.Url
 			targetInfo.Url = reurl
-			err, _ = DoWebScan(targetInfo, 3, firstUrl)
+			err, _, ps = DoWebScan(targetInfo, 3, firstUrl)
+			mergePresents(presents, ps)
 			if err != nil {
 				return
 			}
@@ -311,13 +316,25 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 		if strings.Contains(reurl, "://") {
 			firstUrl := targetInfo.Url
 			targetInfo.Url = reurl
-			err, _ = DoWebScan(targetInfo, 3, firstUrl)
+			err, _, ps = DoWebScan(targetInfo, 3, firstUrl)
+			mergePresents(presents, ps)
 			if err != nil {
 				return err
 			}
 		}
 	}
+	if err == nil {
+		// 目录扫描注册：探测链完整（err 不注册，省 70 次注定超时的请求）
+		RegisterSite(origUrl, presents)
+	}
 	return err
+}
+
+// mergePresents 把 DoWebScan 返回的呈现 key 并入集合（首页链全调用收集）。
+func mergePresents(dst map[string]struct{}, src []string) {
+	for _, p := range src {
+		dst[p] = struct{}{}
+	}
 }
 
 func parseCertField(value interface{}) string {
@@ -376,7 +393,9 @@ func GetCertRaw(TLS *tls.ConnectionState) string {
 	return certByte.String()
 }
 
-func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (error, string) {
+// DoWebScan 单次 Web 探测。第三返回值为本次响应的呈现 key（指纹非空才有，
+// 供目录扫描首页呈现差集判定使用，BL-DIR-001；不需要的调用方忽略即可）。
+func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (error, string, []string) {
 	//scanType 1 初次访问，不进行跳转
 	//scanType 2 获取图标 /favicon.ico
 	//scanType 3 访问一些跳转的URL，例如从初次访问得到的302、location等
@@ -389,7 +408,7 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 
 	req, err := http.NewRequest("GET", targetInfo.Url, nil)
 	if err != nil {
-		return err, ""
+		return err, "", nil
 	}
 	req.Header.Set("User-agent", common.UserAgent)
 	req.Header.Set("Accept", common.Accept)
@@ -429,9 +448,9 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	}
 	if err != nil {
 		if !strings.HasPrefix(targetInfo.Url, "https") {
-			return err, "https" //如果报错，用https协议来重新探测一次
+			return err, "https", nil //如果报错，用https协议来重新探测一次
 		}
-		return err, ""
+		return err, "", nil
 	}
 
 	body, err := ReadRawWithSize(resp, 192*1024) // 最大获取前192KB页面（2026-09-23 决策：保持192KB不变）
@@ -519,9 +538,7 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	}
 	// 提取标题、备案号、版权信息
 	title, icp, copyRight, reurl = ExtractTitleAndICP(body)
-	if title == "" || strings.TrimSpace(title) == "" {
-		title = "None"
-	}
+	title = normalizeTitle(title) // 与目录扫描 runDirTask 用同一规范化，保证呈现 key 一致
 	if reurl != "" && !strings.Contains(reurl, "http") {
 		// 解析 原始URL，准备组装跳转url
 		parsedURL, err := url.Parse(targetInfo.Url)
@@ -564,6 +581,11 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	// 处理web识别的结果
 	result := strings.Builder{}
 	productSlice := strings.Split(products, "||")
+	// 呈现 key（指纹非空才有）：供目录扫描差集判定；指纹排序规范化在 presentKey 内
+	var present []string
+	if fps := nonEmptyProducts(productSlice); len(fps) > 0 {
+		present = []string{presentKey(fps, title)}
+	}
 	result.WriteString("[+] Product ")
 	result.WriteString(fmt.Sprintf("%s\t%d\t(%s)\t", targetInfo.Url, resp.StatusCode, title))
 	firstWriteFlag := false
@@ -648,12 +670,23 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	common.LogSuccess(result.String())
 
 	if reurl != "" {
-		return nil, reurl
+		return nil, reurl, present
 	}
 	if resp.StatusCode == 400 && !strings.HasPrefix(targetInfo.Url, "https") {
-		return nil, "https"
+		return nil, "https", present
 	}
-	return nil, ""
+	return nil, "", present
+}
+
+// nonEmptyProducts 过滤指纹切片中的空串（products 为空时 Split 产生 [""]）。
+func nonEmptyProducts(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, p := range in {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // TimeoutReader 是一个包装了 io.Reader 的结构体，用于支持超时控制

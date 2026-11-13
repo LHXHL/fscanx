@@ -136,6 +136,7 @@ func ScanFromReader(r io.Reader, targetLabel string) {
 		targetInputCh <- Addr{target, portInt}
 	}
 	common.LogWG.Wait()
+	SealAndDrain() // 目录扫描两阶段停机（BL-DIR-001）：关闭注册并排空
 	close(targetInputCh)
 	add_task_done.Wait()
 	common.PoolScan.StopAndWait()
@@ -333,6 +334,7 @@ func Scan(inputInfo common.HostInfo) {
 		common.LogSuccess("[*] Icmp alive hosts len is: %d\n\n############################################\n[*] 端口扫描", len(aliveIPList))
 		if common.Scantype == "icmp" {
 			common.LogWG.Wait()
+			SealAndDrain() // 目录扫描两阶段停机（BL-DIR-001）：关闭注册并排空
 			return
 		}
 		if common.BloomFilter != nil {
@@ -348,6 +350,7 @@ func Scan(inputInfo common.HostInfo) {
 		PortScanBatchTaskWithList(aliveIPList, common.PortsInput)
 		common.LogWG.Wait()
 		if common.Scantype == "portscan" {
+			SealAndDrain() // 目录扫描两阶段停机（BL-DIR-001）：关闭注册并排空
 			return
 		}
 	} else {
@@ -401,6 +404,7 @@ ScanIpContainPort:
 	}
 
 	wg.Wait()
+	SealAndDrain() // 目录扫描两阶段停机（BL-DIR-001）：关闭注册并排空
 
 	//统计和打印存活的端口
 	alivePortPrint := "[+] alive ports(%d): "

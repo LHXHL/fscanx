@@ -101,6 +101,8 @@ func Flag(Info *HostInfo) {
 	flag.IntVar(&AutoScanTcpTimeout, "atime", 3, "port scan timeout with auto scan task")
 	flag.BoolVar(&IsParseDomain, "pd", false, "is parse domain to ip and add to port scan")
 	flag.BoolVar(&DomainPortBind, "dp", false, "for domain targets, bind all -p ports to generate http(s)://domain:port URLs")
+	flag.BoolVar(&DirScanEnable, "dir", false, "fingerprint-oriented directory scan on alive web sites (off by default: multiplies target requests by dictionary size)")
+	flag.StringVar(&DirDictFile, "dirf", "", "external path dictionary for -dir (embedded dictionary by default)")
 
 	flag.Parse()
 

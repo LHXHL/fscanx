@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-11-14
+
+- 新增指纹导向目录扫描 `-dir`/`-dirf`（BL-DIR-001，P0）：轮询环调度器按"(站点,路径)对"交错探测（单站点在途≤1，流量均摊不轰单点）、两阶段停机（Seal→Drain）兼容渐进注册；四道判定闸（404/5xx 短路→302 同源同前缀跟随→指纹非空→(指纹,标题)呈现差集）免疫两类软 404 并保住"同产品后台入口"场景；站点聚合输出同构 Product 行（url 带路径、下游零适配），聚合器站点级生命周期；内置 70 条字典 go:embed（-dirf 覆盖），默认关闭
+- 配套改造：DoWebScan 增加呈现返回值（全链收集首页(指纹,标题)并集）、WebScanWorker 成功后按原始 URL 注册（err 不注册）、Scan/ScanFromReader 含 -m icmp/portscan 四处收尾接入 SealAndDrain
+- 单测 11 项（race）抓出并修复 4 个实现 bug：dirWorker 缺 recover、RegisterSite 持锁 return 死锁、loadDirPaths Once 重置叠加、nil seeds 误杀合法站点；reviewer（opus）复验抓出第 5 个：SealAndDrain 未等 worker 拖尾（全量 race 多轮 FAIL + LogWG 顺序契约缺口），以 workers.WaitGroup 修复后 APPROVE
+- 实测：真实二进制 -dir 冒烟（隐藏路径目标 3 findings：/seeyon/、/admin 301 跟随保留原始路径、/jeecg-boot/）；无 -dir 与 HEAD 输出逐行一致（零侵入）；-std 管线冒烟正常退出
+
 ## 2026-11-13
 
 - 日志管道 IO 优化（BL-MEM-003）：去掉每条结果一次的 fl.Sync()（WriteString 直写内核页缓存，进程终止不丢已写行）、Results 通道加 256 缓冲吸收毛刺；不引入 bufio（用户态缓冲进程死即丢，负优化）

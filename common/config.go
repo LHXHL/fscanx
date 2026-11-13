@@ -156,6 +156,8 @@ var (
 	AutoScanTcpTimeout int
 	IsParseDomain      bool
 	DomainPortBind     bool
+	DirScanEnable      bool   // -dir：指纹导向目录扫描（默认关：对目标请求量放大约为字典条数倍）
+	DirDictFile        string // -dirf：目录扫描外部路径字典，空则用内置字典
 )
 
 var (
