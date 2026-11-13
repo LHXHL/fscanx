@@ -2,6 +2,7 @@
 
 ## 2026-11-13
 
+- README 更新记录补充 masscan 内嵌联动模式 `-msc` 的内容与用法，并校正进度开关与 `-margs` 托管参数的描述
 - 文档体系按新版 project-control-plane 重整：新增 `docs/设计总览.md`、`docs/当前实现总览.md`、`docs/modules/01-命令行参数模块.md`；backlog 补模块演进叙事与状态汇总表
 - 控制台改为“模块总览 + 活动 Backlog”，BL-001 保持待验收；修正 02 backlog 指向不存在的 `docs/后续开发事项.md`，并同步 masscan 模块文档中 `-msc -auto`/`-msc -m icmp` 互斥说明
 - 新增 masscan 内嵌联动模式 `-msc`（BL-MSC-001）：fscanx 自动查找并启动 masscan，stdout 流式复用 `--std` 扫描管线，stderr 解析进度并在终端底部原位刷新；新增 `-mr/-mp/-margs`，目标支持 `-h/-hf/-hn` 与域名解析，端口支持端口组/区间/`-pn` 相减
