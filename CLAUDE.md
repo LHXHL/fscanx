@@ -396,7 +396,7 @@ plans/
 更新：
 
 ```
-CHANGELOG.md
+docs/CHANGELOG.md
 ```
 
 ---
