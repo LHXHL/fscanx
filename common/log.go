@@ -15,7 +15,9 @@ import (
 
 var Num int64
 var End int64
-var Results = make(chan *string)
+
+// Results 带缓冲的结果队列：吸收终端打印/磁盘写的短时毛刺，避免背压直接传导到扫描 worker
+var Results = make(chan *string, 256)
 var LogSucTime int64
 var LogErrTime int64
 var WaitTime int64
@@ -34,12 +36,6 @@ func init() {
 	LogSucTime = time.Now().Unix()
 	go SaveLog()
 }
-
-//func LogSuccess(result string) {
-//	LogWG.Add(1)
-//	LogSucTime = time.Now().Unix()
-//	Results <- &result
-//}
 
 func LogSuccess(formatStr string, a ...any) {
 	LogWG.Add(1)
@@ -130,7 +126,6 @@ func WriteFile(result string, fl *os.File) {
 			Printf("[CRITICAL] WriteFile panic: %v\n", r)
 		}
 	}()
-	var err error
 	if JsonOutput {
 		var scantype string
 		var text string
@@ -166,14 +161,13 @@ func WriteFile(result string, fl *os.File) {
 			}
 		}
 		jsonData = append(jsonData, []byte(",\n")...)
-		_, err = fl.Write(jsonData)
+		_, _ = fl.Write(jsonData)
 	} else {
-		_, err = fl.WriteString(result + "\n")
+		_, _ = fl.WriteString(result + "\n")
 	}
-	err = fl.Sync()
-	if err != nil {
-		Printf("Write log error, %v\n", err)
-	}
+	// 不做每行 fsync（BL-MEM-003）：WriteString 直写进入内核页缓存，write(2) 完成后
+	// 进程终止（含 Ctrl+C）不丢已写行，仅断电可能丢尾部；逐行 fsync 的 ms 级成本
+	// 会通过 Results 通道背压到所有扫描 worker。不引入 bufio：用户态缓冲进程死即丢。
 }
 
 func LogError(errinfo interface{}) {

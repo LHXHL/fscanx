@@ -317,7 +317,6 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 			}
 		}
 	}
-	targetInfo = nil
 	return err
 }
 
@@ -434,10 +433,6 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 		}
 		return err, ""
 	}
-	defer func() {
-		resp.Body.Close()
-		req.Close = true
-	}()
 
 	body, err := ReadRawWithSize(resp, 192*1024) // 最大获取前192KB页面（2026-09-23 决策：保持192KB不变）
 	if err != nil {
@@ -739,101 +734,6 @@ func ReadRawWithSize(resp *http.Response, size int64) ([]byte, error) {
 	// 返回完整的响应数据（必须拷贝，原因同上：池化 buffer 的底层内存不得逸出到池外）
 	return append([]byte(nil), raw.Bytes()...), nil
 }
-
-//new bufpool
-//func ReadRawWithSize(resp *http.Response, size int64) ([]byte, error) {
-//	buf := BufPool.Get().([]byte)
-//	defer BufPool.Put(buf)
-//
-//	////读取协议头部分
-//	//raw.WriteString(resp.Proto + " " + resp.Status + "\r\n")
-//	//raw.Write(ReadHeader(resp))
-//	//
-//	////读取header属性部分
-//	//for k, v := range resp.Header {
-//	//	for _, i := range v {
-//	//		header.WriteString(k + ": " + i + "\r\n")
-//	//	}
-//	//}
-//
-//	n, err := io.ReadFull(resp.Body, buf)
-//	if err != nil {
-//		// io.ErrUnexpectedEOF 说明 body 小于 16KB，可以直接copy一份副本返回
-//		if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
-//			return append([]byte(nil), buf[:n]...), nil
-//		}
-//		return nil, err
-//	}
-//
-//	// Body 大于 16KB，销毁剩余部分，这部分是为了能复用http连接，这里不需要也可以，因为已经关闭了http的keepalive
-//	_, _ = io.Copy(io.Discard, resp.Body)
-//
-//	// copy返回一份副本，不要使用pool里的buf，因为将会被其他协程复用
-//	return append([]byte(nil), buf[:n]...), nil
-//}
-
-// new bufpool
-//func NewReadBodyWithSize(resp *http.Response, size int64) ([]byte, error) {
-//	buffer := BufPool.Get().(*bytes.Buffer)
-//	buffer.Reset()
-//	defer BufPool.Put(buffer)
-//	defer resp.Body.Close()
-//
-//	if size > 0 {
-//		buffer.Grow(int(size))
-//	}
-//
-//	_, err := io.Copy(buffer, resp.Body)
-//	if err != nil && err != io.EOF {
-//		return nil, err
-//	}
-//
-//	temp := buffer.Bytes()
-//	length := len(temp)
-//	var body []byte
-//
-//	// 避免过多浪费（>50%）
-//	if cap(temp) > length*3/2 {
-//		body = make([]byte, length)
-//		copy(body, temp)
-//	} else {
-//		body = append([]byte(nil), temp...) // 防止后续修改
-//	}
-//	return body, nil
-//}
-
-//func NewReadBodyWithSize(resp *http.Response, size int64) ([]byte, error) {
-//	//ioutil.ReadAll starts at a very small 512
-//	//it really should let you specify an initial size
-//	buffer := bytes.NewBuffer(make([]byte, 0, 65536))
-//	//io.Copy(buffer, resp.Body)
-//	writeN, err := io.CopyN(buffer, resp.Body, size)
-//	if err != nil {
-//		return buffer.Bytes(), err
-//	}
-//	temp := buffer.Bytes()
-//	length := int(writeN)
-//	var body []byte
-//	//are we wasting more than 10% space?
-//	if cap(temp) > (length + length/10) {
-//		body = make([]byte, length)
-//		copy(body, temp)
-//	} else {
-//		body = temp
-//	}
-//	return body, err
-//}
-
-//func NewReadBodyWithSize(resp *http.Response, size int64) ([]byte, error) {
-//	//ioutil.ReadAll starts at a very small 512
-//	//it really should let you specify an initial size
-//	buffer := bytes.NewBuffer(make([]byte, 0, size))
-//	_, err := io.CopyN(buffer, resp.Body, size)
-//	if err != nil {
-//		return buffer.Bytes(), err
-//	}
-//	return buffer.Bytes(), err
-//}
 
 func stripFirstChar(path string) string {
 	if strings.HasPrefix(path, "/") {

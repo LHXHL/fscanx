@@ -2,6 +2,9 @@
 
 ## 2026-11-13
 
+- 日志管道 IO 优化（BL-MEM-003）：去掉每条结果一次的 fl.Sync()（WriteString 直写内核页缓存，进程终止不丢已写行）、Results 通道加 256 缓冲吸收毛刺；不引入 bufio（用户态缓冲进程死即丢，负优化）
+- qqwry.dat 装入改造（BL-MEM-003）：unix 经 syscall.Mmap 按需映射（无归属地查询时 RSS 近零，失败回退 ReadAll），windows 直接 ReadAll；加载失败打印提示并降级，不再吞错误
+- 死代码清偿（BL-MEM-003）：删除 mylib/simplehttp 整包（676 行）、icmp.go.bak、portscan.go/webScanTask.go 注释旧实现约 340 行、main.go MemStats 调试块、scanner.go 恒空 alivePortResList 与 ScanUrl 死标签、webScanTask.go 的 targetInfo=nil 与 resp.Body 双重 Close；净 -1319 行，扫描行为与输出格式零变化（新旧输出对比实测一致）
 - 修复 -msc 的 Ctrl+C 退出（BL-MSC-002）：第一次信号停止 masscan 并最多等 3 秒，超时或第二次信号清理临时文件并以 130 退出；中断不再打印 masscan mode failed
 - BL-MSC-002 用户真机测试确认 Ctrl+C 有界退出/二次强退，验收状态置已验收
 - README 更新记录补充 masscan 内嵌联动模式 `-msc` 的内容与用法，并校正进度开关与 `-margs` 托管参数的描述

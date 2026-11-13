@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/killmonday/fscanx/mylib/stdio/chinese"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -249,7 +248,8 @@ func NewQQwry(filePath string) (*QQwry, error) {
 		}
 		defer fileBase.Close()
 
-		fileData, err = io.ReadAll(fileBase)
+		// 分平台装入：unix 用 mmap 按需映射省常驻内存，windows 直接 ReadAll（BL-MEM-003）
+		fileData, err = loadIPDBFile(fileBase)
 		if err != nil {
 			return nil, err
 		}

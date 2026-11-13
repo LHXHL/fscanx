@@ -25,7 +25,12 @@ func init() {
 	for _, port := range common.PluginPortMap {
 		common.PortsArrayHasPlugin = append(common.PortsArrayHasPlugin, strconv.Itoa(port))
 	}
-	Czdb, _ = NewQQwry("qqwry.dat")
+	var err error
+	Czdb, err = NewQQwry("qqwry.dat")
+	if err != nil {
+		// 加载失败只降级归属地功能，不阻断扫描（BL-MEM-003：不再吞错误）
+		common.Printf("[-] load qqwry.dat failed, IP location disabled: %v\n", err)
+	}
 }
 
 // ScanFromStdin 从标准输入读取目标并探测。
@@ -262,10 +267,7 @@ func Scan(inputInfo common.HostInfo) {
 		}
 	}()
 	var wg = sync.WaitGroup{}
-	var alivePortResList []*PortScanRes
 	isPrintIcmp := true
-	//web := strconv.Itoa(common.PluginPortMap["web"])         //只是个标志 1000003
-	//ms17010 := strconv.Itoa(common.PluginPortMap["ms17010"]) //只是个标志 1000001
 	nowStr := time.Now().Format("2006-01-02 15:04:05")
 	common.LogSuccess(fmt.Sprintf("===================new task===================\n%s\nargs: %s\ntarget: %s", nowStr, strings.Join(os.Args[1:], " "), inputInfo.Host))
 	fmt.Println("start infoscan")
@@ -350,8 +352,6 @@ func Scan(inputInfo common.HostInfo) {
 		}
 	} else {
 		// 1.2 跳过icmp扫描，直接做端口探测和协议识别
-		//finalResChan := make(chan *PortScanRes, common.PortScanThreadNum)
-		//portscanWg := sync.WaitGroup{}
 		common.LogSuccess("[*] 端口扫描")
 
 		if common.NmapInitOK == false && common.UseNmap {
@@ -389,11 +389,6 @@ ScanIpContainPort:
 	gonmap.Clear()
 	runtime.GC() //回收gonmap对象等
 
-	if len(alivePortResList) == 0 {
-		goto ScanUrl
-	}
-
-ScanUrl:
 	// 3.对于url目标，直接web扫描
 	for _, url := range common.Urls {
 		targetInfo := common.HostInfo{
