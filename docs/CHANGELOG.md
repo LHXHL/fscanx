@@ -2,6 +2,8 @@
 
 ## 2026-11-13
 
+- 修复 -msc 的 Ctrl+C 退出（BL-MSC-002）：第一次信号停止 masscan 并最多等 3 秒，超时或第二次信号清理临时文件并以 130 退出；中断不再打印 masscan mode failed
+- BL-MSC-002 用户真机测试确认 Ctrl+C 有界退出/二次强退，验收状态置已验收
 - README 更新记录补充 masscan 内嵌联动模式 `-msc` 的内容与用法，并校正进度开关与 `-margs` 托管参数的描述
 - 文档体系按新版 project-control-plane 重整：新增 `docs/设计总览.md`、`docs/当前实现总览.md`、`docs/modules/01-命令行参数模块.md`；backlog 补模块演进叙事与状态汇总表
 - 控制台改为“模块总览 + 活动 Backlog”，BL-001 保持待验收；修正 02 backlog 指向不存在的 `docs/后续开发事项.md`，并同步 masscan 模块文档中 `-msc -auto`/`-msc -m icmp` 互斥说明

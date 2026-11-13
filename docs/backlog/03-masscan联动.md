@@ -4,11 +4,12 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 
 ## 状态汇总
 
-1 item：1 已完成 / 0 进行中 / 0 未开始；1 已验收
+2 item：2 已完成 / 0 进行中 / 0 未开始；2 已验收
 
 | ID | 标题 | 优先级 | 状态 | 验收状态 |
 |----|------|--------|------|----------|
 | BL-MSC-001 | 新增 masscan 内嵌联动模式 | P1 | 已完成 | 已验收 |
+| BL-MSC-002 | 修复 -msc Ctrl+C 退出不可靠 | P1 | 已完成 | 已验收 |
 
 ## BL-MSC-001 新增 masscan 内嵌联动模式
 
@@ -86,3 +87,59 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 - 2026-11-13：独立代码审查（opus）结论 REVISE，已修复：失败/中断不再打印成功行；第二次 Ctrl+C 清理临时文件后强制退出；`--version` 试跑失败保留 stderr 尾部与候选原因；URL 大小写、`-hf` 行内注释/空格、完整区间起止顺序、参数错误输出到 stderr。审查确认核心链路（管道收尾、CIDR 不展开、端口相减/压缩、进度锁、`--std` 回归）无问题。
 - 2026-11-13：用户真机验收通过（底部进度显示、Ctrl+C 清理），全部验收条件勾选，验收状态置已验收。
 - 2026-11-13：文档体系整理时补充：实现还拒绝 `-msc -auto` 与 `-msc -m icmp`（masscan 模式不需要空闲目标探测、icmp 没有端口可扫），已同步模块文档；原方案节为立项时点记录，不回写。
+
+## BL-MSC-002 修复 -msc Ctrl+C 退出不可靠
+
+- 模块：masscan 联动
+- 优先级：P1
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：让 `-msc` 的 Ctrl+C 行为可预期：第一次有界收尾，超时或第二次立即退出，避免信号被吞掉或长时间卡住。
+- 关联模块文档：docs/modules/03-masscan联动模块.md
+- 关联计划：plans/2026-11-13-BL-MSC-002-msc-interrupt.md
+- 关联代码：Plugins/masscan.go、Plugins/masscan_interrupt.go、main.go
+- 验收状态：已验收
+
+### 方案
+
+- **做什么**：修复 `-msc` 的 Ctrl+C 退出链路。第一次 Ctrl+C 停止 masscan，最多等 3 秒让在飞扫描收尾；超时或第二次 Ctrl+C 立即清理临时文件并以 130 退出。
+- **为什么**：当前第一次 Ctrl+C 的取消操作会立即关闭 `ctx.Done()`，信号处理协程随之退出；`signal.Notify` 仍在生效，但已无人读取信号，后续 Ctrl+C 被吞掉，进程只能等所有在飞扫描结束。同时 `LogWG.Wait`/`PoolScan.StopAndWait` 没有等待上限，单个慢扫描会把退出拖到很久。
+- **怎么做**：把信号处理抽成可测试的两段式 helper：第一次信号执行 cancel 并启动 3 秒计时；第二次信号、计时到期或外部完成信号三选一。前两者执行统一清理（停进度、删临时文件）并 `os.Exit(130)`，正常完成通过 done 通道让 helper 退出。`ScanWithMasscan` 返回中断哨兵错误，`main` 对中断以 130 退出且不打印 “masscan mode failed”。
+- **为什么这么做**：保留“尽量让在飞结果落盘”的原意，同时给退出加硬上限；不新增命令行参数，不改变 `--std` 行为，也不尝试取消每个网络请求（改动面大、难验证）。
+
+### 范围
+
+- `Plugins/masscan.go`：接入两段式中断 helper、统一清理、返回中断哨兵
+- 新增 `Plugins/masscan_interrupt.go`：可测试的中断等待逻辑
+- `main.go`：中断退出码 130，不再打印失败信息
+- 新增 `Plugins/masscan_interrupt_test.go`
+- 模块文档、README、控制台、CHANGELOG 同步
+
+### 不做
+
+- 不改变 `--std` 模式的 Ctrl+C 行为（Go 默认退出）
+- 不取消或中断正在执行的网络请求/插件任务
+- 不新增命令行参数（3 秒为固定值）
+- 不改 masscan 查找、目标/端口转换逻辑
+
+### 验收条件
+
+- [x] 第一次 Ctrl+C 停止 masscan；在飞扫描 3 秒内结束时正常清理并以 130 退出，不打印 “masscan mode failed”
+- [x] 第一次 Ctrl+C 后 3 秒仍有任务未结束：停止进度、删除 `fscanx-masscan-*` 临时文件，以 130 退出
+- [x] 第一次 Ctrl+C 后再按一次 Ctrl+C：立即清理并以 130 退出
+- [x] 未按 Ctrl+C 的正常完成路径行为不变：退出码 0、临时文件清理、进度行清除
+- [x] 单测覆盖 helper 的第一次信号、第二次信号、计时到期、正常完成四个分支
+- [x] `go test ./Plugins ./common`、`go build .` 通过
+- [x] `--std` 模式无行为变化
+- [x] 用户在真实终端确认第一次/第二次 Ctrl+C 行为（2026-11-13 用户真机测试确认；helper 单测覆盖策略）
+
+### 依赖
+
+- 无
+
+### 状态记录
+
+- 2026-11-13：立项并开始实现。用户确认采用“有界收尾 + 二次强退”：第一次 Ctrl+C 最多等 3 秒，超时或第二次 Ctrl+C 立即清理退出。
+- 2026-11-13：实现完成。新增 `Plugins/masscan_interrupt.go`（两段式中断 helper）与 `Plugins/masscan_interrupt_test.go`；`Plugins/masscan.go` 接入有界等待/二次强退与中断哨兵；`main.go` 对中断以 130 退出。
+- 2026-11-13：本地验证通过：`go build .`；`go test ./Plugins ./common`；`go test -race -run TestWaitMasscanInterrupt ./Plugins`；`go vet ./Plugins ./common`。真机 Ctrl+C 行为待用户确认。
+- 2026-11-13：用户真机测试确认 Ctrl+C 行为（第一次有界收尾、第二次强退），全部验收条件勾选，验收状态置已验收。

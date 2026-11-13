@@ -61,6 +61,20 @@ func StopProgress() {
 	progressText = ""
 }
 
+// TryStopProgress 尝试擦除进度行并关闭进度显示；若进度锁已被占用则立即返回。
+// 供强制退出路径使用，避免阻塞在可能卡住的输出上。
+func TryStopProgress() {
+	if !progressMu.TryLock() {
+		return
+	}
+	defer progressMu.Unlock()
+	if progressVisible {
+		clearProgressLocked()
+	}
+	progressEnabled = false
+	progressText = ""
+}
+
 // Println 与 fmt.Println 用法一致，但会先擦掉进度行、打印后再重绘。
 func Println(a ...interface{}) {
 	withProgress(func() { fmt.Fprintln(logOut, a...) })

@@ -1,6 +1,6 @@
 # 2026 更新记录
 
-2026.11.13，新增 masscan 内嵌联动模式 `-msc`：fscanx 自己查找并启动 masscan，实时读取结果并复用 `--std` 扫描管线，masscan 的原始输出不再打印，进度固定在终端底部，避免 `masscan | fscanx --std` 两个进程抢终端输出。新增 `-mr`（masscan 发包速率，默认 600）、`-mp`（手动指定 masscan 路径）、`-margs`（追加 fscanx 未托管的 masscan 参数）。用法示例：
+2026.11.13，新增 masscan 内嵌联动模式 `-msc`：fscanx 自己查找并启动 masscan，实时读取结果并复用 `--std` 扫描管线，masscan 的原始输出不再打印，进度固定在终端底部，避免 `masscan | fscanx --std` 两个进程抢终端输出造成字符错乱。新增选项`-msc` （自动调用masscan）、 `-mr`（设置masscan 发包速率，默认 600）、`-mp`（当masscan路径不在系统环境变量时，手动指定 masscan 路径）、`-margs`（追加额外的 masscan 参数）。用法示例：
 
 ```bash
 # 扫描一个 C 段，指定端口和 masscan 发包速率
@@ -13,7 +13,11 @@ fscanx -msc -hf targets.txt -hn 192.168.1.1 -p web -mr 2000
 fscanx -msc -h 10.0.0.0/8 -p 1-65535 -mp ./masscan.exe -margs "--wait 3"
 ```
 
-`-msc` 需要本机有 masscan：Windows 需安装 Npcap，Linux 需 root 或 CAP_NET_RAW 权限；masscan 可放在 PATH，或用 `-mp` 指定。`-msc` 不能与 `-std`、`-dp`、`-u/-uf`、`-auto`、`-m icmp` 同用；`-margs` 里不能覆盖 `-p`、`--ports`、`--rate`、`-iL`、`--includefile`、`--exclude`、`--excludefile` 等 fscanx 托管的参数。更多细节见第 9 节使用案例（4.1）。
+需要本机有 masscan：建议把masscan路径放置到系统环境变量，若没有则需用 `-mp` 指定文件路径；`-margs` 里不能再写 `-p`、`--ports`、`--rate`、`-iL`、`--includefile`、`--exclude`、`--excludefile` 等 fscanx 已经自动托管的参数。Ctrl+C 第一次会停止 masscan 并最多等 3 秒让在飞扫描收尾；超时或第二次 Ctrl+C 会立即清理临时文件并以 130 退出。更多细节见第 9 节使用案例（4.1）。
+
+![image-20261113183620391](README.assets/image-20261113183620391.png)
+
+
 
 2026.08.13，README 补充带认证 socks5 代理的用法说明（socks5://用户名:密码@ip:端口），详见第 9 节使用案例（5）。此前代码已支持账号密码认证，但文档一直没写，容易误以为不支持。
 
@@ -248,7 +252,7 @@ fscanx.exe  -msc  -h  192.168.0.0/16  -p  80,443  -mr  600
 - `-mp`：手动指定 masscan 路径；不填则按 PATH → 当前目录 → fscanx 所在目录自动查找，并按文件头识别系统/架构，多个候选会依次试跑。
 - `-margs`：只放 fscanx 未托管的额外 masscan 参数（如 `--wait 3`、`--adapter-ip 1.2.3.4`、`--banners`）。端口、速率、目标、排除分别用 `-p`、`-mr`、`-h/-hf`、`-hn`；在 `-margs` 里再写 `-p/--ports`、`--rate`、`-iL/--includefile`、`--exclude/--excludefile` 会被拒绝，避免绕过端口转换、`-pn` 相减和排除逻辑。
 - `-hf` 目标文件只读，不会被改写；`-hn` 用于排除网段。
-- 进度行写 stderr，`-silent` 或 stderr 不是终端时自动关闭；只重定向 stdout 不影响进度，也不会污染结果文件。Ctrl+C 一次停止 masscan 并等待在飞扫描结束，连续两次强制清理临时文件后退出。
+- 进度行写 stderr，`-silent` 或 stderr 不是终端时自动关闭；只重定向 stdout 不影响进度，也不会污染结果文件。Ctrl+C 第一次停止 masscan，最多等 3 秒让在飞扫描收尾；超时或第二次 Ctrl+C 会清理临时文件并以 130 退出。
 
 **（5）代理模式**下，高架炮远程扫描目标内网的192 B段。
 

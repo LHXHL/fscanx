@@ -32,6 +32,9 @@ var (
 	masscanShortRangeRe = regexp.MustCompile(`^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)(\d{1,3})-(\d{1,3})$`)
 )
 
+// ErrMasscanInterrupted 表示用户通过 Ctrl+C/SIGTERM 中断了 -msc 扫描。
+var ErrMasscanInterrupted = errors.New("masscan interrupted")
+
 type masscanStatus struct {
 	Found int64
 	Last  string
@@ -149,7 +152,7 @@ func ScanWithMasscan(host string) error {
 	}
 
 	common.StartProgress()
-	defer common.StopProgress()
+	defer common.TryStopProgress()
 
 	var stderrWG sync.WaitGroup
 	status := &masscanStatus{}
@@ -159,30 +162,31 @@ func ScanWithMasscan(host string) error {
 		parseMasscanStderr(stderr, status)
 	}()
 
-	sigCh := make(chan os.Signal, 1)
+	sigCh := make(chan os.Signal, 2)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
 	interrupted := make(chan struct{})
-	go func() {
-		select {
-		case <-sigCh:
-			close(interrupted)
-			common.Println("[*] interrupt received; stopping masscan; in-flight scans will finish (press Ctrl+C again to force quit)")
-			cancel()
-			select {
-			case <-sigCh:
-				common.StopProgress()
-				_ = os.Remove(targetsFile)
-				if excludeFile != "" {
-					_ = os.Remove(excludeFile)
-				}
-				os.Exit(130)
-			case <-ctx.Done():
-			}
-		case <-ctx.Done():
+	cleanupInterrupted := func() {
+		common.TryStopProgress()
+		_ = os.Remove(targetsFile)
+		if excludeFile != "" {
+			_ = os.Remove(excludeFile)
 		}
-	}()
+	}
+	stopInterrupt := startMasscanInterrupt(sigCh, masscanInterruptGrace,
+		func() {
+			close(interrupted)
+			cancel()
+			// 打印放到后台，避免输出阻塞拖住计时器和第二次 Ctrl+C。
+			go common.Printf("[*] interrupt received; stopping masscan; waiting up to %s for in-flight scans (press Ctrl+C again to force quit)\n", masscanInterruptGrace)
+		},
+		func() {
+			cleanupInterrupted()
+			os.Exit(130)
+		},
+	)
+	defer stopInterrupt()
 
 	counted := &masscanCountingReader{r: stdout}
 	ScanFromReader(counted, "masscan")
@@ -198,7 +202,7 @@ func ScanWithMasscan(host string) error {
 
 	select {
 	case <-interrupted:
-		return errors.New("interrupted")
+		return ErrMasscanInterrupted
 	default:
 	}
 	if waitErr != nil {

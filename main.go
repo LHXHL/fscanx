@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -53,6 +54,9 @@ func main() {
 		common.LogWG.Wait() //等待所有日志打印和写入文件等等事件
 		close(common.Results)
 		if err != nil {
+			if errors.Is(err, Plugins.ErrMasscanInterrupted) {
+				os.Exit(130)
+			}
 			fmt.Fprintln(os.Stderr, "[-] masscan mode failed:", err)
 			os.Exit(1)
 		}

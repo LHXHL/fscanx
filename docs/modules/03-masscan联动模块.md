@@ -24,6 +24,7 @@
 - 参数边界：`-msc` 与 `-std`、`-dp`、`-u`、`-uf`、`-auto`、`-m icmp` 互斥（`-auto` 的空闲目标探测与 masscan 发现重复，`-m icmp` 没有端口可扫）；`-margs` 不能出现 fscanx 托管的参数（`-p/--ports/--rate/-iL/--includefile/--exclude/--excludefile`），避免绕过端口相减和速率设置。`-margs` 只用于 fscanx 未托管的 masscan 选项（如 `--wait`、`--adapter-ip`、`--ttl`、`--banners`）；端口用 `-p`、速率用 `-mr`、目标用 `-h/-hf`、排除用 `-hn`。
 - 派生初始化独立：不把 `-msc` 写成 `ScanWithStdInput=true`（否则 main 会去读 os.Stdin），只用 `usesStdinLikePipeline = -std || -msc` 控制并发模型和 BloomFilter。
 - 临时文件生命周期：目标/排除文件放系统临时目录，正常返回、启动失败、Ctrl+C/SIGTERM 都删除；用户 `-hf` 原文件不动。
+- 两段式中断：第一次 Ctrl+C/SIGTERM 取消 masscan，最多等待 3 秒让在飞扫描收尾；第二次信号或 3 秒到期时停止进度、删除临时文件并以 130 退出。正常完成通过 done 通道让中断处理器退出，避免信号处理器提前消失、后续 Ctrl+C 被吞掉。
 
 ## 关键功能怎么做
 
@@ -45,12 +46,13 @@ masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐�
 - 候选按文件头匹配程度排序；没有可执行位/权限的直接记录原因跳过，其余（含架构不一致、格式未知）依次 `--version` 试跑，第一个成功且输出含 masscan 的胜出；全部失败时汇总输出逐条失败原因。
 - masscan 启动失败：打印启动错误；masscan 非零退出：打印 stderr 尾部（如 Windows 缺 Npcap、Linux 无权限），退出非零。
 - 域名没有 IPv4 记录、目标文件为空、端口集合为空：明确报错并退出非零，不能静默扫空。
-- 收到 Ctrl+C/SIGTERM：杀掉 masscan 子进程、清掉进度行、删除临时文件，再以非零码退出。
+- 收到 Ctrl+C/SIGTERM：第一次信号杀掉 masscan 子进程，最多等 3 秒让在飞扫描收尾；第二次信号或超时后清掉进度行、删除临时文件并以 130 退出。若在飞扫描在 3 秒内结束，同样以 130 退出，不再打印 “masscan mode failed”。
 - `-silent` 或 stderr 不是 TTY：不渲染进度；仅重定向 stdout 不影响进度（进度写 stderr，不会污染结果文件）。
 
 ## 相关 backlog
 
 - BL-MSC-001 新增 masscan 内嵌联动模式（docs/backlog/03-masscan联动.md）
+- BL-MSC-002 修复 -msc Ctrl+C 退出不可靠（docs/backlog/03-masscan联动.md）
 
 ## 变更记录
 
@@ -61,3 +63,4 @@ masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐�
 - 2026-11-13：独立代码审查修复：失败/中断不打印成功行；第二次 Ctrl+C 清理临时文件后退出；试跑失败保留 stderr 与候选原因；`-hf` 容忍行内注释/空格、URL 大小写不敏感、反向区间提前拒绝、参数错误写 stderr。
 - 2026-11-13：用户真机验收通过，BL-MSC-001 闭合，控制台移除该项。
 - 2026-11-13：文档体系整理补齐实现中的参数互斥说明（`-msc` 还拒绝 `-auto` 与 `-m icmp`）。
+- 2026-11-13：BL-MSC-002 修复 Ctrl+C 退出：原信号处理器在 `cancel()` 后因 `ctx.Done()` 提前退出，后续 Ctrl+C 被吞；改为两段式有界等待/二次强退，main 对中断以 130 退出。
