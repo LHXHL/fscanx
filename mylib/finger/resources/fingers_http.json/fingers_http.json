@@ -70115,8 +70115,7 @@
                 "regexps": {
                     "body": [
                         "Hillstone",
-                        "licenseAggrement",
-                        "GLOBAL_CONFIG.js"
+                        "licenseAggrement"
                     ]
                 }
             }

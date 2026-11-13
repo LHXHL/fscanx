@@ -15,7 +15,7 @@ fscanx -msc -h 10.0.0.0/8 -p 1-65535 -mp ./masscan.exe -margs "--wait 3"
 
 需要本机有 masscan：建议把masscan路径放置到系统环境变量，若没有则需用 `-mp` 指定文件路径；`-margs` 里不能再写 `-p`、`--ports`、`--rate`、`-iL`、`--includefile`、`--exclude`、`--excludefile` 等 fscanx 已经自动托管的参数。Ctrl+C 第一次会停止 masscan 并最多等 3 秒让在飞扫描收尾；超时或第二次 Ctrl+C 会立即清理临时文件并以 130 退出。更多细节见第 9 节使用案例（4.1）。
 
-![image-20261113183620391](README.assets/image-20261113183620391.png)
+![image-20261113184734586](README.assets/image-20261113184734586.png)
 
 
 
