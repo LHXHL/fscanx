@@ -441,9 +441,11 @@ func (d *dirScheduler) complete(s *dirSite) {
 			// 与 DoWebScan 输出行同构：[+] Product <url>\t<status>\t(<title>)\t<fps>
 			lines = append(lines, fmt.Sprintf("[+] Product %s\t%d\t(%s)\t%s", h.url, h.status, h.title, h.fps))
 		}
-		if diag := s.slowSiteLine(); diag != "" {
-			lines = append(lines, diag)
-		}
+		// 诊断画像输出（BL-DIR-001 慢站点排查用；二轮真机画像定性并落地连续慢熔断后，
+		// 经用户决策暂时注释——统计与 slowSiteLine 函数保留，下次排查恢复此块即可）
+		// if diag := s.slowSiteLine(); diag != "" {
+		// 	lines = append(lines, diag)
+		// }
 		s.hits = nil // 聚合器释放：站点级生命周期结束（零命中站点同样释放）
 		s.seeds = nil
 		s.seen = nil
