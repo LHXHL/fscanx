@@ -4024,12 +4024,8 @@
   }]
 }, {
   "name": "\u4e07\u6237\u7f51\u7edc-ezOFFICE",
-  "logic": "a||b||c||d||e||f",
+  "logic": "b||c||d||e",
   "rule": [{
-    "label": "a",
-    "feature": "ezOFFICE",
-    "is_equal": true
-  }, {
     "label": "b",
     "feature": "EZOFFICEUSERNAME",
     "is_equal": true
@@ -4044,10 +4040,6 @@
   }, {
     "label": "e",
     "feature": "/defaultroot/js/cookie.js",
-    "is_equal": true
-  }, {
-    "label": "f",
-    "feature": "LocLan",
     "is_equal": true
   }]
 }, {
@@ -43732,12 +43724,8 @@
   }]
 }, {
   "name": "Grafana_Labs-\u516c\u53f8\u4ea7\u54c1",
-  "logic": "a||b",
+  "logic": "b",
   "rule": [{
-    "label": "a",
-    "feature": "Grafana",
-    "is_equal": true
-  }, {
     "label": "b",
     "feature": "window.grafanabootdata = ",
     "is_equal": true
