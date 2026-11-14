@@ -35,7 +35,7 @@
 2. 查找 masscan；转换目标（`-h`/`-hf`，逐行再按逗号拆分）和排除项（`-hn`）到临时文件；展开、相减、压缩端口。
 3. 拼装参数：`--rate <mr> -p<ports> -iL <targets> [--excludefile <exclude>] [margs...]`。
 4. 启动进程，stdout 交给 `ScanFromReader`，stderr 交给进度解析器；两路都不继承终端。
-5. masscan 结束后等待 stderr 读完，清掉进度行，打印统计；非零退出时打印 stderr 末尾并以非零码退出。
+5. masscan 结束后（stderr 读尽 + 进程回收）立即清掉进度行并打印统计（found 与 cost 只计 masscan 自身阶段，BL-MSC-005）——下游 fscanx 扫描继续进行，总耗时由 main 的 scan done 行收账；非零退出时打印 stderr 末尾并以非零码退出。
 
 ### -auto 组合流程
 
@@ -66,6 +66,7 @@ masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐�
 - BL-MSC-002 修复 -msc Ctrl+C 退出不可靠（docs/backlog/03-masscan联动.md）
 - BL-MSC-003 -msc 结束后清除底部 rate 进度行（docs/backlog/03-masscan联动.md）
 - BL-MSC-004 -msc -auto 组合（探活复用原逻辑，masscan 接手端口扫描）（docs/backlog/03-masscan联动.md）
+- BL-MSC-005 masscan done 统计行提前到 masscan 退出时打印（docs/backlog/03-masscan联动.md）
 
 ## 变更记录
 
@@ -79,3 +80,4 @@ masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐�
 - 2026-11-13：BL-MSC-002 修复 Ctrl+C 退出：原信号处理器在 `cancel()` 后因 `ctx.Done()` 提前退出，后续 Ctrl+C 被吞；改为两段式有界等待/二次强退，main 对中断以 130 退出。
 - 2026-11-14：BL-MSC-003 修复 rate 进度行残留：`StopProgress` 时机从"全流程结束后"提前到 stderr 读尽（masscan 退出）时，下游扫描期间底部不再残留最后一帧 rate 行。
 - 2026-11-14：BL-MSC-004 新增 `-msc -auto` 组合：探活原逻辑零改动产出存活 C 段，留存 `.msc/` 后 masscan `-iL` 消费；0 存活退出 0；`-hf`/简写判定/中断清理排除留存文件经三轮独立审查修复闭合。
+- 2026-11-14：BL-MSC-005 done 统计行提前到 masscan 退出时打印：`ScanFromReader` goroutine 化（三条返回路径并入扫描协程防 close(Results) 竞争）、counting reader 原子化、cost 改为 masscan 自身耗时。

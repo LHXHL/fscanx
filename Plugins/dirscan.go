@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	dirWorkerNum      = 16               // worker 池大小；任务 channel 容量与之相等
+	dirWorkerNum      = 16               // worker 数回退值；亦作任务 channel 缓冲容量（调度器单协程，缓冲深度只影响发送阻塞时机）
 	dirRedirectLimit  = 3                // 目录请求跟随跳转上限
 	dirAbortThresh    = 3                // 站点连续请求失败熔断阈值（防半死站点 70×超时拖垮收尾，2026-11-14 用户由 5 调低）
 	dirProgressEvery  = 30 * time.Second // 进度快照间隔：打印量恒定不刷屏，仅扫描变慢时可见
@@ -152,8 +152,10 @@ func (d *dirScheduler) noteSiteFail(s *dirSite) {
 	fails := s.consecFails
 	d.mu.Unlock()
 	if abort {
-		// 锁外发送（LogSuccess 可能阻塞在 Results 通道）
-		common.LogSuccess("[-] dirscan abort %s: %d consecutive failures, skip %d paths", url, fails, skipped)
+		// 仅终端不落盘（用户决策 BL-DIR-003：abort/progress 行量大，不进 result.txt）
+		if !common.Silent {
+			common.Printf("[-] dirscan abort %s: %d consecutive failures, skip %d paths\n", url, fails, skipped)
+		}
 	}
 }
 
@@ -183,8 +185,11 @@ func (d *dirScheduler) notePathDone(s *dirSite, dur time.Duration) {
 	url := s.url
 	d.mu.Unlock()
 	if abort {
-		common.LogSuccess("[-] dirscan abort %s: %d consecutive slow paths (>%ds), skip %d paths",
-			url, dirAbortThresh, int(dirSlowPathMark.Seconds()), skipped)
+		// 仅终端不落盘（BL-DIR-003）
+		if !common.Silent {
+			common.Printf("[-] dirscan abort %s: %d consecutive slow paths (>%ds), skip %d paths\n",
+				url, dirAbortThresh, int(dirSlowPathMark.Seconds()), skipped)
+		}
 	}
 }
 
@@ -262,6 +267,16 @@ var dirSched = &dirScheduler{
 	done:   make(chan struct{}),
 }
 
+// dirWorkerCount 目录扫描 worker 数量由 -tn（WebScanThreadNum）控制，与 web 扫描并发
+// 保持一致（BL-DIR-003）；非法值（≤0，含单测未跑 flag 的零值）回退 16——与历史默认
+// 相同，也避免 0 worker 无人消费任务导致排空卡死。taskCh 缓冲容量固定 16 不随动。
+func dirWorkerCount() int {
+	if n := common.WebScanThreadNum; n > 0 {
+		return n
+	}
+	return dirWorkerNum
+}
+
 // progressLoop 周期性打印进度快照（时间驱动而非百分比里程碑：站点渐进注册、
 // 分母不单调，N/M 会误导；时间驱动的打印量恒定——快扫描完全看不到，慢扫描
 // 每 30s 一行让使用者知道仍在推进，且仅在有新进展时打印防重复刷屏）。
@@ -287,7 +302,10 @@ func (d *dirScheduler) progressLoop() {
 		lastDone = donePaths
 		d.mu.Unlock()
 		if changed {
-			common.LogSuccess("[*] dirscan progress: %d/%d paths done, %d sites pending, %d findings", donePaths, total*len(dirPaths), pendingSites, findings)
+			// 仅终端不落盘（BL-DIR-003；-silent 时完全静默）
+			if !common.Silent {
+				common.Printf("[*] dirscan progress: %d/%d paths done, %d sites pending, %d findings\n", donePaths, total*len(dirPaths), pendingSites, findings)
+			}
 		}
 	}
 }
@@ -328,7 +346,7 @@ func RegisterSite(url string, seedPresents map[string]struct{}) {
 		dirSched.started = true
 		firstStart = true
 		client := dirHTTPClient()
-		for i := 0; i < dirWorkerNum; i++ {
+		for i := 0; i < dirWorkerCount(); i++ {
 			dirSched.workers.Add(1)
 			go dirWorker(client)
 		}

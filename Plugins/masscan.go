@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -56,7 +57,7 @@ func (s *masscanStatus) Tail() string {
 type masscanCountingReader struct {
 	r     io.Reader
 	buf   []byte
-	count int64
+	count atomic.Int64 // 原子：masscan 退出时主协程读终值快照，读侧仍在扫描协程（BL-MSC-005）
 }
 
 func (c *masscanCountingReader) Read(p []byte) (int, error) {
@@ -79,14 +80,14 @@ func (c *masscanCountingReader) consume(final bool) {
 		}
 		line := bytes.TrimSpace(c.buf[:idx])
 		if common.RegMasscanRunningText.Match(line) {
-			c.count++
+			c.count.Add(1)
 		}
 		c.buf = c.buf[idx+1:]
 	}
 	if final {
 		line := bytes.TrimSpace(c.buf)
 		if len(line) > 0 && common.RegMasscanRunningText.Match(line) {
-			c.count++
+			c.count.Add(1)
 		}
 		c.buf = nil
 	}
@@ -235,30 +236,42 @@ func runMasscanTargets(targetsFile string, targetCount int, keepTargets bool) er
 	defer stopInterrupt()
 
 	counted := &masscanCountingReader{r: stdout}
-	ScanFromReader(counted, "masscan")
+	scanDone := make(chan struct{})
+	go func() {
+		defer close(scanDone)
+		ScanFromReader(counted, "masscan")
+	}()
 
 	stderrWG.Wait()
 	waitErr := cmd.Wait()
 	common.StopProgress()
 
+	// found 取 stderr 终值与 stdout 计数快照的较大者；快照在 masscan 退出瞬间读取，
+	// 仅无 stderr 状态行的修改版 masscan 兜底路径可能漏末尾几行（统计行非结果数据）。
 	found := status.Found
-	if counted.count > found {
-		found = counted.count
+	if n := counted.count.Load(); n > found {
+		found = n
 	}
 
 	select {
 	case <-interrupted:
+		<-scanDone // 三条返回路径都先并入扫描协程，避免 main 的 LogWG.Wait/close(Results) 与其竞争
 		return ErrMasscanInterrupted
 	default:
 	}
 	if waitErr != nil {
+		<-scanDone
 		if tail := status.Tail(); tail != "" {
 			return fmt.Errorf("masscan exited with error: %v\n%s", waitErr, tail)
 		}
 		return fmt.Errorf("masscan exited with error: %w", waitErr)
 	}
 
+	// masscan 已退出即报统计（BL-MSC-005）：cost 为 masscan 自身耗时、不含下游 fscanx
+	// 扫描；下游继续跑，总耗时由 main 的 scan done 行收账。
 	common.LogSuccess("[*] masscan done: found=%d, cost=%s\n", found, time.Since(start))
+
+	<-scanDone
 	return nil
 }
 

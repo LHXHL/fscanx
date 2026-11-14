@@ -4,7 +4,7 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 
 ## 状态汇总
 
-4 item：4 已完成 / 0 进行中 / 0 未开始；4 已验收
+5 item：5 已完成 / 0 进行中 / 0 未开始；5 已验收
 
 | ID | 标题 | 优先级 | 状态 | 验收状态 |
 |----|------|--------|------|----------|
@@ -12,6 +12,7 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 | BL-MSC-002 | 修复 -msc Ctrl+C 退出不可靠 | P1 | 已完成 | 已验收 |
 | BL-MSC-003 | -msc 结束后清除底部 rate 进度行 | P2 | 已完成 | 已验收 |
 | BL-MSC-004 | -msc -auto 组合（探活复用原逻辑，masscan 接手端口扫描） | P1 | 已完成 | 已验收 |
+| BL-MSC-005 | masscan done 统计行提前到 masscan 退出时打印 | P2 | 已完成 | 已验收 |
 
 ## BL-MSC-001 新增 masscan 内嵌联动模式
 
@@ -246,3 +247,46 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 - 2026-11-14：独立审查三轮（REVISE→REVISE→APPROVE），闭合四项：①0 存活被 nil 误判为"不支持网段"（CountAliveIPCidrWithGlobal 零存活返回 nil，死分支）→调用侧镜像判定+len==0；②switch 无 fallthrough 短路 `-m icmp`/`-mr<=0` 校验→case 前移；③gofmt 双空行；④镜像判定漏 `192`/`10` 简写归一（scanner.go:173-177）→补归一+文案。非阻断备案：普通 -msc 双错时报错顺序变化（均 exit 2）、os.Stat 持续错误的理论死循环、同秒 `-2` 后缀弱断言。
 - 2026-11-14：验证：单测 race 全过；全量 `go test ./Plugins ./common` 双 ok；vet/gofmt/build 通过；二进制实测校验路径（无 -h/-hf/不支持网段/简写过闸，限时探针验证）；普通 -msc 冒烟回归零变化。真机组合扫描（留存文件行数、masscan 消费、Ctrl+C 不删留存）待用户验收。
 - 2026-11-14：用户真机测试通过，验收闭合。其中 0 存活与 Ctrl+C 两条边缘路径以审查级证据闭合（未单独构造场景，先例 BL-DIR-001 豁免模式），异议可回置待验收。验收状态置已验收，控制台移除。
+
+## BL-MSC-005 masscan done 统计行提前到 masscan 退出时打印
+
+- 模块：masscan 联动
+- 优先级：P2
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：`[*] masscan done` 在 masscan 退出瞬间即出现、cost 只计 masscan 自身耗时；不再混在整轮任务结束的最后一屏，下游扫描期间使用者就能看到端口发现阶段的收账。
+- 关联模块文档：docs/modules/03-masscan联动模块.md
+- 关联计划：plans/2026-11-14-BL-MSC-005-masscan-done-timing.md
+- 关联代码：Plugins/masscan.go
+- 验收状态：已验收
+
+### 方案
+
+- **做什么**：`ScanFromReader` 移入 goroutine（scanDone 收口）；主路径在 stderr 读尽 + `cmd.Wait()`（masscan 真正退出）后即取 found、打印 done 行，随后并入扫描协程等待下游收尾。
+- **为什么**：原实现 done 行在 `ScanFromReader`（阻塞至整轮下游扫描结束）之后才打印，与 BL-MSC-003 的 rate 行残留同类生命周期缺陷（模块文档"启动流程 step 5"写的是 masscan 结束后打印统计）；且 `cost=time.Since(start)` 把下游时间计入 masscan 耗时，数值误导。
+- **怎么做**：`masscanCountingReader.count` 改 `atomic.Int64`（masscan 退出时主协程读快照，读侧在扫描协程）；`status.Found` 在 stderr EOF 已是终值、权威；三条返回路径（interrupted/waitErr/正常）都先 `<-scanDone` 并入扫描协程——避免 main 的 `LogWG.Wait()`/`close(Results)` 与扫描协程的 `LogWG.Add`/`Results<-` 竞争（close 后 send panic）。done 行中途打印安全：`LogSuccess` 调用即 `LogWG.Add`（log.go:41）+ 同步 send。
+- **为什么这么做**：与 BL-MSC-003 同构，以"管道 EOF = masscan 退出"为唯一时点；found 快照在无 stderr 状态行的修改版 masscan 兜底路径可能漏末尾几行（统计行非结果数据，注释载明）。
+
+### 范围
+
+- `Plugins/masscan.go`：counting reader 原子化、runMasscanTargets 尾部 goroutine 化、done 行提前
+
+### 不做
+
+- 不改中断两段式语义（第二次 Ctrl+C 强退跳过并入属既有设计）
+- 不为 done 行加时间戳前缀（cost 字段已含时长信息）
+
+### 验收条件
+
+- [x] 全量 `go test ./Plugins ./common` + masscan 相关 `-race` 通过；build/vet/gofmt 绿
+- [x] 冒烟（127.0.0.1:445，真实 masscan 回环 found=0 为既有已知）：done 行先于 scan done、退出 0、无卡死（通道并入正确）；cost 语义= masscan 自身耗时（11.64s ≈ masscan --wait 时长，下游无任务时两值重合属预期）
+- [x] 真机网络目标：下游扫描进行中即见 done 行，cost 明显小于总 scan done 耗时（2026-11-14 用户真机测试通过）
+
+### 依赖
+
+- 无
+
+### 状态记录
+
+- 2026-11-14：用户报告"done 在任务结束才打印"；定位与 BL-MSC-003 同类（done 打印点滞后于 ScanFromReader）。实现 + 回归 + 冒烟通过，真机时序待用户验收。
+- 2026-11-14：用户真机测试通过（下游扫描进行中即见 done 行），验收状态置已验收，控制台移除。

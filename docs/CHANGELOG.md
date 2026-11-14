@@ -2,6 +2,14 @@
 
 ## 2026-11-14
 
+- BL-MSC-005 用户真机验收闭合（下游扫描进行中即见 done 行、cost 为 masscan 自身耗时），从控制台移除；本日累计闭合 7 item，16 item 中 12 已验收
+
+- masscan done 统计行提前到 masscan 退出时打印（BL-MSC-005，用户反馈"任务结束才打印"）：ScanFromReader goroutine 化（三条返回路径并入扫描协程，防 close(Results) 后 send panic）、stdout 计数改原子快照、cost 语义修正为 masscan 自身耗时（不再混入下游扫描时长）；与 BL-MSC-003 同类的生命周期缺陷，模块文档"masscan 结束后打印统计"自此与实现一致
+
+- BL-DIR-003 用户真机验收闭合（worker 跟 -tn、result.txt 无 abort/progress 行），从控制台移除
+
+- 目录扫描 worker 改由 -tn 控制并与 web 并发一致 + abort/progress 不落盘（BL-DIR-003，用户两指令）：`dirWorkerCount`（≤0 回退 16，taskCh 容量固定不随动）；两处熔断 abort 行与 30s 进度行改 Printf 仅终端（-silent 完全静默），enabled/done/Product 落盘不变；本机慢站点冒烟实证 abort 独立成行打终端、result.txt 零 abort/progress（顺带补 Printf 缺失的换行）
+
 - BL-MSC-003/BL-MSC-004/BL-DIR-002 验收闭合（用户真机测试通过）：MSC-003 rate 行为在组合扫描中一并确认；MSC-004 的 0 存活与 Ctrl+C 边缘路径以审查级证据闭合；DIR-002 全部为客观机器证据。三项从控制台移除，累计 14 item 中 10 已验收
 
 - 新增 `-msc -auto` 组合（BL-MSC-004）：`-auto` 探活原逻辑零改动筛出存活 C 段，清单留存 `.msc/msc-targets-<时间戳>.txt`（不自动清理，可 `masscan -iL` 复跑），masscan `-iL` 只扫存活段；组合跳过全 IP icmp 验活（`-np` 无作用）、0 存活提示退出 0、`-hf` 显式拒绝、Ctrl+C 不删留存文件；普通 `-msc` 行为零变化（本机冒烟验证）。经三轮独立审查 APPROVE（闭合 0 存活误判/校验短路/简写归一三项缺陷）
