@@ -711,6 +711,31 @@ func TestBodyBlackholeTriggersFailAbort(t *testing.T) {
 	}
 }
 
+// ---------- 快 404 清零失败计数（复验轮回归：短路在 body 读取前，曾执行不到清零） ----------
+
+// 间歇超时与快 404 交错的站点不得被误熔断——≥300 短路响应（头快速到达）即存活信号。
+func TestFast4xxClearsFailCounter(t *testing.T) {
+	dirTestSetup(t, []string{"/p1", "/p2", "/p3", "/p4"})
+	gone := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer gone.Close()
+
+	s := &dirSite{url: gone.URL, seeds: map[string]struct{}{}, seedFps: map[string]struct{}{}, seen: map[string]struct{}{}}
+	client := &http.Client{Timeout: 3 * time.Second}
+
+	dirSched.noteSiteFail(s) // 模拟两次超时（直调，等价于 runDirTask 的 err 路径）
+	dirSched.noteSiteFail(s)
+	runDirTask(client, dirTask{site: s, path: "/p1"}) // 快 404：应清零
+	if s.consecFails != 0 {
+		t.Fatalf("快 404 应清零失败计数（头到达即存活），got consecFails=%d", s.consecFails)
+	}
+	dirSched.noteSiteFail(s) // 清零后的第 3 次失败：非连续，不应熔断
+	if s.idx != 0 {
+		t.Fatalf("非连续 3 次失败不应熔断（快 404 已清零），idx=%d", s.idx)
+	}
+}
+
 // ---------- 双熔断交织 ----------
 
 // 超时路径同时计入失败与慢两个计数器；fail-abort 跳顶后 slow-abort 被

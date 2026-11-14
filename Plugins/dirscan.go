@@ -522,6 +522,10 @@ func runDirTask(client *http.Client, t dirTask) {
 	// 同样无有效内容。4xx：403/404 噪声已实证，401 经取舍价值也低（仅极少数产品靠响应头
 	// 特征可识别，2026-11-14 用户决策全 4xx 屏蔽）。跟随成功的落地响应状态码才进入判定。
 	if resp.StatusCode >= 300 {
+		// 响应头快速到达即存活信号：404/302 等短路响应清零失败计数——否则间歇超时与
+		// 快 404 交错的站点（扫描自身造成的偶发丢包形态）3 次非连续超时即被误熔断
+		// （复验轮抓到的回归：短路在 body 读取之前，404 路径原本执行不到任何清零）
+		dirSched.noteSiteOK(t.site)
 		return
 	}
 	body, err := ReadRawWithSize(resp, 192*1024)
@@ -529,12 +533,11 @@ func runDirTask(client *http.Client, t dirTask) {
 		// body 读取不完整（超时/中断）：ReadRawWithSize 错误分支返回"状态行+头(+部分body)"
 		// 恒非空，旧条件 len(body)==0 永假致此防线不可达（独立审查实测证实）；与入口门槛
 		// bodyOK=err==nil 语义对称——body 不完整即计入失败熔断并丢弃（残缺数据不做识别）。
-		// 注意 noteSiteOK 必须在 body 成功后才清零：黑洞路径"头到达+body 超时"的组合中，
-		// 若在 Do 成功时清零，consecFails 每条被清回 1、熔断永不触发（高-1 修复暴露的交互）
+		// 2xx 黑洞路径此处计入失败且不被清零（≥300 短路的清零在上一分支，200 不经过）
 		dirSched.noteSiteFail(t.site)
 		return
 	}
-	dirSched.noteSiteOK(t.site) // 完整响应才证明服务器健康，清零计数（含后续短路丢弃的 404 等——body 已完整）
+	dirSched.noteSiteOK(t.site) // 2xx 且 body 完整：健康，清零计数
 	frames, _ := Engine.DetectContent(body)
 	products := strings.Split(frames.String(), "||")
 	fps := make([]string, 0, len(products))
