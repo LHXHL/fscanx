@@ -131,6 +131,7 @@ type dirSite struct {
 	totalDur  time.Duration
 	maxPath   time.Duration // 最慢单路径
 	slowPaths int           // 超过 dirSlowPathMark 的路径数
+	pathFails int           // 请求失败条数（dial 超时/连接失败/body 黑洞）——区分"慢成功"与"间歇失败"型拖尾
 }
 
 // noteSiteFail 连续失败计数；达 dirAbortThresh 熔断该站点（剩余路径全部跳过）。
@@ -140,6 +141,7 @@ type dirSite struct {
 func (d *dirScheduler) noteSiteFail(s *dirSite) {
 	d.mu.Lock()
 	s.consecFails++
+	s.pathFails++
 	abort := s.consecFails >= dirAbortThresh && s.idx < len(dirPaths)
 	var skipped int
 	if abort {
@@ -175,13 +177,19 @@ func (d *dirScheduler) notePathDone(s *dirSite, dur time.Duration) {
 }
 
 // slowSiteLine 慢站点画像行；总耗时未达 dirSlowSiteReport 返回空串（不打）。
+// avg/slowest/fails 用于区分拖尾形态：慢成功（avg 高 fails 低）/间歇失败
+// （fails 高但 consecFails 不连续、熔断抓不住）/排队为主（avg 低但总耗时长）。
 // 调用方持锁。
 func (s *dirSite) slowSiteLine() string {
 	if s.startedAt.IsZero() || time.Since(s.startedAt) < dirSlowSiteReport {
 		return ""
 	}
-	return fmt.Sprintf("[*] dirscan slow site %s: %d paths in %.0fs (slowest %.1fs, %d paths >%ds), %d findings",
-		s.url, s.idx, time.Since(s.startedAt).Seconds(), s.maxPath.Seconds(), s.slowPaths, int(dirSlowPathMark.Seconds()), len(s.hits))
+	avg := 0.0
+	if s.idx > 0 {
+		avg = s.totalDur.Seconds() / float64(s.idx)
+	}
+	return fmt.Sprintf("[*] dirscan slow site %s: %d paths in %.0fs (avg %.1fs, slowest %.1fs, %d slow, %d failed), %d findings",
+		s.url, s.idx, time.Since(s.startedAt).Seconds(), avg, s.maxPath.Seconds(), s.slowPaths, s.pathFails, len(s.hits))
 }
 func (d *dirScheduler) noteSiteOK(s *dirSite) {
 	d.mu.Lock()
@@ -445,7 +453,9 @@ func dirWorker(client *http.Client) {
 			}()
 			defer dirSched.complete(task.site)
 			t0 := time.Now()
-			defer dirSched.notePathDone(task.site, time.Since(t0)) // 先于 complete：统计先落、flush 后读
+			// 闭包求值：defer 参数若直接写 time.Since(t0) 会在注册时求值（恒为 ~0），
+			// 单路径耗时统计全废（真机画像 slowest 0.0s 即此 bug）
+			defer func() { dirSched.notePathDone(task.site, time.Since(t0)) }() // 先于 complete：统计先落、flush 后读
 			runDirTask(client, task)
 		}()
 	}
