@@ -106,14 +106,36 @@ type dirHit struct {
 }
 
 // dirSite 轮询环中的站点条目。seeds 为首页扫描链（初次+跳转+https重试）
-// 收集的呈现集合；hits/seen 构成站点聚合器，站点扫完即释放（置 nil）。
+// 收集的呈现集合；seedFps 为首页全部指纹元素的并集（空标题路径的判定
+// 基准，用户规则 2026-11-14：空标题不算标题差异，退化为指纹差）；
+// hits/seen 构成站点聚合器，站点扫完即释放（置 nil）。
 type dirSite struct {
 	url      string
 	idx      int // 下一条待发射路径的下标
 	inflight int // 在途请求计数（>0 时调度器跳过该站点）
 	seeds    map[string]struct{}
+	seedFps  map[string]struct{}
 	hits     []dirHit
 	seen     map[string]struct{}
+}
+
+// seedFingerprintUnion 从呈现 key 集合拆出全部指纹元素的并集。
+// key 格式见 presentKey（排序指纹 "\x1f" join + "\x00" + 标题），
+// 指纹名为产品串不含控制字符，拆分安全。
+func seedFingerprintUnion(seeds map[string]struct{}) map[string]struct{} {
+	union := make(map[string]struct{})
+	for k := range seeds {
+		fpPart := k
+		if i := strings.IndexByte(k, 0x00); i >= 0 {
+			fpPart = k[:i]
+		}
+		for _, fp := range strings.Split(fpPart, "\x1f") {
+			if fp != "" {
+				union[fp] = struct{}{}
+			}
+		}
+	}
+	return union
 }
 
 func (s *dirSite) drained() bool { return s.idx >= len(dirPaths) && s.inflight == 0 }
@@ -164,9 +186,10 @@ func RegisterSite(url string, seedPresents map[string]struct{}) {
 		seedPresents = make(map[string]struct{})
 	}
 	s := &dirSite{
-		url:   url,
-		seeds: seedPresents,
-		seen:  make(map[string]struct{}),
+		url:     url,
+		seeds:   seedPresents,
+		seedFps: seedFingerprintUnion(seedPresents),
+		seen:    make(map[string]struct{}),
 	}
 	dirSched.mu.Lock()
 	if dirSched.sealed {
@@ -374,7 +397,21 @@ func runDirTask(client *http.Client, t dirTask) {
 	if t.site.seeds == nil {
 		return // 站点已 flush 释放（迟到任务）
 	}
-	if _, dup := t.site.seeds[key]; dup {
+	if title == "None" {
+		// 空标题不算标题差异（用户规则 2026-11-14）："None" 是占位符而非真实新标题，
+		// 二元组判定在 (首页指纹,真实标题) vs (同指纹,None) 间会误判为"新呈现"输出噪声；
+		// 退化为纯指纹差——全部指纹为首页已见则丢，有任一新指纹才输出
+		hasNew := false
+		for _, fp := range fps {
+			if _, seen := t.site.seedFps[fp]; !seen {
+				hasNew = true
+				break
+			}
+		}
+		if !hasNew {
+			return
+		}
+	} else if _, dup := t.site.seeds[key]; dup {
 		return // 呈现与首页完全重合：302 型软 404 兜底
 	}
 	if _, dup := t.site.seen[key]; dup {

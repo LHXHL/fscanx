@@ -340,6 +340,17 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 		w.WriteHeader(code)
 		fmt.Fprint(w, body)
 	})
+	// 空标题用例（用户规则：空标题不算差异，退化为指纹差）
+	// /nt-same：无 title、指纹与首页同源（Server 头）→ 无新指纹 → 丢
+	// /nt-new：无 title、body 带目录列表特征文案（directory 类指纹）→ 有新指纹 → 出
+	mux.HandleFunc("/nt-same", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		fmt.Fprint(w, `<html><body>nothing here</body></html>`)
+	})
+	mux.HandleFunc("/nt-new", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		fmt.Fprint(w, `<html><body><h1>Directory listing for /</h1><hr><a href="../">../</a><hr></body></html>`)
+	})
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -374,7 +385,7 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 
 	run := func(path string) *dirSite {
 		t.Helper()
-		s := &dirSite{url: srv.URL, seeds: seeds, seen: map[string]struct{}{}}
+		s := &dirSite{url: srv.URL, seeds: seeds, seedFps: seedFingerprintUnion(seeds), seen: map[string]struct{}{}}
 		runDirTask(client, dirTask{site: s, path: path})
 		return s
 	}
@@ -403,6 +414,31 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 		t.Errorf("同前缀 302 跟随后应 1 命中，got %d", len(s.hits))
 	} else if !strings.Contains(s.hits[0].url, "/sub") {
 		t.Errorf("命中 url 应保留原始路径 /sub，got %s", s.hits[0].url)
+	}
+
+	// 空标题规则（自适应：先取 /nt-same 的真实指纹集构造首页基准，不依赖指纹库具体产品名）
+	ntKey := probePresent(t, client, srv.URL, "/nt-same") // (FA, None)
+	ntFps := strings.Split(strings.SplitN(ntKey, "\x00", 2)[0], "\x1f")
+	// 前置断言：/nt-new 必须比 /nt-same 多至少一个指纹（目录列表特征文案生效），
+	// 若指纹库演进导致失效，此处 Fail 提示重造测试页而不是静默跳过
+	nwKey := probePresent(t, client, srv.URL, "/nt-new")
+	nwFps := strings.Split(strings.SplitN(nwKey, "\x00", 2)[0], "\x1f")
+	if len(nwFps) <= len(ntFps) {
+		t.Fatalf("测试页构造失效：/nt-new 指纹(%d) 应多于 /nt-same(%d)，需重造特征 body", len(nwFps), len(ntFps))
+	}
+	ntSeeds := map[string]struct{}{presentKey(ntFps, "Home"): {}} // 模拟首页：同指纹、有真实标题
+	ntRun := func(path string) *dirSite {
+		s := &dirSite{url: srv.URL, seeds: ntSeeds, seedFps: seedFingerprintUnion(ntSeeds), seen: map[string]struct{}{}}
+		runDirTask(client, dirTask{site: s, path: path})
+		return s
+	}
+	if s := ntRun("/nt-same"); len(s.hits) != 0 {
+		t.Errorf("空标题且指纹全为首页已见应零命中，got %d", len(s.hits))
+	}
+	if s := ntRun("/nt-new"); len(s.hits) != 1 {
+		t.Errorf("空标题但有新指纹（目录列表特征）应 1 命中，got %d", len(s.hits))
+	} else if s.hits[0].title != "None" {
+		t.Errorf("命中标题应为 None 占位，got %q", s.hits[0].title)
 	}
 }
 
