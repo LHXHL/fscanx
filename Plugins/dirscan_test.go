@@ -305,6 +305,11 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 	mux.HandleFunc("/gone", func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	})
+	// 403 屏蔽（真机噪声反馈）：响应头带可识别指纹也应零输出
+	mux.HandleFunc("/denied", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	})
 	// 同前缀跳转：/sub → /sub/login（应跟随并识别）
 	mux.HandleFunc("/sub", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/sub/login", http.StatusFound)
@@ -376,6 +381,9 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 
 	if s := run("/gone"); len(s.hits) != 0 {
 		t.Error("404 路径应零命中")
+	}
+	if s := run("/denied"); len(s.hits) != 0 {
+		t.Error("403 路径应零命中（用户决策屏蔽，即使响应头带可识别指纹）")
 	}
 	if s := run("/plain"); len(s.hits) != 0 {
 		t.Error("无指纹 200 应零命中")
