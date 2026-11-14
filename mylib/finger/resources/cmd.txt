@@ -1,3 +1,6 @@
-gzip -c fingers_http.json > fingers_http.json.gz
+指纹库重打包（替代 gzip 命令，Windows/Linux/macOS 通用）：
 
-gzip -c goby.json > goby.json.gz
+go run ./mylib/finger/cmd/pack
+
+读取 fingers_http.json/fingers_http.json、goby.json/goby.json 明文，
+校验 JSON 后压缩写入根目录 fingers_http.json.gz、goby.json.gz（go:embed 真源）。
