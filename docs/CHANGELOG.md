@@ -1,6 +1,18 @@
 # CHANGELOG
 
+## 2026-11-15
+
+- BL-FOC-001~004 用户真机验收闭合（重点标记 `[*产品名]` 输出正常、若依指纹命中），从控制台移除；本日累计闭合 4 item，21 item 中 17 已验收
+
 ## 2026-11-14
+
+- 护网脆弱产品 focus 打标（BL-FOC-004，清单经用户确认）：goby.json 451 条命中插入 focus:true（9 类：Web 危险组件 30/国产 OA 12/ERP 27/VPN 与安全设备 169/视频监控 162/堡垒机运维 15/邮件 28/报表低代码 6/远控 2）+ 用户新增若依指纹（若依-RuoYi，三组 body 特征 OR，focus），条目 7075→7076、focus 452；明细落 plans/2026-11-14-BL-FOC-004-护网打标.md，手术脚本 plans/scripts/tag_hw_focus.py（深度相等验证前置）。执行中发现 git autocrlf+stash 往返曾把 goby.json 物化为 CRLF，已恢复 LF（与 gz 内容字节级一致后手术）。
+
+- goby.json 中文形态化（BL-FOC-003，用户追加需求）：11971 处 uXXXX 转义解码为 UTF-8 原文（raw_decode 逐 token 手术，非字符串区域逐字节保留），转换前后 json.load 深度相等、纯 LF/无 BOM/无尾换行；引擎加载 Len==7075 不变、中文特征抽样匹配命中；重打包 goby.json.gz（2053147 明文 → 310928 gz）。转换工具沉淀 plans/scripts/convert_goby_unicode.py。
+
+- goby 引擎支持内联 focus 字段（BL-FOC-002）：GobyFinger 新增 Focus（json `focus,omitempty`），Match 命中置 frame.IsFocus，与 fingers 引擎语义一致；新建 goby 包单测 2 个（focus 置位/旧格式兼容）PASS，现库加载取证 Len==7075 行为不变；doc/README.md goby 节与 rule.md 补 focus 字段说明。
+
+- focus 重点关注输出符号 ASCII 化（BL-FOC-001，用户反馈 ⚠️ 在 macOS 等终端错位）：U+26A0+FE0F 改为 `*`，输出形如 `[*shiro]`；修正 rule.md:154 失实描述（"输出时带有focus字样"→"指纹名带 `*` 前缀"）；新建 common 包 framework_test.go 断言输出形态（4 用例 PASS）。build/test 失败项经 stash 基线取证均为 pre-existing。
 
 - BL-FP-004 用户真机验收闭合（复扫目标不再报致远互联-OA/Log4j2，真阳性 PHP/Nginx 保留），从控制台移除；本日累计闭合 8 item，17 item 中 13 已验收
 

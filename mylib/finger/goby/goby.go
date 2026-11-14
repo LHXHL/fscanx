@@ -85,6 +85,7 @@ type GobyFinger struct {
 	Logic     string `json:"logic"`
 	logicExpr *logic.Program
 	Name      string     `json:"name"`
+	Focus     bool       `json:"focus,omitempty"` // 重点关注指纹标记, 语义与 fingers 引擎的 focus 一致
 	Rule      []gobyRule `json:"rule"`
 }
 
@@ -109,7 +110,11 @@ func (finger *GobyFinger) Match(raw string) *common.Framework {
 	matched := logic.EvalLogic(finger.logicExpr, env)
 
 	if matched {
-		return common.NewFramework(finger.Name, common.FrameFromGoby)
+		frame := common.NewFramework(finger.Name, common.FrameFromGoby)
+		if finger.Focus {
+			frame.IsFocus = true
+		}
+		return frame
 	}
 	return nil
 }

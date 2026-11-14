@@ -130,7 +130,7 @@ func (f *Framework) String() string {
 
 	s.WriteString("[")
 	if f.IsFocus {
-		s.WriteString("⚠️") // 感叹符号 \x26\xA0
+		s.WriteString("*") // 重点关注标记, ASCII 星号在任何终端宽度恒定, 避免 emoji 在 macOS 等终端错位
 	}
 	s.WriteString(f.Name)
 	if f.Version != "" {

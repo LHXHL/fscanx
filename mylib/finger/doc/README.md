@@ -50,4 +50,4 @@ https://github.com/chainreactors/fingers/tree/master/ehole 为其规则库的go�
 
 规则库本体来自开源社区的逆向[goby](https://gobies.org/) Thanks @XiaoliChan @9bie .
 
-https://github.com/chainreactors/fingers/tree/master/goby 为其规则库的go实现. 本仓库的此规则库只做同步.
+https://github.com/chainreactors/fingers/tree/master/goby 为其规则库的go实现. 本仓库在同步基础上本地维护(误报清理等), 并扩展了focus字段: 指纹条目可添加`"focus": true`声明重点关注产品, 命中后输出形如`[*产品名]`, 语义与 fingers 引擎的 focus 一致; 不带该字段的条目为旧格式, 行为不变.
