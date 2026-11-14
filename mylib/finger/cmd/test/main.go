@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/killmonday/fscanx/mylib/finger/alias"
+	fingers "github.com/killmonday/fscanx/mylib/finger"
 	"github.com/killmonday/fscanx/mylib/finger/common"
 	"gopkg.in/yaml.v3"
 )
@@ -57,7 +58,7 @@ func main() {
 
 	// If detect-all flag is set, run general detection
 	if *detectAll {
-		fmt.Println("🔍 Running general fingerprint detection...\n")
+		fmt.Println("🔍 Running general fingerprint detection...")
 		allResults := runGeneralDetection(eng, *target, *timeout, *verbose)
 
 		fmt.Printf("📊 General Detection Results:\n")

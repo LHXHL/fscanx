@@ -3,10 +3,20 @@ package wappalyzer
 import (
 	"testing"
 
+	"github.com/killmonday/fscanx/mylib/finger/resources"
 	"github.com/stretchr/testify/require"
 )
 
+// skipIfDataMissing 在引擎数据未嵌入时跳过(974150e 内存优化裁剪了 wappalyzer 数据 embed,
+// 主程序仅启用 fingers+goby); 数据恢复嵌入后判据自动失效, 测试恢复真跑。
+func skipIfDataMissing(t *testing.T) {
+	if len(resources.WappalyzerData) == 0 {
+		t.Skip("wappalyzer 引擎数据未嵌入(974150e 内存裁剪), 跳过")
+	}
+}
+
 func TestCookiesDetect(t *testing.T) {
+	skipIfDataMissing(t)
 	wappalyzer, err := NewWappalyzeEngine()
 	require.Nil(t, err, "could not create wappalyzer")
 
@@ -32,6 +42,7 @@ func TestCookiesDetect(t *testing.T) {
 }
 
 func TestHeadersDetect(t *testing.T) {
+	skipIfDataMissing(t)
 	wappalyzer, err := NewWappalyzeEngine()
 	require.Nil(t, err, "could not create wappalyzer")
 
@@ -43,6 +54,7 @@ func TestHeadersDetect(t *testing.T) {
 }
 
 func TestBodyDetect(t *testing.T) {
+	skipIfDataMissing(t)
 	wappalyzer, err := NewWappalyzeEngine()
 	require.Nil(t, err, "could not create wappalyzer")
 

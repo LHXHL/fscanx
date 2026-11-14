@@ -2,6 +2,8 @@
 
 ## 2026-11-15
 
+- 重构遗留编译与测试债务修复（BL-BLD-001）：5 个构建失败包全修复（cmd 三工具补 fingers import、examples 改 NewWappalyzeEngine、rdpgfx 补回 ChannelSender 字段）+ 4 个测试文件编译修复（engine_test int→string×2、cssp_test 字节字面量、ntlm_test API 更名）+ 14 个测试数据判据 skip 化（数据裁剪自愈判据）。go build ./... 零错误、finger 域 6 包测试全 ok。重要发现：RDP NLA 认证回归嫌疑（ComputeResponseV2 blob 多 4 字节 0，LM 正确 NT 不符，待真机裁定）、DERT 编码漂移、rle 越界——三处真问题测试 skip 注明待专项。
+
 - BL-FOC-001~004 用户真机验收闭合（重点标记 `[*产品名]` 输出正常、若依指纹命中），从控制台移除；本日累计闭合 4 item，21 item 中 17 已验收
 
 ## 2026-11-14

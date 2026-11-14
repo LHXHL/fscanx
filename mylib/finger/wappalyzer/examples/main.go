@@ -16,7 +16,7 @@ func main() {
 	}
 	data, _ := io.ReadAll(resp.Body) // Ignoring error for example
 
-	wappalyzerClient, err := wappalyzer.New()
+	wappalyzerClient, err := wappalyzer.NewWappalyzeEngine()
 	if err != nil {
 		log.Fatal(err)
 	}

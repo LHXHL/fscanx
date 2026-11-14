@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime/pprof"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,10 +17,31 @@ import (
 	"github.com/killmonday/fscanx/mylib/finger/fingerprinthub"
 	"github.com/killmonday/fscanx/mylib/finger/fingers"
 	"github.com/killmonday/fscanx/mylib/finger/goby"
+	"github.com/killmonday/fscanx/mylib/finger/resources"
 	"github.com/killmonday/fscanx/mylib/finger/wappalyzer"
 )
 
+// skipIfEngineDataMissing 在引擎数据未嵌入时跳过测试。
+// 974150e 内存优化裁剪了 wappalyzer/nmap 数据 embed(主程序仅启用 fingers+goby),
+// NewEngine 对单引擎初始化失败是整体报错, 默认引擎集(AllEngines)因此不可用;
+// 数据恢复嵌入后判据自动失效, 测试恢复真跑。
+func skipIfEngineDataMissing(t *testing.T, engines ...string) {
+	for _, name := range engines {
+		switch name {
+		case WappalyzerEngine:
+			if len(resources.WappalyzerData) == 0 {
+				t.Skipf("%s 引擎数据未嵌入(974150e 内存裁剪), 跳过", name)
+			}
+		case NmapEngine:
+			if len(resources.NmapServiceProbesData) == 0 {
+				t.Skipf("%s 引擎数据未嵌入(974150e 内存裁剪), 跳过", name)
+			}
+		}
+	}
+}
+
 func TestEngine(t *testing.T) {
+	skipIfEngineDataMissing(t, WappalyzerEngine, NmapEngine)
 	// 创建内存分析文件
 	memProfileFile, err := os.Create("memprofile.out")
 	if err != nil {
@@ -73,6 +95,7 @@ func TestEngine(t *testing.T) {
 }
 
 func TestEngine_Match(t *testing.T) {
+	skipIfEngineDataMissing(t, WappalyzerEngine, NmapEngine)
 	engine, err := NewEngine()
 	if err != nil {
 		panic(err)
@@ -86,6 +109,7 @@ func TestEngine_Match(t *testing.T) {
 }
 
 func TestFavicon(t *testing.T) {
+	skipIfEngineDataMissing(t, WappalyzerEngine, NmapEngine)
 	engine, err := NewEngine()
 	if err != nil {
 		panic(err)
@@ -125,6 +149,7 @@ func TestFingersEngine(t *testing.T) {
 }
 
 func TestEngine_MatchWithEngines(t *testing.T) {
+	skipIfEngineDataMissing(t, WappalyzerEngine, NmapEngine)
 	engine, err := NewEngine()
 	if err != nil {
 		t.Error(err)
@@ -200,6 +225,7 @@ func TestGobyEngine(t *testing.T) {
 }
 
 func TestEngine_Wappalyzer(t *testing.T) {
+	skipIfEngineDataMissing(t, WappalyzerEngine)
 	engine, err := wappalyzer.NewWappalyzeEngine()
 	if err != nil {
 		t.Error(err)
@@ -218,6 +244,7 @@ func TestEngine_Wappalyzer(t *testing.T) {
 }
 
 func TestAlias(t *testing.T) {
+	skipIfEngineDataMissing(t, WappalyzerEngine, NmapEngine)
 	engine, err := NewEngine()
 	if err != nil {
 		t.Error()
@@ -229,6 +256,7 @@ func TestAlias(t *testing.T) {
 }
 
 func TestNmapEngine(t *testing.T) {
+	skipIfEngineDataMissing(t, NmapEngine)
 	engine, err := NewEngine(NmapEngine)
 	if err != nil {
 		t.Error(err)
@@ -252,7 +280,7 @@ func TestNmapEngine(t *testing.T) {
 		}
 	}
 
-	result := nmapEngine.ServiceMatch("127.0.0.1", 80, 1, testServiceSender, testServiceCallback)
+	result := nmapEngine.ServiceMatch("127.0.0.1", "80", 1, testServiceSender, testServiceCallback)
 	if result != nil && result.Framework != nil {
 		t.Logf("service result: %s", result.Framework.String())
 	}
@@ -275,6 +303,7 @@ func TestNmapEngine(t *testing.T) {
 
 // TestServiceEngine 测试Service引擎的能力
 func TestServiceEngine(t *testing.T) {
+	skipIfEngineDataMissing(t, NmapEngine)
 	engine, err := NewEngine(NmapEngine)
 	if err != nil {
 		t.Error(err)
@@ -307,7 +336,7 @@ func TestServiceEngine(t *testing.T) {
 
 	ports := []int{80, 443, 445, 135, 1080, 3306, 1433, 1521}
 	for _, port := range ports {
-		results, err := engine.DetectService("127.0.0.1", port, 9, testSender, nil)
+		results, err := engine.DetectService("127.0.0.1", strconv.Itoa(port), 9, testSender, nil)
 		if err != nil {
 			t.Logf("DetectService error: %v", err)
 		}

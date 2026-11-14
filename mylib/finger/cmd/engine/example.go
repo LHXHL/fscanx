@@ -13,6 +13,7 @@ import (
 	"github.com/chainreactors/utils/encode"
 	"github.com/chainreactors/utils/httputils"
 	"github.com/jessevdk/go-flags"
+	fingers "github.com/killmonday/fscanx/mylib/finger"
 	"github.com/killmonday/fscanx/mylib/finger/common"
 	"github.com/killmonday/fscanx/mylib/finger/resources"
 	"gopkg.in/yaml.v3"

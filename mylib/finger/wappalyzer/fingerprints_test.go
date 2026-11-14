@@ -10,7 +10,9 @@ func TestVersionRegex(t *testing.T) {
 	regex, err := newVersionRegex("JBoss(?:-([\\d.]+))?\\;confidence:50\\;version:\\1")
 	require.NoError(t, err, "could not create version regex")
 
-	matched, version := regex.MatchString("JBoss-2.3.9")
+	// 生产路径 Fingerprint() 对输入统一 lower 化后匹配(newVersionRegex 编译前 ToLower),
+	// 此处测试输入遵循同一契约
+	matched, version := regex.MatchString("jboss-2.3.9")
 	require.True(t, matched, "could not get version regex match")
 	require.Equal(t, "2.3.9", version, "could not get correct version")
 

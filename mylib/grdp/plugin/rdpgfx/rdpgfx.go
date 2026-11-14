@@ -13,6 +13,7 @@ const (
 )
 
 type gfxClient struct {
+	w core.ChannelSender
 }
 
 func (c *gfxClient) Send(s []byte) (int, error) {
