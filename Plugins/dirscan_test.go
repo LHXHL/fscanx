@@ -309,11 +309,14 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 	mux.HandleFunc("/sub", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/sub/login", http.StatusFound)
 	})
-	// 跨前缀跳转：/rand → /landing（软 404 形态，不应跟随）
+	// 跨前缀跳转：/rand → /landing（软 404 形态，不应跟随）。
+	// Server 头故意可被指纹引擎识别：复刻真机误报条件——302 响应本身的头
+	// （Location/Server）被匹配出指纹（BL-DIR-001 真机 thinkphp 误报），断言仍零输出。
 	mux.HandleFunc("/rand", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
 		http.Redirect(w, r, "/landing", http.StatusFound)
 	})
-	// 跨 host：/ext → 第二个 server
+	// 跨 host：/ext → 第二个 server（同样带可识别指纹的 302 响应头）
 	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		code, body := fingerPage("OtherHost")
 		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
@@ -322,6 +325,7 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 	}))
 	defer other.Close()
 	mux.HandleFunc("/ext", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
 		http.Redirect(w, r, other.URL+"/x", http.StatusFound)
 	})
 	// 同指纹不同标题（同产品后台救回场景）

@@ -343,7 +343,11 @@ func runDirTask(client *http.Client, t dirTask) {
 		return
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 404 || resp.StatusCode >= 500 {
+	// 短路丢弃：404/5xx 常规；3xx 一律丢——CheckRedirect 拒绝跟随时拿到的是 302 响应本身，
+	// 其 Location/Server 头会被指纹引擎匹配出无关产品（真机实测 Location 含 "thinkphp"
+	// 字样即误报 thinkphp）；限跳截断的落地 3xx 同样无有效内容。跟随成功的最终响应
+	// 状态码才会进入后续判定。401/403 保留（后台访问控制的强信号，靠响应头特征识别）。
+	if sc := resp.StatusCode; sc == 404 || sc >= 500 || (sc >= 300 && sc < 400) {
 		return
 	}
 	body, err := ReadRawWithSize(resp, 192*1024)
