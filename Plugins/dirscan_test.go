@@ -346,16 +346,10 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 		w.WriteHeader(code)
 		fmt.Fprint(w, body)
 	})
-	// 空标题用例（用户规则：空标题不算差异，退化为指纹差）
-	// /nt-same：无 title、指纹与首页同源（Server 头）→ 无新指纹 → 丢
-	// /nt-new：无 title、body 带目录列表特征文案（directory 类指纹）→ 有新指纹 → 出
+	// 空标题集成用例：无 title、指纹与首页同源（Server 头）→ 无新指纹 → 丢
 	mux.HandleFunc("/nt-same", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
 		fmt.Fprint(w, `<html><body>nothing here</body></html>`)
-	})
-	mux.HandleFunc("/nt-new", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
-		fmt.Fprint(w, `<html><body><h1>Directory listing for /</h1><hr><a href="../">../</a><hr></body></html>`)
 	})
 
 	srv := httptest.NewServer(mux)
@@ -425,29 +419,15 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 		t.Errorf("命中 url 应保留原始路径 /sub，got %s", s.hits[0].url)
 	}
 
-	// 空标题规则（自适应：先取 /nt-same 的真实指纹集构造首页基准，不依赖指纹库具体产品名）
+	// 空标题集成验证（自适应 seeds；"空标题+新指纹"分支由 TestSiteAdmit 纯函数覆盖——
+	// 指纹引擎对同一 body 的识别数量不稳定（实测抖动），不适合构造指纹差集成用例）
 	ntKey := probePresent(t, client, srv.URL, "/nt-same") // (FA, None)
 	ntFps := strings.Split(strings.SplitN(ntKey, "\x00", 2)[0], "\x1f")
-	// 前置断言：/nt-new 必须比 /nt-same 多至少一个指纹（目录列表特征文案生效），
-	// 若指纹库演进导致失效，此处 Fail 提示重造测试页而不是静默跳过
-	nwKey := probePresent(t, client, srv.URL, "/nt-new")
-	nwFps := strings.Split(strings.SplitN(nwKey, "\x00", 2)[0], "\x1f")
-	if len(nwFps) <= len(ntFps) {
-		t.Fatalf("测试页构造失效：/nt-new 指纹(%d) 应多于 /nt-same(%d)，需重造特征 body", len(nwFps), len(ntFps))
-	}
 	ntSeeds := map[string]struct{}{presentKey(ntFps, "Home"): {}} // 模拟首页：同指纹、有真实标题
-	ntRun := func(path string) *dirSite {
-		s := &dirSite{url: srv.URL, seeds: ntSeeds, seedFps: seedFingerprintUnion(ntSeeds), seen: map[string]struct{}{}}
-		runDirTask(client, dirTask{site: s, path: path})
-		return s
-	}
-	if s := ntRun("/nt-same"); len(s.hits) != 0 {
-		t.Errorf("空标题且指纹全为首页已见应零命中，got %d", len(s.hits))
-	}
-	if s := ntRun("/nt-new"); len(s.hits) != 1 {
-		t.Errorf("空标题但有新指纹（目录列表特征）应 1 命中，got %d", len(s.hits))
-	} else if s.hits[0].title != "None" {
-		t.Errorf("命中标题应为 None 占位，got %q", s.hits[0].title)
+	ntSite := &dirSite{url: srv.URL, seeds: ntSeeds, seedFps: seedFingerprintUnion(ntSeeds), seen: map[string]struct{}{}}
+	runDirTask(client, dirTask{site: ntSite, path: "/nt-same"})
+	if len(ntSite.hits) != 0 {
+		t.Errorf("空标题且指纹全为首页已见应零命中，got %d", len(ntSite.hits))
 	}
 }
 
@@ -516,6 +496,66 @@ func TestDirDictFileOverride(t *testing.T) {
 	defer mu.Unlock()
 	if requests != 3 {
 		t.Fatalf("3 条字典应恰好发 3 个请求，got %d", requests)
+	}
+}
+
+// ---------- 站点熔断：连续失败放弃剩余路径 ----------
+
+func TestSiteAbortOnConsecutiveFailures(t *testing.T) {
+	dirTestSetup(t, []string{"/p1", "/p2", "/p3", "/p4", "/p5", "/p6", "/p7", "/p8"})
+
+	newSite := func() *dirSite {
+		return &dirSite{url: "http://down.test", seeds: map[string]struct{}{}, seedFps: map[string]struct{}{}, seen: map[string]struct{}{}}
+	}
+	// 直调计数器验证熔断逻辑（不真发请求：Windows 对未监听端口是 drop，
+	// 走网络会烧满超时拖慢测试；runDirTask→noteSiteFail 接线由代码覆盖）
+	s := newSite()
+	for i := 0; i < dirAbortThresh; i++ {
+		dirSched.noteSiteFail(s)
+	}
+	if s.idx != len(dirPaths) {
+		t.Fatalf("连续 %d 次失败应熔断（idx 跳到顶 %d），got idx=%d", dirAbortThresh, len(dirPaths), s.idx)
+	}
+	if !s.drained() {
+		t.Fatalf("熔断站点应 drained（inflight=%d）", s.inflight)
+	}
+
+	// 成功响应清零计数：失败 1 次 → OK → 再失败 3 次不应熔断（未达阈值）
+	s2 := newSite()
+	dirSched.noteSiteFail(s2)
+	dirSched.noteSiteOK(s2)
+	dirSched.noteSiteFail(s2)
+	dirSched.noteSiteFail(s2)
+	dirSched.noteSiteFail(s2)
+	if s2.idx != 0 {
+		t.Fatalf("OK 清零后 3 次失败不应熔断（阈值 %d），idx=%d", dirAbortThresh, s2.idx)
+	}
+}
+
+// ---------- 呈现判定纯函数（隔离指纹引擎的输出不稳定性） ----------
+
+func TestSiteAdmit(t *testing.T) {
+	// 首页基准：指纹 {A}，呈现 (A,"Home")
+	seeds := map[string]struct{}{presentKey([]string{"A"}, "Home"): {}}
+	s := &dirSite{seeds: seeds, seedFps: map[string]struct{}{"A": {}}, seen: map[string]struct{}{}}
+
+	cases := []struct {
+		name  string
+		fps   []string
+		title string
+		want  bool
+	}{
+		{"非空标题+新标题(同产品后台救回)", []string{"A"}, "Admin", true},
+		{"非空标题+首页呈现重合", []string{"A"}, "Home", false},
+		{"非空标题+新指纹", []string{"A", "B"}, "Home", true},
+		{"空标题+指纹全为首页已见", []string{"A"}, "None", false},
+		{"空标题+有新指纹", []string{"A", "B"}, "None", true},
+		{"空标题+全新指纹", []string{"C"}, "None", true},
+	}
+	for _, c := range cases {
+		if got := s.admit(c.fps, c.title); got != c.want {
+			t.Errorf("%s: admit(%v,%q)=%v, want %v", c.name, c.fps, c.title, got, c.want)
+		}
 	}
 }
 

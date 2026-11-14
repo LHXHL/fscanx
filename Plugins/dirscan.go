@@ -5,11 +5,14 @@ package Plugins
 // 调度单元是 (站点,路径) 对而非站点：轮询环 + per-site 在途门闩保证任意时刻
 // 单站点在途请求 ≤1、多站点请求在时间上交错，避免目录扫描流量集中轰单个站点。
 // 停机采用两阶段协议（Seal 关闭注册 → Drain 排空），调度器不因"暂时无活"退出，
-// 解决流水线模式下站点渐进注册与收尾的竞争。
+// 解决流水线模式下站点渐进注册与收尾的竞争。站点级连续失败熔断（dirAbortThresh）
+// 防半死站点 70×超时拖垮收尾。
 //
-// 判定管线（四道闸）：404/5xx 短路 → 302 同源同前缀跟随（发射端省流量）→
+// 判定管线（四道闸，经六轮真机迭代收敛）：状态码 ≥300 全短路（仅 2xx 参与识别，
+// 3xx 响应头会被引擎误匹配、4xx/5xx 噪声）→ 302 同源同前缀跟随（发射端省流量）→
 // 指纹非空（200 型软 404 免疫）→ 呈现差集（(指纹,标题) 二元组与首页已见呈现
-// 完全重合则丢弃，302 型软 404 免疫；判定与输出解耦，输出带完整指纹）。
+// 完全重合则丢弃，302 型软 404 免疫；空标题退化为纯指纹差；判定与输出解耦，
+// 输出带完整指纹）。
 
 import (
 	_ "embed"
@@ -27,8 +30,10 @@ import (
 )
 
 const (
-	dirWorkerNum     = 16 // worker 池大小；任务 channel 容量与之相等
-	dirRedirectLimit = 3  // 目录请求跟随跳转上限
+	dirWorkerNum     = 16               // worker 池大小；任务 channel 容量与之相等
+	dirRedirectLimit = 3                // 目录请求跟随跳转上限
+	dirAbortThresh   = 5                // 站点连续请求失败熔断阈值（防半死站点 70×超时拖垮收尾）
+	dirProgressEvery = 30 * time.Second // 进度快照间隔：打印量恒定不刷屏，仅扫描变慢时可见
 )
 
 // ---------- 字典 ----------
@@ -110,13 +115,43 @@ type dirHit struct {
 // 基准，用户规则 2026-11-14：空标题不算标题差异，退化为指纹差）；
 // hits/seen 构成站点聚合器，站点扫完即释放（置 nil）。
 type dirSite struct {
-	url      string
-	idx      int // 下一条待发射路径的下标
-	inflight int // 在途请求计数（>0 时调度器跳过该站点）
-	seeds    map[string]struct{}
-	seedFps  map[string]struct{}
-	hits     []dirHit
-	seen     map[string]struct{}
+	url         string
+	idx         int // 下一条待发射路径的下标
+	inflight    int // 在途请求计数（>0 时调度器跳过该站点）
+	consecFails int // 连续请求失败计数（超时/连接失败/body 黑洞），达阈值熔断
+	seeds       map[string]struct{}
+	seedFps     map[string]struct{}
+	hits        []dirHit
+	seen        map[string]struct{}
+}
+
+// noteSiteFail 连续失败计数；达 dirAbortThresh 熔断该站点（剩余路径全部跳过）。
+// 背景：半死站点（握手成功/头能回/body 黑洞）会通过首页扫描注册进来，其后每条
+// 路径烧满 WebTimeout 且单站点在途≤1 串行——最坏 70×9s 纯超时并拖死收尾排空
+// （真机实测"部分网段扫描很久"的根因）。熔断只惩罚连续失败，正常站点不受影响。
+func (d *dirScheduler) noteSiteFail(s *dirSite) {
+	d.mu.Lock()
+	s.consecFails++
+	abort := s.consecFails >= dirAbortThresh && s.idx < len(dirPaths)
+	var skipped int
+	if abort {
+		skipped = len(dirPaths) - s.idx
+		s.idx = len(dirPaths) // 跳过剩余路径；当前任务 complete 归零在途后站点自然 drained
+	}
+	url := s.url
+	fails := s.consecFails
+	d.mu.Unlock()
+	if abort {
+		// 锁外发送（LogSuccess 可能阻塞在 Results 通道）
+		common.LogSuccess("[-] dirscan abort %s: %d consecutive failures, skip %d paths", url, fails, skipped)
+	}
+}
+
+// noteSiteOK 拿到有效响应（含短路丢弃的 404 等——服务器是活的）清零连续失败计数。
+func (d *dirScheduler) noteSiteOK(s *dirSite) {
+	d.mu.Lock()
+	s.consecFails = 0
+	d.mu.Unlock()
 }
 
 // seedFingerprintUnion 从呈现 key 集合拆出全部指纹元素的并集。
@@ -171,6 +206,35 @@ var dirSched = &dirScheduler{
 	done:   make(chan struct{}),
 }
 
+// progressLoop 周期性打印进度快照（时间驱动而非百分比里程碑：站点渐进注册、
+// 分母不单调，N/M 会误导；时间驱动的打印量恒定——快扫描完全看不到，慢扫描
+// 每 30s 一行让使用者知道仍在推进，且仅在有新进展时打印防重复刷屏）。
+func (d *dirScheduler) progressLoop() {
+	lastDone := -1
+	for {
+		select {
+		case <-d.done:
+			return
+		case <-time.After(dirProgressEvery):
+		}
+		d.mu.Lock()
+		donePaths, pendingSites, total := 0, 0, len(d.sites)
+		for _, s := range d.sites {
+			donePaths += s.idx - s.inflight
+			if !s.drained() {
+				pendingSites++
+			}
+		}
+		findings := d.totalFinds
+		changed := donePaths != lastDone
+		lastDone = donePaths
+		d.mu.Unlock()
+		if changed {
+			common.LogSuccess("[*] dirscan progress: %d/%d paths done, %d sites pending, %d findings", donePaths, total*len(dirPaths), pendingSites, findings)
+		}
+	}
+}
+
 // RegisterSite 注册站点进入目录扫描轮询环（WebScanWorker 成功返回后调用，
 // err 路径不注册）。sealed 后与重复 URL 静默拒绝。首个站点注册时启动子系统。
 func RegisterSite(url string, seedPresents map[string]struct{}) {
@@ -212,6 +276,7 @@ func RegisterSite(url string, seedPresents map[string]struct{}) {
 			go dirWorker(client)
 		}
 		go dirSched.run()
+		go dirSched.progressLoop()
 	}
 	nSites := len(dirSched.sites)
 	dirSched.wakeup()
@@ -348,6 +413,22 @@ func dirWorker(client *http.Client) {
 	}
 }
 
+// admit 判定路径呈现能否作为该站点的有效命中（调用方持调度器锁；不含站点内去重）。
+// 非空标题走 (指纹,标题) 二元组判定；空标题（"None" 占位）退化为纯指纹差——
+// 两条路径分别对应用户 2026-11-14 的两项规则收紧。
+func (s *dirSite) admit(fps []string, title string) bool {
+	if title == "None" {
+		for _, fp := range fps {
+			if _, seen := s.seedFps[fp]; !seen {
+				return true // 空标题但有任一新指纹
+			}
+		}
+		return false // 空标题且指纹全为首页已见
+	}
+	_, dup := s.seeds[presentKey(fps, title)]
+	return !dup // 与首页呈现完全重合则拒绝
+}
+
 // runDirTask 单个 (站点,路径) 探测：读原始响应 → 短路 → 指纹 → 呈现差集 → 命中入聚合器。
 func runDirTask(client *http.Client, t dirTask) {
 	url := strings.TrimSuffix(t.site.url, "/") + t.path
@@ -363,9 +444,11 @@ func runDirTask(client *http.Client, t dirTask) {
 	req.Header.Set("Connection", "close")
 	resp, err := client.Do(req)
 	if err != nil {
+		dirSched.noteSiteFail(t.site) // 超时/连接失败计入熔断
 		return
 	}
 	defer resp.Body.Close()
+	dirSched.noteSiteOK(t.site) // 拿到响应即证明服务器存活，清零计数（含后续短路丢弃的 404 等）
 	// 短路丢弃：3xx/4xx/5xx 一律不进指纹引擎（状态码 >= 300 全丢，仅 2xx 参与识别）。
 	// 3xx：CheckRedirect 拒绝跟随时拿到的是 302 响应本身，其 Location/Server 头会被引擎
 	// 匹配出无关产品（真机实测 Location 含 "thinkphp" 字样即误报）；限跳截断的落地 3xx
@@ -376,6 +459,7 @@ func runDirTask(client *http.Client, t dirTask) {
 	}
 	body, err := ReadRawWithSize(resp, 192*1024)
 	if len(body) == 0 && err != nil {
+		dirSched.noteSiteFail(t.site) // body 黑洞（头回 body 超时）同样计入熔断
 		return
 	}
 	frames, _ := Engine.DetectContent(body)
@@ -397,22 +481,8 @@ func runDirTask(client *http.Client, t dirTask) {
 	if t.site.seeds == nil {
 		return // 站点已 flush 释放（迟到任务）
 	}
-	if title == "None" {
-		// 空标题不算标题差异（用户规则 2026-11-14）："None" 是占位符而非真实新标题，
-		// 二元组判定在 (首页指纹,真实标题) vs (同指纹,None) 间会误判为"新呈现"输出噪声；
-		// 退化为纯指纹差——全部指纹为首页已见则丢，有任一新指纹才输出
-		hasNew := false
-		for _, fp := range fps {
-			if _, seen := t.site.seedFps[fp]; !seen {
-				hasNew = true
-				break
-			}
-		}
-		if !hasNew {
-			return
-		}
-	} else if _, dup := t.site.seeds[key]; dup {
-		return // 呈现与首页完全重合：302 型软 404 兜底
+	if !t.site.admit(fps, title) {
+		return // 首页呈现重合 / 空标题且无新指纹
 	}
 	if _, dup := t.site.seen[key]; dup {
 		return // 站点内同呈现去重（url 保留首个命中）
