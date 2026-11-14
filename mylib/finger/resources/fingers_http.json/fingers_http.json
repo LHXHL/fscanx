@@ -3003,23 +3003,6 @@
         ]
     },
     {
-        "focus": true,
-        "link": "",
-        "name": "云梦cms",
-        "rule": [
-            {
-                "regexps": {
-                    "body": [
-                        "wezhan.cn"
-                    ]
-                }
-            }
-        ],
-        "tag": [
-            "cms"
-        ]
-    },
-    {
         "link": "",
         "name": "未知金融行业通用系统",
         "rule": [

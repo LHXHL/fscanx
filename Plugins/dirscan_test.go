@@ -310,6 +310,12 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
 		http.Error(w, "Forbidden", http.StatusForbidden)
 	})
+	// 401 同属 4xx 全屏蔽（用户决策：仅极少数产品可识别，价值低）
+	mux.HandleFunc("/auth401", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	})
 	// 同前缀跳转：/sub → /sub/login（应跟随并识别）
 	mux.HandleFunc("/sub", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/sub/login", http.StatusFound)
@@ -395,6 +401,9 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 	}
 	if s := run("/denied"); len(s.hits) != 0 {
 		t.Error("403 路径应零命中（用户决策屏蔽，即使响应头带可识别指纹）")
+	}
+	if s := run("/auth401"); len(s.hits) != 0 {
+		t.Error("401 路径应零命中（4xx 全屏蔽，即使带 WWW-Authenticate 特征）")
 	}
 	if s := run("/plain"); len(s.hits) != 0 {
 		t.Error("无指纹 200 应零命中")

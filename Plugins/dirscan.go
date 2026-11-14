@@ -366,12 +366,12 @@ func runDirTask(client *http.Client, t dirTask) {
 		return
 	}
 	defer resp.Body.Close()
-	// 短路丢弃：404/5xx 常规；3xx 一律丢——CheckRedirect 拒绝跟随时拿到的是 302 响应本身，
-	// 其 Location/Server 头会被指纹引擎匹配出无关产品（真机实测 Location 含 "thinkphp"
-	// 字样即误报 thinkphp）；限跳截断的落地 3xx 同样无有效内容。403 屏蔽（2026-11-14 用户
-	// 决策：全站 403 的 WAF/安全设备使每条路径都变成"403+Server 头指纹"噪声）。跟随成功
-	// 的最终响应状态码才会进入后续判定。401 保留（后台认证墙是路径存在的强信号）。
-	if sc := resp.StatusCode; sc == 403 || sc == 404 || sc >= 500 || (sc >= 300 && sc < 400) {
+	// 短路丢弃：3xx/4xx/5xx 一律不进指纹引擎（状态码 >= 300 全丢，仅 2xx 参与识别）。
+	// 3xx：CheckRedirect 拒绝跟随时拿到的是 302 响应本身，其 Location/Server 头会被引擎
+	// 匹配出无关产品（真机实测 Location 含 "thinkphp" 字样即误报）；限跳截断的落地 3xx
+	// 同样无有效内容。4xx：403/404 噪声已实证，401 经取舍价值也低（仅极少数产品靠响应头
+	// 特征可识别，2026-11-14 用户决策全 4xx 屏蔽）。跟随成功的落地响应状态码才进入判定。
+	if resp.StatusCode >= 300 {
 		return
 	}
 	body, err := ReadRawWithSize(resp, 192*1024)
