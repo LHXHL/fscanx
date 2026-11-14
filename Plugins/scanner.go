@@ -419,7 +419,11 @@ ScanIpContainPort:
 	alivePortPrint = fmt.Sprintf(alivePortPrint, count)
 	alivePortPrint = strings.TrimRight(alivePortPrint, ",")
 	common.LogSuccess(alivePortPrint)
-	common.Printf("\n[*] ok: 1/1\n")
+	if !common.DirScanEnable {
+		// ok 行走 Printf 直写终端，而目录聚合行走 Results 通道异步排队——-dir 时会插队到
+		// 目录结果前面（真机反馈体感怪异），跳过；非 -dir 时其后无目录输出，保持原样
+		common.Printf("\n[*] ok: 1/1\n")
+	}
 
 	return
 }

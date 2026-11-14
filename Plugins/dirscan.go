@@ -289,12 +289,15 @@ func (d *dirScheduler) complete(s *dirSite) {
 	if s.drained() {
 		d.totalFinds += len(s.hits)
 		if len(s.hits) > 0 {
-			lines = make([]string, 0, len(s.hits))
+			lines = make([]string, 0, len(s.hits)+1)
 			for _, h := range s.hits {
 				// 与 DoWebScan 输出行同构：[+] Product <url>\t<status>\t(<title>)\t<fps>
 				lines = append(lines, fmt.Sprintf("[+] Product %s\t%d\t(%s)\t%s", h.url, h.status, h.title, h.fps))
 			}
 		}
+		// 站点完成进度行（先发现后进度，与聚合行同通道排队保证顺序；不用 N/M 计数——
+		// 站点渐进注册、分母不单调会显示 "1/1"→"2/3" 造成误导）
+		lines = append(lines, fmt.Sprintf("[*] dirscan site done: %s (%d findings)", s.url, len(s.hits)))
 		s.hits = nil // 聚合器释放：站点级生命周期结束（零命中站点同样释放）
 		s.seeds = nil
 		s.seen = nil
