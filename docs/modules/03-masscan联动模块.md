@@ -21,7 +21,8 @@
 - 目标格式转换：masscan 不支持末段简写区间（实测 `192.168.137.230-232` 报 `bad IP address/range`），所以只展开这种简写；fscanx 习惯写法 `10`/`172`/`192` 先展开为 `10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16`；CIDR 和完整区间原样传递，避免把 `10.0.0.0/8` 枚举成上千万行。
 - 端口格式转换：先展开端口组和区间得到端口集合，减去 `-pn`，再压缩回区间；这样既支持 `-p web`，也不会把 `1-65535` 拼成超长命令行。
 - `-hf` 只读：不复用会改写用户文件的 `ReadInputFile`，单独实现只读转换；每行先按逗号拆成 token，再逐项分类。
-- 参数边界：`-msc` 与 `-std`、`-dp`、`-u`、`-uf`、`-auto`、`-m icmp` 互斥（`-auto` 的空闲目标探测与 masscan 发现重复，`-m icmp` 没有端口可扫）；`-margs` 不能出现 fscanx 托管的参数（`-p/--ports/--rate/-iL/--includefile/--exclude/--excludefile`），避免绕过端口相减和速率设置。`-margs` 只用于 fscanx 未托管的 masscan 选项（如 `--wait`、`--adapter-ip`、`--ttl`、`--banners`）；端口用 `-p`、速率用 `-mr`、目标用 `-h/-hf`、排除用 `-hn`。
+- 参数边界：`-msc` 与 `-std`、`-dp`、`-u`、`-uf`、`-m icmp` 互斥（`-m icmp` 没有端口可扫）；`-msc -auto` 组合下目标只来自 `-h`（须为 /8、/16 或简写 10/172/192；`-hf` 显式拒绝——探活只读 Host，静默忽略劣于报错）；`-margs` 不能出现 fscanx 托管的参数（`-p/--ports/--rate/-iL/--includefile/--exclude/--excludefile`），避免绕过端口相减和速率设置。`-margs` 只用于 fscanx 未托管的 masscan 选项（如 `--wait`、`--adapter-ip`、`--ttl`、`--banners`）；端口用 `-p`、速率用 `-mr`、目标用 `-h/-hf`、排除用 `-hn`。
+- `-msc -auto` 组合（BL-MSC-004）：探活与端口扫描接力——`AutoScanBigCidr` 原逻辑零改动（TCP+ICMP 智能探活筛存活 C 段），返回值（`a.b.c.0/24` 列表）逐行写入 `.msc/msc-targets-<时间戳>.txt` 留存（同秒冲突加序号；不自动清理；内容即 masscan `-iL` 实际消费物，可直接复跑），masscan 只扫存活段。组合跳过普通 `-auto` 后续的全 IP icmp 验活（masscan SYN 扫覆盖 IP 级发现，`-np` 在此组合无作用）；调用侧镜像 `AutoScanBigCidr` 的网段支持判定（含 192/10 简写归一，改 scanner.go 须同步）区分"不支持网段"（非零退出）与"0 存活"（合法结果，提示后退出 0，不建目录）；探活用的 BloomFilter 在组合路径无后续消费者，探活后释放。
 - 派生初始化独立：不把 `-msc` 写成 `ScanWithStdInput=true`（否则 main 会去读 os.Stdin），只用 `usesStdinLikePipeline = -std || -msc` 控制并发模型和 BloomFilter。
 - 临时文件生命周期：目标/排除文件放系统临时目录，正常返回、启动失败、Ctrl+C/SIGTERM 都删除；用户 `-hf` 原文件不动。
 - 两段式中断：第一次 Ctrl+C/SIGTERM 取消 masscan，最多等待 3 秒让在飞扫描收尾；第二次信号或 3 秒到期时停止进度、删除临时文件并以 130 退出。正常完成通过 done 通道让中断处理器退出，避免信号处理器提前消失、后续 Ctrl+C 被吞掉。
@@ -36,9 +37,19 @@
 4. 启动进程，stdout 交给 `ScanFromReader`，stderr 交给进度解析器；两路都不继承终端。
 5. masscan 结束后等待 stderr 读完，清掉进度行，打印统计；非零退出时打印 stderr 末尾并以非零码退出。
 
+### -auto 组合流程
+
+1. 校验通过后 main 按 `AutoScanBigCidr` 分流到 `ScanWithMasscanAuto`：先镜像判定网段支持性（"192"/"10" 简写先归一），不支持即报错非零退出。
+2. `AutoScanBigCidr` 原逻辑探活（`-am`/`-ap` 等参数原样生效），产出存活 C 段；探活后释放 BloomFilter。
+3. 0 存活：打印提示正常退出（不建 `.msc/`、不启动 masscan）；有存活：写入 `.msc/` 留存文件并打印路径与 C 段数。
+4. `runMasscanTargets(留存文件, N, keepTargets=true)`——与普通 `-msc` 共享全部执行/进度/中断逻辑；唯一差别是留存文件在正常返回、启动失败、两段式中断三条清理路径都不删除（exclude 临时文件照删）。
+5. 普通 `-msc`（keepTargets=false）行为零变化：目标临时文件用后即删，不产生 `.msc/`。
+
 ### 进度渲染
 
 masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐，终端会把同一行反复覆盖，所以看起来“钉”在底部。fscanx 解析这些状态行（`rate: ...-kpps, ...% done, ... remaining/waiting ..., found=N`），清洗后交给进度模块重绘。进度模块记录上一次显示的宽度，擦除时用 `\r` + 等宽空格 + `\r`，不依赖 ANSI 转义，兼容 Windows 控制台。日志输出前后调用擦除/重绘，因此日志出现在进度行上方。扫描路径里绕过 SaveLog 的直接打印已接入同一个协调层，否则在 445 等目标上会撕裂进度行。
+
+进度行生命周期止于 masscan 进程退出：stderr 读尽（EOF）即擦除并停用，不等下游 fscanx 扫描收尾——下游扫描期间终端底部没有任何进度行（BL-MSC-003；原实现把擦除留到全流程结束，导致最后一帧 rate 行贯穿整轮扫描残留）。
 
 ### 失败处理
 
@@ -53,6 +64,8 @@ masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐�
 
 - BL-MSC-001 新增 masscan 内嵌联动模式（docs/backlog/03-masscan联动.md）
 - BL-MSC-002 修复 -msc Ctrl+C 退出不可靠（docs/backlog/03-masscan联动.md）
+- BL-MSC-003 -msc 结束后清除底部 rate 进度行（docs/backlog/03-masscan联动.md）
+- BL-MSC-004 -msc -auto 组合（探活复用原逻辑，masscan 接手端口扫描）（docs/backlog/03-masscan联动.md）
 
 ## 变更记录
 
@@ -64,3 +77,5 @@ masscan 的状态行原本就写到 stderr、以 `\r` 结尾并用空格补齐�
 - 2026-11-13：用户真机验收通过，BL-MSC-001 闭合，控制台移除该项。
 - 2026-11-13：文档体系整理补齐实现中的参数互斥说明（`-msc` 还拒绝 `-auto` 与 `-m icmp`）。
 - 2026-11-13：BL-MSC-002 修复 Ctrl+C 退出：原信号处理器在 `cancel()` 后因 `ctx.Done()` 提前退出，后续 Ctrl+C 被吞；改为两段式有界等待/二次强退，main 对中断以 130 退出。
+- 2026-11-14：BL-MSC-003 修复 rate 进度行残留：`StopProgress` 时机从"全流程结束后"提前到 stderr 读尽（masscan 退出）时，下游扫描期间底部不再残留最后一帧 rate 行。
+- 2026-11-14：BL-MSC-004 新增 `-msc -auto` 组合：探活原逻辑零改动产出存活 C 段，留存 `.msc/` 后 masscan `-iL` 消费；0 存活退出 0；`-hf`/简写判定/中断清理排除留存文件经三轮独立审查修复闭合。

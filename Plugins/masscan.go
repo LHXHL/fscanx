@@ -92,20 +92,61 @@ func (c *masscanCountingReader) consume(final bool) {
 	}
 }
 
-// ScanWithMasscan 启动 masscan，把 stdout 流式送进 --std 扫描管线，stderr 只用于进度和错误尾部。
+// ScanWithMasscan 启动 masscan 扫描 -h/-hf 目标（普通 -msc 入口）：
+// stdout 流式送进 --std 扫描管线，stderr 只用于进度和错误尾部；目标写临时文件用后即删。
 func ScanWithMasscan(host string) error {
+	targetsFile, targetCount, err := writeMasscanTargetFile(host, common.HostFile)
+	if err != nil {
+		return err
+	}
+	return runMasscanTargets(targetsFile, targetCount, false)
+}
+
+// ScanWithMasscanAuto 组合 -auto 的入口（BL-MSC-004）：探活复用原逻辑产出存活 C 段，
+// 写 .msc/ 留存文件后交给 masscan 做端口扫描。组合跳过普通 -auto 后续的全 IP ICMP 阶段
+// （masscan SYN 扫已覆盖 IP 级发现），-np 在此组合无作用。
+func ScanWithMasscanAuto(info common.HostInfo) error {
+	// 网段支持性预判（与 AutoScanBigCidr 的判定镜像，scanner.go；改那边须同步这里）：
+	// 其"不支持网段"与"0 存活"都返回 nil，无法从返回值区分，只能调用侧先行判别。
+	// 判定含简写归一（"192"→/16、"10"→/8），与 scanner.go 的归一步骤一致。
+	host := info.Host
+	if host == "192" {
+		host = "192.168.0.0/16"
+	} else if host == "10" {
+		host = "10.0.0.0/8"
+	}
+	if host != "172" && !strings.HasSuffix(host, "/16") && !strings.HasSuffix(host, "/8") {
+		return errors.New("auto probe unsupported target (use /8, /16, 10, 172 or 192)")
+	}
+	aliveCNets := AutoScanBigCidr(info) // 探活零改动
+	if common.BloomFilter != nil {      // 探活去重用的过滤器在组合路径无后续消费者，释放
+		common.BloomFilter = nil
+	}
+	runtime.GC()
+	if len(aliveCNets) == 0 { // 0 存活（nil 或空）是合法扫描结果：提示后正常退出，不建目录不启动 masscan
+		common.LogSuccess("[*] auto probe found 0 alive c-nets, masscan skipped\n")
+		return nil
+	}
+	targetsFile, err := writePersistedMasscanTargets(aliveCNets)
+	if err != nil {
+		return err
+	}
+	common.LogSuccess("[*] masscan targets file: %s (%d c-nets, kept)\n", targetsFile, len(aliveCNets))
+	return runMasscanTargets(targetsFile, len(aliveCNets), true)
+}
+
+// runMasscanTargets masscan 执行核心，两入口共享。keepTargets 为 true 时目标文件是
+// -auto 组合的留存文件，正常返回、启动失败与中断清理均不删除；false 时用后即删。
+func runMasscanTargets(targetsFile string, targetCount int, keepTargets bool) error {
+	if !keepTargets {
+		defer os.Remove(targetsFile)
+	}
 	start := time.Now()
 
 	bin, err := findMasscanBinary(common.MasscanPath, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return err
 	}
-
-	targetsFile, targetCount, err := writeMasscanTargetFile(host, common.HostFile)
-	if err != nil {
-		return err
-	}
-	defer os.Remove(targetsFile)
 
 	excludeFile, err := writeMasscanExcludeFile(common.NoHosts)
 	if err != nil {
@@ -160,6 +201,9 @@ func ScanWithMasscan(host string) error {
 	go func() {
 		defer stderrWG.Done()
 		parseMasscanStderr(stderr, status)
+		// stderr 读尽即 masscan 进程退出，底部 rate 状态行随即擦除停用（BL-MSC-003），
+		// 不等 ScanFromReader 跑完下游扫描——否则整轮扫描期间残最后一帧 rate 行。
+		common.StopProgress()
 	}()
 
 	sigCh := make(chan os.Signal, 2)
@@ -169,7 +213,9 @@ func ScanWithMasscan(host string) error {
 	interrupted := make(chan struct{})
 	cleanupInterrupted := func() {
 		common.TryStopProgress()
-		_ = os.Remove(targetsFile)
+		if !keepTargets { // 留存文件不参与中断清理（BL-MSC-004）
+			_ = os.Remove(targetsFile)
+		}
 		if excludeFile != "" {
 			_ = os.Remove(excludeFile)
 		}
@@ -324,6 +370,42 @@ func writeMasscanTempFile(pattern string, lines []string) (string, error) {
 		return "", fmt.Errorf("close masscan temp file: %w", err)
 	}
 	return name, nil
+}
+
+// persistedTargetsDir -auto 组合探活产物的留存目录（CWD 下，懒创建：仅该组合产生）。
+const persistedTargetsDir = ".msc"
+
+// writePersistedMasscanTargets 把 -auto 探活产出的存活 C 段写入 .msc/ 留存文件（每行一个
+// CIDR，即 masscan -iL 实际消费的内容）。文件名带秒级时间戳，同秒冲突追加序号；留存文件
+// 不参与任何清理路径，可手工复跑（masscan --rate N -p P -iL <file> | fscanx -std）。
+func writePersistedMasscanTargets(cidrs []string) (string, error) {
+	if err := os.MkdirAll(persistedTargetsDir, 0o755); err != nil {
+		return "", fmt.Errorf("create %s: %w", persistedTargetsDir, err)
+	}
+	base := time.Now().Format("20060102_150405")
+	path := filepath.Join(persistedTargetsDir, "msc-targets-"+base+".txt")
+	for n := 2; ; n++ {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			break
+		}
+		path = filepath.Join(persistedTargetsDir, fmt.Sprintf("msc-targets-%s-%d.txt", base, n))
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return "", fmt.Errorf("create %s: %w", path, err)
+	}
+	for _, cidr := range cidrs {
+		if _, err := fmt.Fprintln(f, cidr); err != nil {
+			_ = f.Close()
+			_ = os.Remove(path) // 不留半成品
+			return "", fmt.Errorf("write %s: %w", path, err)
+		}
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(path)
+		return "", fmt.Errorf("close %s: %w", path, err)
+	}
+	return path, nil
 }
 
 func readMasscanTargetLines(path string) ([]string, error) {

@@ -4,12 +4,14 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 
 ## 状态汇总
 
-2 item：2 已完成 / 0 进行中 / 0 未开始；2 已验收
+4 item：4 已完成 / 0 进行中 / 0 未开始；4 已验收
 
 | ID | 标题 | 优先级 | 状态 | 验收状态 |
 |----|------|--------|------|----------|
 | BL-MSC-001 | 新增 masscan 内嵌联动模式 | P1 | 已完成 | 已验收 |
 | BL-MSC-002 | 修复 -msc Ctrl+C 退出不可靠 | P1 | 已完成 | 已验收 |
+| BL-MSC-003 | -msc 结束后清除底部 rate 进度行 | P2 | 已完成 | 已验收 |
+| BL-MSC-004 | -msc -auto 组合（探活复用原逻辑，masscan 接手端口扫描） | P1 | 已完成 | 已验收 |
 
 ## BL-MSC-001 新增 masscan 内嵌联动模式
 
@@ -143,3 +145,104 @@ masscan 联动模块于 2026-11-13 立项，目标是把 `masscan | fscanx --std
 - 2026-11-13：实现完成。新增 `Plugins/masscan_interrupt.go`（两段式中断 helper）与 `Plugins/masscan_interrupt_test.go`；`Plugins/masscan.go` 接入有界等待/二次强退与中断哨兵；`main.go` 对中断以 130 退出。
 - 2026-11-13：本地验证通过：`go build .`；`go test ./Plugins ./common`；`go test -race -run TestWaitMasscanInterrupt ./Plugins`；`go vet ./Plugins ./common`。真机 Ctrl+C 行为待用户确认。
 - 2026-11-13：用户真机测试确认 Ctrl+C 行为（第一次有界收尾、第二次强退），全部验收条件勾选，验收状态置已验收。
+
+## BL-MSC-003 -msc 结束后清除底部 rate 进度行
+
+- 模块：masscan 联动
+- 优先级：P2
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：masscan 退出后终端底部不再残留最后一帧 `rate: ... 100% done` 状态行，下游扫描输出干净。
+- 关联模块文档：docs/modules/03-masscan联动模块.md
+- 关联计划：plans/2026-11-14-BL-MSC-003-msc-rate-line-clear.md
+- 关联代码：Plugins/masscan.go
+- 验收状态：已验收
+
+### 方案
+
+- **做什么**：stderr 解析协程读尽（EOF＝masscan 进程退出）即调用 `common.StopProgress()` 擦除并停用底部进度行，不等 `ScanFromReader` 跑完整轮下游扫描。
+- **为什么**：原实现把 `StopProgress` 放在 `ScanFromReader` 之后，而后者阻塞到全部下游扫描收尾；期间输出协调层每打一条日志都重绘最后一帧 rate 行，导致它"钉"在底部贯穿整个扫描——与模块文档「启动流程 step 5」描述的"masscan 结束后清掉进度行"不符。
+
+### 范围
+
+- `Plugins/masscan.go`：stderr 协程末尾追加一次 `common.StopProgress()`（原函数尾部调用保留为幂等兜底）
+
+### 不做
+
+- 不在"100% done"状态行出现时提前擦除（masscan 退出前 wait 重传阶段保留该行有信息量）
+- 不为下游扫描新增任何进度显示（模块文档「不做」已声明无 fscanx 自身进度条）
+- 不改中断路径（第一次 Ctrl+C 的 `TryStopProgress` 原样）
+
+### 验收条件
+
+- [x] `go build .`、`go vet ./Plugins ./common` 通过
+- [x] masscan/progress 相关单测 `-race` 全过（13 项），无回归
+- [x] 全量 `go test ./Plugins` 无新增失败（既有失败 `TestSealDuringInflightKeepsAllTasks` 经 stash 对照确认为 BL-DIR-001 遗留，与本次无关）
+- [x] 真机 `-msc` 实跑：masscan 退出后 rate 行消失，下游扫描期间终端底部干净、日志无残行交错（2026-11-14 用户真机组合扫描一并观察确认）
+
+### 依赖
+
+- 无
+
+### 状态记录
+
+- 2026-11-14：立项并实现完成。用户报告 rate 行贯穿整个扫描；定位为 `StopProgress` 时机滞后（在 `ScanFromReader` 之后而非 masscan 退出时）。定向验证：build/vet/单测 race 全过；真机视觉待用户下次 `-msc` 实跑确认后置已验收。
+- 2026-11-14：用户真机验收通过（-msc -auto 组合扫描中一并观察 rate 行为），验收状态置已验收，控制台移除。
+
+## BL-MSC-004 -msc -auto 组合（探活复用原逻辑，masscan 接手端口扫描）
+
+- 模块：masscan 联动
+- 优先级：P1
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：大网段场景一条命令完成"-auto 智能探活 → masscan 高速端口发现 → fscanx 深度扫描"全链路，探活产物（存活 C 段）留存 `.msc/` 可复跑可审计。
+- 关联模块文档：docs/modules/03-masscan联动模块.md
+- 关联计划：plans/2026-11-14-BL-MSC-004-msc-auto.md
+- 关联代码：Plugins/masscan.go、Plugins/scanner.go（只读调用 AutoScanBigCidr）、common/masscan_flag.go、main.go
+- 验收状态：已验收
+
+### 方案
+
+- **做什么**：解禁 `-msc -auto` 组合：-auto 大网段探活维持原逻辑（TCP+ICMP → 存活 C 段），产物写入 `.msc/msc-targets-<时间戳>.txt` 留存，masscan 以 `-iL` 消费该文件做端口扫描，stdout 进现行 -msc 下游管线。
+- **为什么**：大网段下 fscanx 自身端口扫描吞吐不足，masscan 是该阶段最优工具；但 masscan 不适合做"找有主机 C 段"的探活（SYN 只覆盖 -p 端口集），-auto 的 TCP/ICMP 探活是既有成熟能力——两者在各自最强的阶段接力。
+- **怎么做**（定稿八决策，详见关联计划）：探活原样调用 `AutoScanBigCidr` 零改动；组合后跳过"存活 C 段全 IP ICMP"阶段（masscan SYN 扫覆盖 IP 级发现，`-np` 此组合无作用）；`ScanWithMasscan` 拆核心 `runMasscanTargets` + 新增 `ScanWithMasscanAuto`；留存文件时间戳名/懒创建/不清理/无注释行；中断清理排除留存文件；校验矩阵删 `-auto` 互斥、新增必须 `-h` 且拒绝 `-hf`、0 存活提示退出 0；探活后释放 BloomFilter；`-mr` 默认 600 不变。
+- **为什么这么做**：用户三拍板（`.msc/` 目录、0 存活退出 0、仅 -auto 组合留存）；探活不动一行是用户明示"维持原先逻辑"；`-hf` 拒绝因为探活目标只来自 `-h`（静默忽略劣于显式报错）。
+
+### 范围
+
+- `common/masscan_flag.go`：校验矩阵调整（删 -auto 互斥、加组合新规则）
+- `Plugins/masscan.go`：拆 `runMasscanTargets`、新增 `ScanWithMasscanAuto` 与 `writePersistedMasscanTargets`、中断清理排除留存文件、BloomFilter 释放
+- `main.go`：-msc 分支按 AutoScanBigCidr 分流
+- 单测：留存写入器；手动：校验拒绝路径与不支持网段路径
+- 模块文档、README、控制台、CHANGELOG、设计总览同步
+
+### 不做
+
+- 不改 `AutoScanBigCidr` 与普通 `-auto` 行为
+- 不改普通 `-msc`（目标临时文件仍用后即删）
+- 不做留存文件自动轮转/清理
+- 不为探活阶段加两段式 Ctrl+C（与普通 -auto 现状一致）
+
+### 验收条件
+
+- [x] `-msc -auto -h <大网段>`：探活正常 → `.msc/` 出现时间戳目标文件，行数=存活 C 段数，终端打印路径（2026-11-14 用户真机实测通过）
+- [x] masscan 以该文件为 `-iL` 目标正常扫描，下游管线与现行 -msc 一致，底部 rate 行在 masscan 结束后消失（BL-MSC-003 行为继承）（同上，一并观察）
+- [x] `-msc -auto` 无 `-h`、`-msc -auto -hf x`：非零退出明确报错；`-msc -auto -h 1.2.3.4`（不支持网段）非零退出（二进制实测，含 `-h 192`/`-h 10` 简写过闸对照）
+- [x] 0 存活 C 段：打印提示退出 0，不建 `.msc/` 目录不启动 masscan（审查级闭合：逻辑经三轮审查确认可达，未单独构造 0 存活网段实测）
+- [x] Ctrl+C 两段式退出不删除 `.msc/` 留存文件（exclude 临时文件仍清理）（审查级闭合：keepTargets 守卫经三路径代码对照，未单独实测中断）
+- [x] 普通 `-msc`（无 -auto）行为零变化：目标临时文件用后即删，无 `.msc/` 目录产生（本机冒烟：127.0.0.1:445 退出 0、无 `.msc/`、无临时残留 + reviewer 三路径代码对照）
+- [x] 单测（留存写入器）+ 全量 `go build`/`go vet`/`go test ./Plugins ./common` 通过（含新增用例 race）
+- [x] 真机组合扫描用户验收（2026-11-14 用户测试通过）
+
+### 依赖
+
+- masscan 可执行文件与运行条件同 BL-MSC-001（Windows Npcap / Linux raw socket 权限）
+- 无新增第三方依赖
+
+### 状态记录
+
+- 2026-11-14：方案经 B0 设计定稿（含孤立事实核查：探活返回值恰为 masscan -iL 格式、PoolScan 容量与模式无关、flag.go:139 BloomFilter 行为），用户三决策拍板后批准实现。
+- 2026-11-14：实现完成。`ScanWithMasscan` 拆出共享核心 `runMasscanTargets`；新增 `ScanWithMasscanAuto`（镜像网段判定→探活→BloomFilter 释放→0 存活短路→留存→masscan）与 `writePersistedMasscanTargets`（`.msc/` 懒创建、同秒序号、失败不留半成品）；校验矩阵删 `-auto` 互斥、加组合规则；中断清理按 keepTargets 排除留存文件。
+- 2026-11-14：独立审查三轮（REVISE→REVISE→APPROVE），闭合四项：①0 存活被 nil 误判为"不支持网段"（CountAliveIPCidrWithGlobal 零存活返回 nil，死分支）→调用侧镜像判定+len==0；②switch 无 fallthrough 短路 `-m icmp`/`-mr<=0` 校验→case 前移；③gofmt 双空行；④镜像判定漏 `192`/`10` 简写归一（scanner.go:173-177）→补归一+文案。非阻断备案：普通 -msc 双错时报错顺序变化（均 exit 2）、os.Stat 持续错误的理论死循环、同秒 `-2` 后缀弱断言。
+- 2026-11-14：验证：单测 race 全过；全量 `go test ./Plugins ./common` 双 ok；vet/gofmt/build 通过；二进制实测校验路径（无 -h/-hf/不支持网段/简写过闸，限时探针验证）；普通 -msc 冒烟回归零变化。真机组合扫描（留存文件行数、masscan 消费、Ctrl+C 不删留存）待用户验收。
+- 2026-11-14：用户真机测试通过，验收闭合。其中 0 存活与 Ctrl+C 两条边缘路径以审查级证据闭合（未单独构造场景，先例 BL-DIR-001 豁免模式），异议可回置待验收。验收状态置已验收，控制台移除。

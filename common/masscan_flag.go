@@ -27,14 +27,20 @@ func ValidateMasscanMode(host string) {
 		reason = "-msc cannot be used with -dp (masscan targets only come from -h/-hf)"
 	case URL != "" || UrlFile != "":
 		reason = "-msc cannot be used with -u/-uf (masscan targets only come from -h/-hf)"
-	case AutoScanBigCidr:
-		reason = "-msc cannot be used with -auto"
-	case Scantype == "icmp":
+	case Scantype == "icmp": // 须先于 AutoScanBigCidr：switch 无 fallthrough，组合下也要拒绝
 		reason = "-msc cannot be used with -m icmp (no ports to scan)"
+	case MasscanRate <= 0: // 同上，组合下 -mr<=0 也要拒绝
+		reason = "-mr must be greater than 0"
+	case AutoScanBigCidr:
+		// -msc -auto 组合（BL-MSC-004）：探活目标只来自 -h（AutoScanBigCidr 只读 Host），
+		// -hf 会被静默忽略——显式拒绝优于静默。
+		if host == "" {
+			reason = "-msc -auto requires -h (big CIDR like 10.0.0.0/8)"
+		} else if HostFile != "" {
+			reason = "-msc -auto cannot be used with -hf (probe targets come from -h only)"
+		}
 	case host == "" && HostFile == "":
 		reason = "-msc requires -h or -hf"
-	case MasscanRate <= 0:
-		reason = "-mr must be greater than 0"
 	}
 	if reason != "" {
 		fmt.Fprintln(os.Stderr, "[-]", reason)

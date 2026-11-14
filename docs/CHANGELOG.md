@@ -2,6 +2,14 @@
 
 ## 2026-11-14
 
+- BL-MSC-003/BL-MSC-004/BL-DIR-002 验收闭合（用户真机测试通过）：MSC-003 rate 行为在组合扫描中一并确认；MSC-004 的 0 存活与 Ctrl+C 边缘路径以审查级证据闭合；DIR-002 全部为客观机器证据。三项从控制台移除，累计 14 item 中 10 已验收
+
+- 新增 `-msc -auto` 组合（BL-MSC-004）：`-auto` 探活原逻辑零改动筛出存活 C 段，清单留存 `.msc/msc-targets-<时间戳>.txt`（不自动清理，可 `masscan -iL` 复跑），masscan `-iL` 只扫存活段；组合跳过全 IP icmp 验活（`-np` 无作用）、0 存活提示退出 0、`-hf` 显式拒绝、Ctrl+C 不删留存文件；普通 `-msc` 行为零变化（本机冒烟验证）。经三轮独立审查 APPROVE（闭合 0 存活误判/校验短路/简写归一三项缺陷）
+
+- 修复 TestSealDuringInflightKeepsAllTasks 调度竞速误报（BL-DIR-002，仅测试）：断言"消费第 2 任务时 sealed 必已置位"无 happens-before 保障，go1.20/windows 下 seal 协程稳定输掉起跑（孤立探针 50ms 先机对照实证：10/10 过 vs 原测试 5/5 败）；改为有界等待 waitSealedFor(2s)，生产代码零改动（sealed 只约束拒绝注册与排空 close，置位早晚与在途任务无关）
+
+- 修复 -msc 底部 rate 进度行贯穿整个扫描残留（BL-MSC-003）：`StopProgress` 从"全流程结束后"提前到 stderr 读尽（masscan 退出）时，下游 fscanx 扫描期间终端底部不再钉着最后一帧 `rate: ... 100% done`；masscan 相关单测 race 全过，真机视觉待实跑确认
+
 - BL-DIR-001 与 BL-MEM-003 Mode F 验收闭合（用户明示决策）：DIR-001 接受"17 项单测 race 全过 + 三轮独立审查闭环 + 修复带回归测试"作为行为级修复回归证据（豁免复扫）、-msc 路径接受代码审查覆盖；MEM-003 接受"交叉编译验证 + mmap 失败自动回退 ReadAll"作为运行时证据；验收状态置已验收并从控制台移除，本会话三项全部闭合
 - BL-001（-dp 域名端口绑定）Mode F 验收闭合：四条验收条件真机实测补证（baidu.com 对照 -dp 开/关与 -h/-hf 两入口，独立审计复跑证据吻合），验收状态置已验收并从控制台移除；同轮修正设计总览 04 行与 04 模块文档 mermaid 图的判定闸过时口径（404/5xx→状态码 ≥300 全短路）
 - 目录扫描第三轮审查复验收口（BL-DIR-001）：复验抓到 noteSiteOK 移位引入的回归——≥300 短路（先于 body 读取）路径执行不到清零，间歇超时+快 404 交错的站点 3 次非连续超时即误熔断；短路 return 前补 noteSiteOK（头快速到达即存活），补 TestFast4xxClearsFailCounter 回归

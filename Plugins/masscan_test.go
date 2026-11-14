@@ -332,3 +332,50 @@ func TestSplitMasscanTargetLine(t *testing.T) {
 		}
 	}
 }
+
+// ---------- -auto 组合留存文件（BL-MSC-004） ----------
+
+// TestWritePersistedMasscanTargets 验证 .msc/ 目录懒创建、内容逐行等于输入 CIDR
+// （即 masscan -iL 实际消费的目标）、同秒重复调用不覆盖已有文件（追加序号）。
+func TestWritePersistedMasscanTargets(t *testing.T) {
+	dir := t.TempDir()
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil { // go1.20 无 t.Chdir，手动切换并在 defer 还原
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(oldWd); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	cidrs := []string{"10.1.0.0/24", "10.2.0.0/24"}
+	path1, err := writePersistedMasscanTargets(cidrs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Dir(path1) != persistedTargetsDir {
+		t.Fatalf("留存文件应在 %s/ 下, got %s", persistedTargetsDir, path1)
+	}
+	lines, err := readMasscanTargetLines(path1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != len(cidrs) || lines[0] != cidrs[0] || lines[1] != cidrs[1] {
+		t.Fatalf("内容应逐行等于输入 CIDR, got %v", lines)
+	}
+
+	path2, err := writePersistedMasscanTargets(cidrs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path2 == path1 {
+		t.Fatalf("同秒重复调用不应覆盖已有文件, both %s", path1)
+	}
+	if _, err := os.Stat(path1); err != nil {
+		t.Fatalf("首次留存文件不应被删除: %v", err)
+	}
+}

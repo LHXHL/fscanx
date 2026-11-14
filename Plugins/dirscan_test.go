@@ -228,11 +228,13 @@ func TestSealDuringInflightKeepsAllTasks(t *testing.T) {
 			doSeal := processed == 2
 			mu.Unlock()
 			if doSeal {
-				dirSched.mu.Lock() // 读 sealed 须持调度器锁（与 SealAndDrain 的写互斥，race 安全）
-				sealed := dirSched.sealed
-				dirSched.mu.Unlock()
-				if !sealed {
-					t.Error("Seal 应已置位")
+				// 原瞬时断言（此刻 sealed 必已置位）依赖 seal 协程与
+				// complete→wakeup→调度器再发射链路的调度顺序，无 happens-before 保障，
+				// seal 协程输掉起跑即误报（BL-DIR-002，go1.20/windows 稳定复现）。
+				// 改为有界等待：SealAndDrain 置位 sealed 不依赖消费者推进（此刻 task2
+				// 仍在途未 complete），轮询等其生效仍验证"有在途任务时 Seal 生效"。
+				if !waitSealedFor(2 * time.Second) {
+					t.Error("Seal 应在排空期间置位（2s 内未见 sealed）")
 				}
 			}
 			dirSched.complete(task.site)
@@ -245,6 +247,24 @@ func TestSealDuringInflightKeepsAllTasks(t *testing.T) {
 	defer mu.Unlock()
 	if processed != 4 {
 		t.Fatalf("Seal 与排空并发时应处理全部 4 任务，got %d", processed)
+	}
+}
+
+// waitSealedFor 有界等待调度器 sealed 置位：SealAndDrain 不依赖消费者推进即会置位，
+// 轮询不会死锁；超时返回 false 交由调用方断言。
+func waitSealedFor(timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for {
+		dirSched.mu.Lock()
+		sealed := dirSched.sealed
+		dirSched.mu.Unlock()
+		if sealed {
+			return true
+		}
+		if time.Now().After(deadline) {
+			return false
+		}
+		time.Sleep(time.Millisecond)
 	}
 }
 

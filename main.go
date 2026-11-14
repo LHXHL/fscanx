@@ -20,7 +20,12 @@ func main() {
 
 	// 检查是否有 --msc 参数（通过flag）
 	if common.MasscanMode {
-		err := Plugins.ScanWithMasscan(Info.Host)
+		var err error
+		if common.AutoScanBigCidr { // -msc -auto 组合（BL-MSC-004）：探活产物作为 masscan 目标
+			err = Plugins.ScanWithMasscanAuto(Info)
+		} else {
+			err = Plugins.ScanWithMasscan(Info.Host)
+		}
 		if err == nil {
 			common.LogSuccess("[*] scan done! cost: %s\n", time.Since(start))
 		}
