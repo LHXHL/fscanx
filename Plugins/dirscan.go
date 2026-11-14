@@ -127,11 +127,12 @@ type dirSite struct {
 	seen        map[string]struct{}
 
 	// 慢站点诊断画像（收尾拖尾定位，仅统计不影响行为）
-	startedAt time.Time // 首条路径发起时刻
-	totalDur  time.Duration
-	maxPath   time.Duration // 最慢单路径
-	slowPaths int           // 超过 dirSlowPathMark 的路径数
-	pathFails int           // 请求失败条数（dial 超时/连接失败/body 黑洞）——区分"慢成功"与"间歇失败"型拖尾
+	startedAt  time.Time // 首条路径发起时刻
+	totalDur   time.Duration
+	maxPath    time.Duration // 最慢单路径
+	slowPaths  int           // 超过 dirSlowPathMark 的路径数
+	pathFails  int           // 请求失败条数（dial 超时/连接失败/body 黑洞）——区分"慢成功"与"间歇失败"型拖尾
+	consecSlow int           // 连续慢路径计数（达 dirAbortThresh 熔断——慢而成功型站点不触发失败熔断）
 }
 
 // noteSiteFail 连续失败计数；达 dirAbortThresh 熔断该站点（剩余路径全部跳过）。
@@ -157,13 +158,13 @@ func (d *dirScheduler) noteSiteFail(s *dirSite) {
 	}
 }
 
-// notePathDone 单路径耗时画像（worker defer 中调用，先于 complete）。
-// 仅统计：熔断只拦"连续失败"，慢而成功的响应（高延迟/限速服务器每条数秒但能回
-// 200）不触发熔断、单站点最坏 70×慢RTT——收尾阶段快站点排空后只剩这类站点拖尾
-// （真机实测"最后几十个特别慢"主嫌），画像行用于定位是谁在拖。
+// notePathDone 单路径耗时画像与连续慢熔断（worker defer 中调用，先于 complete）。
+// 连续慢熔断：慢而成功的响应（真机 120.77.216.208 实证——avg 5.1s/条、70 slow、
+// 仅 1 failed，慢速响应/WAF 深检形态）不触发失败熔断，单站点最坏 70×慢RTT 拖死
+// 收尾（占真机总时长 6 分钟中的 6 分钟之 355s）；连续 dirAbortThresh 条 >2s 即
+// 熔断，与连续失败熔断对称。快路径清零，偶发 1-2 条慢的正常站点不受影响。
 func (d *dirScheduler) notePathDone(s *dirSite, dur time.Duration) {
 	d.mu.Lock()
-	defer d.mu.Unlock()
 	if s.startedAt.IsZero() {
 		s.startedAt = time.Now()
 	}
@@ -173,23 +174,39 @@ func (d *dirScheduler) notePathDone(s *dirSite, dur time.Duration) {
 	}
 	if dur > dirSlowPathMark {
 		s.slowPaths++
+		s.consecSlow++
+	} else {
+		s.consecSlow = 0
+	}
+	abort := s.consecSlow >= dirAbortThresh && s.idx < len(dirPaths)
+	var skipped int
+	if abort {
+		skipped = len(dirPaths) - s.idx
+		s.idx = len(dirPaths)
+	}
+	url := s.url
+	d.mu.Unlock()
+	if abort {
+		common.LogSuccess("[-] dirscan abort %s: %d consecutive slow paths (>%ds), skip %d paths",
+			url, dirAbortThresh, int(dirSlowPathMark.Seconds()), skipped)
 	}
 }
 
-// slowSiteLine 慢站点画像行；总耗时未达 dirSlowSiteReport 返回空串（不打）。
-// avg/slowest/fails 用于区分拖尾形态：慢成功（avg 高 fails 低）/间歇失败
-// （fails 高但 consecFails 不连续、熔断抓不住）/排队为主（avg 低但总耗时长）。
-// 调用方持锁。
+// slowSiteLine 慢站点画像行；以**纯路径耗时总和**（totalDur）为阈值而非墙钟跨度——
+// 多站点轮询均摊下正常站点的首末路径跨度≈总扫描时长（真机 130 站点全部打出 71s
+// 假象行），纯耗时总和才能剔除排队时间、只留真慢站点。
+// avg/slowest/slow/failed 用于区分拖尾形态：慢成功（avg 高 failed 低，如 208）/
+// 间歇失败（failed 高）。调用方持锁。
 func (s *dirSite) slowSiteLine() string {
-	if s.startedAt.IsZero() || time.Since(s.startedAt) < dirSlowSiteReport {
+	if s.totalDur < dirSlowSiteReport {
 		return ""
 	}
 	avg := 0.0
 	if s.idx > 0 {
 		avg = s.totalDur.Seconds() / float64(s.idx)
 	}
-	return fmt.Sprintf("[*] dirscan slow site %s: %d paths in %.0fs (avg %.1fs, slowest %.1fs, %d slow, %d failed), %d findings",
-		s.url, s.idx, time.Since(s.startedAt).Seconds(), avg, s.maxPath.Seconds(), s.slowPaths, s.pathFails, len(s.hits))
+	return fmt.Sprintf("[*] dirscan slow site %s: %d paths, %.0fs path time (avg %.1fs, slowest %.1fs, %d slow, %d failed), %d findings",
+		s.url, s.idx, s.totalDur.Seconds(), avg, s.maxPath.Seconds(), s.slowPaths, s.pathFails, len(s.hits))
 }
 func (d *dirScheduler) noteSiteOK(s *dirSite) {
 	d.mu.Lock()

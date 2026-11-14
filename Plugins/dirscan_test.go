@@ -622,35 +622,56 @@ func TestWebScanWorkerRegistersOnlyHealthySites(t *testing.T) {
 	}
 }
 
-// ---------- 慢站点画像行 ----------
+// ---------- 慢站点画像行与连续慢熔断 ----------
 
 func TestSlowSiteLine(t *testing.T) {
-	fresh := &dirSite{url: "http://fast.test", startedAt: time.Now().Add(-2 * time.Second)}
-	if got := fresh.slowSiteLine(); got != "" {
-		t.Errorf("总耗时 2s（阈值 %v）不应打画像行，got %q", dirSlowSiteReport, got)
-	}
-	untouched := &dirSite{url: "http://zero.test"}
-	if got := untouched.slowSiteLine(); got != "" {
-		t.Errorf("未发起任何路径（startedAt 零值）不应打画像行，got %q", got)
+	// 排队假象：墙钟跨度 71s 但纯路径耗时 7s（130 站点均摊的正常形态）——不打
+	queued := &dirSite{startedAt: time.Now().Add(-71 * time.Second), idx: 70, totalDur: 7 * time.Second}
+	if got := queued.slowSiteLine(); got != "" {
+		t.Errorf("纯路径耗时 7s（阈值 %v）的排队假象不应打画像行，got %q", dirSlowSiteReport, got)
 	}
 	slow := &dirSite{
 		url:       "http://slow.test",
-		startedAt: time.Now().Add(-45 * time.Second),
+		startedAt: time.Now().Add(-360 * time.Second),
 		idx:       70,
-		totalDur:  350 * time.Second,
-		maxPath:   8500 * time.Millisecond,
-		slowPaths: 60,
-		pathFails: 40,
+		totalDur:  357 * time.Second,
+		maxPath:   5400 * time.Millisecond,
+		slowPaths: 70,
+		pathFails: 1,
 	}
 	got := slow.slowSiteLine()
 	if got == "" {
-		t.Fatal("总耗时 45s 应打画像行")
+		t.Fatal("纯路径耗时 357s 应打画像行")
 	}
-	// 形态判读要素：avg 5.0s（慢主导）、slowest 8.5s、60 slow / 40 failed（间歇失败型）
-	for _, want := range []string{"slow.test", "70 paths", "avg 5.0s", "8.5s", "60 slow", "40 failed"} {
+	// 形态判读要素：avg 5.1s（慢成功型，真机 208 实证形态）
+	for _, want := range []string{"slow.test", "70 paths", "357s", "avg 5.1s", "5.4s", "70 slow", "1 failed"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("画像行应含 %q: %s", want, got)
 		}
+	}
+}
+
+func TestSiteAbortOnConsecutiveSlowPaths(t *testing.T) {
+	dirTestSetup(t, []string{"/p1", "/p2", "/p3", "/p4", "/p5", "/p6"})
+
+	// 连续 3 条慢路径（>dirSlowPathMark）触发熔断，idx 跳到顶
+	s := &dirSite{url: "http://slowalive.test"}
+	for i := 0; i < dirAbortThresh; i++ {
+		dirSched.notePathDone(s, 3*time.Second)
+	}
+	if s.idx != len(dirPaths) {
+		t.Fatalf("连续 %d 条慢路径应熔断（idx 跳到顶 %d），got %d", dirAbortThresh, len(dirPaths), s.idx)
+	}
+
+	// 慢快交替不熔断：慢 2 条 → 快 1 条清零 → 再慢 2 条，未达连续阈值
+	s2 := &dirSite{url: "http://jitter.test"}
+	dirSched.notePathDone(s2, 3*time.Second)
+	dirSched.notePathDone(s2, 3*time.Second)
+	dirSched.notePathDone(s2, 100*time.Millisecond)
+	dirSched.notePathDone(s2, 3*time.Second)
+	dirSched.notePathDone(s2, 3*time.Second)
+	if s2.idx != 0 {
+		t.Fatalf("慢快交替（连续未达 %d）不应熔断，idx=%d", dirAbortThresh, s2.idx)
 	}
 }
 
