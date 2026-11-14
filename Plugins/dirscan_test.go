@@ -520,15 +520,15 @@ func TestSiteAbortOnConsecutiveFailures(t *testing.T) {
 		t.Fatalf("熔断站点应 drained（inflight=%d）", s.inflight)
 	}
 
-	// 成功响应清零计数：失败 1 次 → OK → 再失败 3 次不应熔断（未达阈值）
+	// 成功响应清零计数：失败 1 次 → OK → 再失败 阈值-1 次不应熔断
 	s2 := newSite()
 	dirSched.noteSiteFail(s2)
 	dirSched.noteSiteOK(s2)
-	dirSched.noteSiteFail(s2)
-	dirSched.noteSiteFail(s2)
-	dirSched.noteSiteFail(s2)
+	for i := 0; i < dirAbortThresh-1; i++ {
+		dirSched.noteSiteFail(s2)
+	}
 	if s2.idx != 0 {
-		t.Fatalf("OK 清零后 3 次失败不应熔断（阈值 %d），idx=%d", dirAbortThresh, s2.idx)
+		t.Fatalf("OK 清零后 %d 次失败不应熔断（阈值 %d），idx=%d", dirAbortThresh-1, dirAbortThresh, s2.idx)
 	}
 }
 

@@ -32,7 +32,7 @@ import (
 const (
 	dirWorkerNum     = 16               // worker 池大小；任务 channel 容量与之相等
 	dirRedirectLimit = 3                // 目录请求跟随跳转上限
-	dirAbortThresh   = 5                // 站点连续请求失败熔断阈值（防半死站点 70×超时拖垮收尾）
+	dirAbortThresh   = 3                // 站点连续请求失败熔断阈值（防半死站点 70×超时拖垮收尾，2026-11-14 用户由 5 调低）
 	dirProgressEvery = 30 * time.Second // 进度快照间隔：打印量恒定不刷屏，仅扫描变慢时可见
 )
 
