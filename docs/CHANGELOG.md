@@ -2,6 +2,12 @@
 
 ## 2026-11-14
 
+- BL-FP-004 用户真机验收闭合（复扫目标不再报致远互联-OA/Log4j2，真阳性 PHP/Nginx 保留），从控制台移除；本日累计闭合 8 item，17 item 中 13 已验收
+
+- goby 指纹库误报清理（BL-FP-004）：实测 https://120.77.222.29/yyoa/（PHP 软404站）恒报致远互联-OA，根因=请求路径被页面 canonical 标签回显进响应体 + goby 数据转换剥离原始 path/status_code 上下文后"路径探测"退化为"全响应子串匹配"（goby.go:105）。修复：致远 c 特征 `/yyoa/`→`/yyoa/ext/`（6 个 seeyon poc 实证目录）；SmartOA 摘 `/smartoa/` 独立分支；整删 Log4j2（294 规则/272 随机 label，混入 yyoa/NSX/JBoss 等无关条件的 mega-OR 污染条目）与 HIKVISION-视频监控（80 规则/54 随机 label）；Microsoft-HTTPAPI logic 去悬空 label。7077→7075，validate 全过，目标命中由 [PHP,致远互联-OA,Nginx,Log4j2] 收敛为 [PHP,Nginx]。全库三类判据扫描：dirlist 交集高危项清零，低危 44 项保留记清单。
+
+- 收编上轮会话未立项的 goby 弱特征修改（reviewer 独立核对补全清单）：THE_OPEN_GROUP-UNIX/OpenSSL 整删（弱词）、H3C"h3c"/SIEMENS"s7"/致远"用友致远A"+"path=/yyoa"/HARBOR"Harbor"/ThinkPHP"thinkphp" 弱 label 删、致远 `||f`（SY8044 裸词）引用删（本轮补删其死 rule）、SmartOA label b 删、APACHE-Druid 弱词 "Apache Druid" 改写为 submitLogin&&druid.login 特异组合。
+
 - BL-MSC-005 用户真机验收闭合（下游扫描进行中即见 done 行、cost 为 masscan 自身耗时），从控制台移除；本日累计闭合 7 item，16 item 中 12 已验收
 
 - masscan done 统计行提前到 masscan 退出时打印（BL-MSC-005，用户反馈"任务结束才打印"）：ScanFromReader goroutine 化（三条返回路径并入扫描协程，防 close(Results) 后 send panic）、stdout 计数改原子快照、cost 语义修正为 masscan 自身耗时（不再混入下游扫描时长）；与 BL-MSC-003 同类的生命周期缺陷，模块文档"masscan 结束后打印统计"自此与实现一致
