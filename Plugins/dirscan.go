@@ -105,11 +105,10 @@ func normalizeTitle(title string) string {
 
 // dirHit 一条有效命中（站点内按呈现去重后）
 type dirHit struct {
-	presentKey string
-	url        string // 站点URL + 首个命中路径
-	status     int
-	title      string
-	fps        string // 完整指纹列表（逗号分隔），与首页 Product 行同构
+	url    string // 站点URL + 首个命中路径
+	status int
+	title  string
+	fps    string // 完整指纹列表（逗号分隔），与首页 Product 行同构
 }
 
 // dirSite 轮询环中的站点条目。seeds 为首页扫描链（初次+跳转+https重试）
@@ -126,8 +125,8 @@ type dirSite struct {
 	hits        []dirHit
 	seen        map[string]struct{}
 
-	// 慢站点诊断画像（收尾拖尾定位，仅统计不影响行为）
-	startedAt  time.Time // 首条路径发起时刻
+	// 慢站点诊断画像（收尾拖尾定位，仅统计不影响行为；startedAt 墙钟字段已随画像
+	// 判定改 totalDur 移除——多站点轮询均摊下墙钟无诊断意义）
 	totalDur   time.Duration
 	maxPath    time.Duration // 最慢单路径
 	slowPaths  int           // 超过 dirSlowPathMark 的路径数
@@ -165,9 +164,6 @@ func (d *dirScheduler) noteSiteFail(s *dirSite) {
 // 熔断，与连续失败熔断对称。快路径清零，偶发 1-2 条慢的正常站点不受影响。
 func (d *dirScheduler) notePathDone(s *dirSite, dur time.Duration) {
 	d.mu.Lock()
-	if s.startedAt.IsZero() {
-		s.startedAt = time.Now()
-	}
 	s.totalDur += dur
 	if dur > s.maxPath {
 		s.maxPath = dur
@@ -270,6 +266,7 @@ var dirSched = &dirScheduler{
 // 分母不单调，N/M 会误导；时间驱动的打印量恒定——快扫描完全看不到，慢扫描
 // 每 30s 一行让使用者知道仍在推进，且仅在有新进展时打印防重复刷屏）。
 func (d *dirScheduler) progressLoop() {
+	defer d.workers.Done()
 	lastDone := -1
 	for {
 		select {
@@ -336,7 +333,10 @@ func RegisterSite(url string, seedPresents map[string]struct{}) {
 			go dirWorker(client)
 		}
 		go dirSched.run()
-		go dirSched.progressLoop()
+		dirSched.workers.Add(1)
+		go dirSched.progressLoop() // 纳入收尾 join：tick 与 done 竞争窗口下进度行可能晚于
+		// LogWG 归零发出 → close(Results) 后 send panic（独立审查中危项；done 关闭后
+		// select 立即返回 Done，workers.Wait 不卡）
 	}
 	nSites := len(dirSched.sites)
 	dirSched.wakeup()
@@ -448,6 +448,7 @@ func (d *dirScheduler) complete(s *dirSite) {
 		// }
 		s.hits = nil // 聚合器释放：站点级生命周期结束（零命中站点同样释放）
 		s.seeds = nil
+		s.seedFps = nil
 		s.seen = nil
 	}
 	d.mu.Unlock()
@@ -515,7 +516,6 @@ func runDirTask(client *http.Client, t dirTask) {
 		return
 	}
 	defer resp.Body.Close()
-	dirSched.noteSiteOK(t.site) // 拿到响应即证明服务器存活，清零计数（含后续短路丢弃的 404 等）
 	// 短路丢弃：3xx/4xx/5xx 一律不进指纹引擎（状态码 >= 300 全丢，仅 2xx 参与识别）。
 	// 3xx：CheckRedirect 拒绝跟随时拿到的是 302 响应本身，其 Location/Server 头会被引擎
 	// 匹配出无关产品（真机实测 Location 含 "thinkphp" 字样即误报）；限跳截断的落地 3xx
@@ -525,10 +525,16 @@ func runDirTask(client *http.Client, t dirTask) {
 		return
 	}
 	body, err := ReadRawWithSize(resp, 192*1024)
-	if len(body) == 0 && err != nil {
-		dirSched.noteSiteFail(t.site) // body 黑洞（头回 body 超时）同样计入熔断
+	if err != nil {
+		// body 读取不完整（超时/中断）：ReadRawWithSize 错误分支返回"状态行+头(+部分body)"
+		// 恒非空，旧条件 len(body)==0 永假致此防线不可达（独立审查实测证实）；与入口门槛
+		// bodyOK=err==nil 语义对称——body 不完整即计入失败熔断并丢弃（残缺数据不做识别）。
+		// 注意 noteSiteOK 必须在 body 成功后才清零：黑洞路径"头到达+body 超时"的组合中，
+		// 若在 Do 成功时清零，consecFails 每条被清回 1、熔断永不触发（高-1 修复暴露的交互）
+		dirSched.noteSiteFail(t.site)
 		return
 	}
+	dirSched.noteSiteOK(t.site) // 完整响应才证明服务器健康，清零计数（含后续短路丢弃的 404 等——body 已完整）
 	frames, _ := Engine.DetectContent(body)
 	products := strings.Split(frames.String(), "||")
 	fps := make([]string, 0, len(products))
@@ -556,11 +562,10 @@ func runDirTask(client *http.Client, t dirTask) {
 	}
 	t.site.seen[key] = struct{}{}
 	t.site.hits = append(t.site.hits, dirHit{
-		presentKey: key,
-		url:        url,
-		status:     resp.StatusCode,
-		title:      title,
-		fps:        strings.Join(fps, ", "),
+		url:    url,
+		status: resp.StatusCode,
+		title:  title,
+		fps:    strings.Join(fps, ", "),
 	})
 }
 

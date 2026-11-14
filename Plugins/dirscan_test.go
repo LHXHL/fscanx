@@ -77,15 +77,20 @@ func fingerPage(title string) (int, string) {
 }
 
 // probePresent 用空 seeds 的探针站点跑一次请求，取该 URL 响应的实际呈现 key
-// （自适应：不依赖指纹库具体产品名，对指纹库演进稳健）。
+// （自适应：不依赖指纹库具体产品名，对指纹库演进稳健）。key 从 seen 取
+// （与 hits 同源写入，单命中时恰一个）。
 func probePresent(t *testing.T, client *http.Client, baseURL, path string) string {
 	t.Helper()
-	s := &dirSite{url: baseURL, seeds: map[string]struct{}{}, seen: map[string]struct{}{}}
+	s := &dirSite{url: baseURL, seeds: map[string]struct{}{}, seedFps: map[string]struct{}{}, seen: map[string]struct{}{}}
 	runDirTask(client, dirTask{site: s, path: path})
 	if len(s.hits) != 1 {
 		t.Fatalf("probe %s: want 1 hit, got %d (页面应可识别指纹)", path, len(s.hits))
 	}
-	return s.hits[0].presentKey
+	for k := range s.seen {
+		return k
+	}
+	t.Fatalf("probe %s: seen 为空", path)
+	return ""
 }
 
 // ---------- presentKey ----------
@@ -436,6 +441,7 @@ func TestRunDirTaskVerdicts(t *testing.T) {
 // ---------- 站点内聚合去重 ----------
 
 func TestAggregatorDedupKeepsFirstURL(t *testing.T) {
+	dirTestSetup(t, nil) // 必设 WebTimeout：零值会使 ReadRawWithSize ctx 立即超时（本测试曾靠旧的永假条件碰巧通过）
 	mux := http.NewServeMux()
 	page := func(w http.ResponseWriter, r *http.Request) {
 		code, body := fingerPage("Same")
@@ -625,14 +631,13 @@ func TestWebScanWorkerRegistersOnlyHealthySites(t *testing.T) {
 // ---------- 慢站点画像行与连续慢熔断 ----------
 
 func TestSlowSiteLine(t *testing.T) {
-	// 排队假象：墙钟跨度 71s 但纯路径耗时 7s（130 站点均摊的正常形态）——不打
-	queued := &dirSite{startedAt: time.Now().Add(-71 * time.Second), idx: 70, totalDur: 7 * time.Second}
+	// 排队假象：墙钟跨度无关，纯路径耗时 7s（130 站点均摊的正常形态）——不打
+	queued := &dirSite{idx: 70, totalDur: 7 * time.Second}
 	if got := queued.slowSiteLine(); got != "" {
 		t.Errorf("纯路径耗时 7s（阈值 %v）的排队假象不应打画像行，got %q", dirSlowSiteReport, got)
 	}
 	slow := &dirSite{
 		url:       "http://slow.test",
-		startedAt: time.Now().Add(-360 * time.Second),
 		idx:       70,
 		totalDur:  357 * time.Second,
 		maxPath:   5400 * time.Millisecond,
@@ -672,6 +677,67 @@ func TestSiteAbortOnConsecutiveSlowPaths(t *testing.T) {
 	dirSched.notePathDone(s2, 3*time.Second)
 	if s2.idx != 0 {
 		t.Fatalf("慢快交替（连续未达 %d）不应熔断，idx=%d", dirAbortThresh, s2.idx)
+	}
+}
+
+// ---------- body 黑洞熔断接线（独立审查高-1 回归） ----------
+
+// 旧条件 len(body)==0 永假（ReadRawWithSize 错误分支返回"头+部分body"恒非空），
+// 该防线曾不可达——挂起服务器直测 runDirTask 断言失败计数与熔断真实发生。
+func TestBodyBlackholeTriggersFailAbort(t *testing.T) {
+	dirTestSetup(t, []string{"/p1", "/p2", "/p3", "/p4"}) // 必设 dirPaths：len(dirPaths)==0 时熔断守卫 idx<len 永假
+	common.WebTimeout = 1                                 // 收紧（setup 默认 5）：黑洞路径 ~1s 判定
+
+	// 挂起 handler 不 Close（Close 会等 handler 返回；泄漏一个测试协程到进程结束）
+	blackhole := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		w.WriteHeader(200)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		<-make(chan struct{})
+	}))
+
+	s := &dirSite{url: blackhole.URL, seeds: map[string]struct{}{}, seedFps: map[string]struct{}{}, seen: map[string]struct{}{}}
+	client := &http.Client{Timeout: 2 * time.Second}
+	for i := 0; i < dirAbortThresh; i++ {
+		runDirTask(client, dirTask{site: s, path: "/x"})
+	}
+	if s.pathFails != dirAbortThresh {
+		t.Fatalf("body 黑洞应计入失败（3 条路径 pathFails=%d），熔断防线不可达则回归", s.pathFails)
+	}
+	if s.idx != len(dirPaths) {
+		t.Fatalf("连续 %d 次 body 黑洞应熔断（idx 跳到顶），got %d", dirAbortThresh, s.idx)
+	}
+}
+
+// ---------- 双熔断交织 ----------
+
+// 超时路径同时计入失败与慢两个计数器；fail-abort 跳顶后 slow-abort 被
+// idx<len 守卫抑制，不产生二次跳顶/重复计数副作用。
+func TestDualAbortInteraction(t *testing.T) {
+	dirTestSetup(t, []string{"/p1", "/p2", "/p3", "/p4"})
+	s := &dirSite{url: "http://mixed.test"}
+
+	// 模拟两条超时路径：失败与慢双计数（真实链路中 noteSiteFail 在 runDirTask 内、
+	// notePathDone 在其 defer——顺序等价于这里的交替调用）
+	dirSched.noteSiteFail(s)
+	dirSched.notePathDone(s, 5*time.Second)
+	dirSched.noteSiteFail(s)
+	dirSched.notePathDone(s, 5*time.Second)
+	if s.idx != 0 {
+		t.Fatalf("2 次超时未达阈值不应熔断，idx=%d", s.idx)
+	}
+	// 第三条超时：fail 先达 3 熔断跳顶；其慢计数同时达 3 但 fail-abort 已顶
+	dirSched.noteSiteFail(s)
+	dirSched.notePathDone(s, 5*time.Second)
+	if s.idx != len(dirPaths) {
+		t.Fatalf("第 3 次失败应熔断，idx=%d", s.idx)
+	}
+	// 守卫验证：已跳顶后再触发慢熔断条件，idx 稳定不二次动作
+	dirSched.notePathDone(s, 5*time.Second)
+	if s.idx != len(dirPaths) {
+		t.Fatalf("已熔断站点的后续慢计数不应改变 idx，got %d", s.idx)
 	}
 }
 
