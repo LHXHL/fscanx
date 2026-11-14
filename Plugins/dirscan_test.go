@@ -622,6 +622,35 @@ func TestWebScanWorkerRegistersOnlyHealthySites(t *testing.T) {
 	}
 }
 
+// ---------- 慢站点画像行 ----------
+
+func TestSlowSiteLine(t *testing.T) {
+	fresh := &dirSite{url: "http://fast.test", startedAt: time.Now().Add(-2 * time.Second)}
+	if got := fresh.slowSiteLine(); got != "" {
+		t.Errorf("总耗时 2s（阈值 %v）不应打画像行，got %q", dirSlowSiteReport, got)
+	}
+	untouched := &dirSite{url: "http://zero.test"}
+	if got := untouched.slowSiteLine(); got != "" {
+		t.Errorf("未发起任何路径（startedAt 零值）不应打画像行，got %q", got)
+	}
+	slow := &dirSite{
+		url:       "http://slow.test",
+		startedAt: time.Now().Add(-45 * time.Second),
+		totalDur:  40 * time.Second,
+		maxPath:   8500 * time.Millisecond,
+		slowPaths: 30,
+	}
+	got := slow.slowSiteLine()
+	if got == "" {
+		t.Fatal("总耗时 45s 应打画像行")
+	}
+	for _, want := range []string{"slow.test", "8.5s", "30 paths", "4"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("画像行应含 %q: %s", want, got)
+		}
+	}
+}
+
 // ---------- 集成：完整流程（RegisterSite 自启动 worker + SealAndDrain 收尾） ----------
 
 func TestDirScanEndToEnd(t *testing.T) {

@@ -30,10 +30,12 @@ import (
 )
 
 const (
-	dirWorkerNum     = 16               // worker 池大小；任务 channel 容量与之相等
-	dirRedirectLimit = 3                // 目录请求跟随跳转上限
-	dirAbortThresh   = 3                // 站点连续请求失败熔断阈值（防半死站点 70×超时拖垮收尾，2026-11-14 用户由 5 调低）
-	dirProgressEvery = 30 * time.Second // 进度快照间隔：打印量恒定不刷屏，仅扫描变慢时可见
+	dirWorkerNum      = 16               // worker 池大小；任务 channel 容量与之相等
+	dirRedirectLimit  = 3                // 目录请求跟随跳转上限
+	dirAbortThresh    = 3                // 站点连续请求失败熔断阈值（防半死站点 70×超时拖垮收尾，2026-11-14 用户由 5 调低）
+	dirProgressEvery  = 30 * time.Second // 进度快照间隔：打印量恒定不刷屏，仅扫描变慢时可见
+	dirSlowSiteReport = 10 * time.Second // 站点慢画像阈值：总耗时超此值才打一行诊断（定位收尾拖尾的慢站点）
+	dirSlowPathMark   = 2 * time.Second  // 单路径慢标记阈值（统计进慢站点画像）
 )
 
 // ---------- 字典 ----------
@@ -123,6 +125,12 @@ type dirSite struct {
 	seedFps     map[string]struct{}
 	hits        []dirHit
 	seen        map[string]struct{}
+
+	// 慢站点诊断画像（收尾拖尾定位，仅统计不影响行为）
+	startedAt time.Time // 首条路径发起时刻
+	totalDur  time.Duration
+	maxPath   time.Duration // 最慢单路径
+	slowPaths int           // 超过 dirSlowPathMark 的路径数
 }
 
 // noteSiteFail 连续失败计数；达 dirAbortThresh 熔断该站点（剩余路径全部跳过）。
@@ -147,7 +155,34 @@ func (d *dirScheduler) noteSiteFail(s *dirSite) {
 	}
 }
 
-// noteSiteOK 拿到有效响应（含短路丢弃的 404 等——服务器是活的）清零连续失败计数。
+// notePathDone 单路径耗时画像（worker defer 中调用，先于 complete）。
+// 仅统计：熔断只拦"连续失败"，慢而成功的响应（高延迟/限速服务器每条数秒但能回
+// 200）不触发熔断、单站点最坏 70×慢RTT——收尾阶段快站点排空后只剩这类站点拖尾
+// （真机实测"最后几十个特别慢"主嫌），画像行用于定位是谁在拖。
+func (d *dirScheduler) notePathDone(s *dirSite, dur time.Duration) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if s.startedAt.IsZero() {
+		s.startedAt = time.Now()
+	}
+	s.totalDur += dur
+	if dur > s.maxPath {
+		s.maxPath = dur
+	}
+	if dur > dirSlowPathMark {
+		s.slowPaths++
+	}
+}
+
+// slowSiteLine 慢站点画像行；总耗时未达 dirSlowSiteReport 返回空串（不打）。
+// 调用方持锁。
+func (s *dirSite) slowSiteLine() string {
+	if s.startedAt.IsZero() || time.Since(s.startedAt) < dirSlowSiteReport {
+		return ""
+	}
+	return fmt.Sprintf("[*] dirscan slow site %s: %d paths in %.0fs (slowest %.1fs, %d paths >%ds), %d findings",
+		s.url, s.idx, time.Since(s.startedAt).Seconds(), s.maxPath.Seconds(), s.slowPaths, int(dirSlowPathMark.Seconds()), len(s.hits))
+}
 func (d *dirScheduler) noteSiteOK(s *dirSite) {
 	d.mu.Lock()
 	s.consecFails = 0
@@ -376,12 +411,13 @@ func (d *dirScheduler) complete(s *dirSite) {
 	var lines []string
 	if s.drained() {
 		d.totalFinds += len(s.hits)
-		if len(s.hits) > 0 {
-			lines = make([]string, 0, len(s.hits))
-			for _, h := range s.hits {
-				// 与 DoWebScan 输出行同构：[+] Product <url>\t<status>\t(<title>)\t<fps>
-				lines = append(lines, fmt.Sprintf("[+] Product %s\t%d\t(%s)\t%s", h.url, h.status, h.title, h.fps))
-			}
+		lines = make([]string, 0, len(s.hits)+1)
+		for _, h := range s.hits {
+			// 与 DoWebScan 输出行同构：[+] Product <url>\t<status>\t(<title>)\t<fps>
+			lines = append(lines, fmt.Sprintf("[+] Product %s\t%d\t(%s)\t%s", h.url, h.status, h.title, h.fps))
+		}
+		if diag := s.slowSiteLine(); diag != "" {
+			lines = append(lines, diag)
 		}
 		s.hits = nil // 聚合器释放：站点级生命周期结束（零命中站点同样释放）
 		s.seeds = nil
@@ -408,6 +444,8 @@ func dirWorker(client *http.Client) {
 				}
 			}()
 			defer dirSched.complete(task.site)
+			t0 := time.Now()
+			defer dirSched.notePathDone(task.site, time.Since(t0)) // 先于 complete：统计先落、flush 后读
 			runDirTask(client, task)
 		}()
 	}
