@@ -2,6 +2,7 @@ package Plugins
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/killmonday/fscanx/PocScan/lib"
 	"github.com/killmonday/fscanx/common"
 )
 
@@ -556,6 +558,67 @@ func TestSiteAdmit(t *testing.T) {
 		if got := s.admit(c.fps, c.title); got != c.want {
 			t.Errorf("%s: admit(%v,%q)=%v, want %v", c.name, c.fps, c.title, got, c.want)
 		}
+	}
+}
+
+// ---------- 注册门槛：根路径 body 黑洞的站点不进目录扫描 ----------
+
+func TestWebScanWorkerRegistersOnlyHealthySites(t *testing.T) {
+	common.DirScanEnable = true
+	common.WebTimeout = 1 // 缩短超时：挂起站点 ~1s 即放弃
+	lib.Inithttp()
+	t.Cleanup(func() {
+		common.DirScanEnable = false
+		common.WebTimeout = 0
+	})
+	setTestDirPaths([]string{"/p1"})
+	resetDirSchedForTest()
+
+	// 健康站点：完整响应
+	healthy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		code, body := fingerPage("Healthy")
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		w.WriteHeader(code)
+		fmt.Fprint(w, body)
+	}))
+	defer healthy.Close()
+
+	// 半死站点：响应头即达、body 挂起到超时（不 Close 它——挂起 handler 会阻塞
+	// httptest.Close，泄漏一个测试协程到进程结束可接受）
+	blackhole := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SimpleHTTP/0.6 Python/3.11.0")
+		w.WriteHeader(200)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		<-make(chan struct{})
+	}))
+
+	for _, srv := range []*httptest.Server{healthy, blackhole} {
+		func() {
+			defer func() { _ = recover() }()
+			host, port, _ := net.SplitHostPort(strings.TrimPrefix(srv.URL, "http://"))
+			_ = WebScanWorker(&common.HostInfo{Host: host, Ports: port})
+		}()
+	}
+
+	dirSched.mu.Lock()
+	registered := len(dirSched.sites)
+	firstURL := ""
+	if registered > 0 {
+		firstURL = dirSched.sites[0].url
+	}
+	dirSched.mu.Unlock()
+
+	// 必须收尾：本测试经真 RegisterSite 启动了 worker/调度器/进度循环，
+	// 不 Seal 会让残留 goroutine 与下个测试的 resetDirSchedForTest 构成 data race
+	SealAndDrain()
+
+	if registered != 1 {
+		t.Fatalf("应只注册健康站点 1 个（body 黑洞站点不注册），got %d", registered)
+	}
+	if firstURL != healthy.URL {
+		t.Fatalf("注册的应是健康站点 %s，got %s", healthy.URL, firstURL)
 	}
 }
 

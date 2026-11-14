@@ -289,10 +289,10 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 		}
 	}
 	// 发送http请求，识别web产品
-	origUrl := targetInfo.Url             // 目录扫描注册用原始入口 URL（下方跳转会改写 Url）
-	presents := make(map[string]struct{}) // 首页扫描链呈现集合（全链并集，差集判定用，BL-DIR-001）
+	origUrl := targetInfo.Url // 目录扫描注册用原始入口 URL（下方跳转会改写 Url）
+	seeds := &seedCollector{presents: make(map[string]struct{})}
 	err, reurl, ps := DoWebScan(targetInfo, 1, "")
-	mergePresents(presents, ps)
+	seeds.add(ps)
 	if err != nil {
 		return err
 	}
@@ -300,13 +300,13 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 	if reurl == "https" {
 		targetInfo.Url = strings.Replace(targetInfo.Url, "http://", "https://", 1)
 		err, reurl, ps = DoWebScan(targetInfo, 1, "")
-		mergePresents(presents, ps)
+		seeds.add(ps)
 		//还有跳转
 		if strings.Contains(reurl, "://") {
 			firstUrl := targetInfo.Url
 			targetInfo.Url = reurl
 			err, _, ps = DoWebScan(targetInfo, 3, firstUrl)
-			mergePresents(presents, ps)
+			seeds.add(ps)
 			if err != nil {
 				return
 			}
@@ -317,23 +317,35 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 			firstUrl := targetInfo.Url
 			targetInfo.Url = reurl
 			err, _, ps = DoWebScan(targetInfo, 3, firstUrl)
-			mergePresents(presents, ps)
+			seeds.add(ps)
 			if err != nil {
 				return err
 			}
 		}
 	}
-	if err == nil {
-		// 目录扫描注册：探测链完整（err 不注册，省 70 次注定超时的请求）
-		RegisterSite(origUrl, presents)
+	if err == nil && seeds.anyBodyOK {
+		// 目录扫描注册门槛：首页链至少一次响应 body 完整——err 不注册省 70 次
+		// 注定失败的请求；body 全黑洞不注册省 70 次注定超时的请求（根路径都拿不到
+		// 完整 body 的服务器，目录路径必然同样黑洞，用户洞察 2026-11-14。
+		// 首页行输出不受影响：仅拦截注册，不动 DoWebScan 的输出路径）
+		RegisterSite(origUrl, seeds.presents)
 	}
 	return err
 }
 
-// mergePresents 把 DoWebScan 返回的呈现 key 并入集合（首页链全调用收集）。
-func mergePresents(dst map[string]struct{}, src []string) {
-	for _, p := range src {
-		dst[p] = struct{}{}
+// seedCollector 首页扫描链呈现收集器：呈现 key 并集（差集判定基准）+ body
+// 健康位（目录扫描注册门槛），全链（初次/https重试/跳转）各次调用累积。
+type seedCollector struct {
+	presents  map[string]struct{}
+	anyBodyOK bool
+}
+
+func (c *seedCollector) add(p scanPresents) {
+	for _, k := range p.keys {
+		c.presents[k] = struct{}{}
+	}
+	if p.bodyOK {
+		c.anyBodyOK = true
 	}
 }
 
@@ -393,9 +405,17 @@ func GetCertRaw(TLS *tls.ConnectionState) string {
 	return certByte.String()
 }
 
-// DoWebScan 单次 Web 探测。第三返回值为本次响应的呈现 key（指纹非空才有，
-// 供目录扫描首页呈现差集判定使用，BL-DIR-001；不需要的调用方忽略即可）。
-func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (error, string, []string) {
+// scanPresents DoWebScan 的呈现输出：keys 为指纹非空时的呈现 key，
+// bodyOK 标记本次响应 body 读取完整（根路径 body 黑洞的站点对目录扫描
+// 是纯超时浪费——首页链健康位是目录扫描的注册门槛，BL-DIR-001）。
+type scanPresents struct {
+	keys   []string
+	bodyOK bool
+}
+
+// DoWebScan 单次 Web 探测。第三返回值为本次响应的呈现（见 scanPresents，
+// 供目录扫描差集判定与注册门槛使用，BL-DIR-001；不需要的调用方忽略即可）。
+func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (error, string, scanPresents) {
 	//scanType 1 初次访问，不进行跳转
 	//scanType 2 获取图标 /favicon.ico
 	//scanType 3 访问一些跳转的URL，例如从初次访问得到的302、location等
@@ -408,7 +428,7 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 
 	req, err := http.NewRequest("GET", targetInfo.Url, nil)
 	if err != nil {
-		return err, "", nil
+		return err, "", scanPresents{}
 	}
 	req.Header.Set("User-agent", common.UserAgent)
 	req.Header.Set("Accept", common.Accept)
@@ -448,15 +468,16 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	}
 	if err != nil {
 		if !strings.HasPrefix(targetInfo.Url, "https") {
-			return err, "https", nil //如果报错，用https协议来重新探测一次
+			return err, "https", scanPresents{} //如果报错，用https协议来重新探测一次
 		}
-		return err, "", nil
+		return err, "", scanPresents{}
 	}
 
 	body, err := ReadRawWithSize(resp, 192*1024) // 最大获取前192KB页面（2026-09-23 决策：保持192KB不变）
-	if err != nil {
-		//fmt.Println("[-] read body err:", err)
-	}
+	var out scanPresents
+	out.bodyOK = err == nil // body 读取完整性：超时/中断意味着响应头之后是黑洞，
+	// 该信号经 WebScanWorker 作为目录扫描注册门槛（根路径都拿不到完整 body 的
+	// 站点，目录路径必然同样超时）——err 本身维持既有忽略语义，不影响首页输出
 
 	// 如果是https网站，获取证书信息
 	if len(targetInfo.Url) >= 5 && targetInfo.Url[:5] == "https" {
@@ -582,9 +603,8 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	result := strings.Builder{}
 	productSlice := strings.Split(products, "||")
 	// 呈现 key（指纹非空才有）：供目录扫描差集判定；指纹排序规范化在 presentKey 内
-	var present []string
 	if fps := nonEmptyProducts(productSlice); len(fps) > 0 {
-		present = []string{presentKey(fps, title)}
+		out.keys = []string{presentKey(fps, title)}
 	}
 	result.WriteString("[+] Product ")
 	result.WriteString(fmt.Sprintf("%s\t%d\t(%s)\t", targetInfo.Url, resp.StatusCode, title))
@@ -670,12 +690,12 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	common.LogSuccess(result.String())
 
 	if reurl != "" {
-		return nil, reurl, present
+		return nil, reurl, out
 	}
 	if resp.StatusCode == 400 && !strings.HasPrefix(targetInfo.Url, "https") {
-		return nil, "https", present
+		return nil, "https", out
 	}
-	return nil, "", present
+	return nil, "", out
 }
 
 // nonEmptyProducts 过滤指纹切片中的空串（products 为空时 Split 产生 [""]）。

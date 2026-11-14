@@ -2,6 +2,7 @@
 
 ## 2026-11-14
 
+- 目录扫描注册门槛入口拦截（BL-DIR-001 用户洞察"根路径都拿不到响应为何还目录扫描"）：DoWebScan 传出 body 读取健康位，首页链（初次/https重试/跳转）全部 body 黑洞的站点不再注册——同一服务器目录路径必然同样超时，从源头省掉纯超时浪费；任何一次 body 完整即健康（跳转后正常不误伤），首页行输出不受影响；熔断保留兜底中途变死站点
 - fingers 指纹库裁剪为 hash-only（BL-FP-003，用户拍板）：首轮清理后误报仍偏高，删除全部文本特征指纹——3770 条纯文本整删、124 条混合指纹修剪文本特征只留 favicon/body 哈希，4289→519（favicon 518 + body 哈希 1）；gz 由 115KB 降至 11KB。此后 fingers 库只接受 hash 类指纹，文本指纹由 goby 引擎（logic 布尔表达式）承担
 - README 重构（BL-DOC-001，用户三决策：重组+精简/大自述迁档/更新记录留尾部）：592→324 行，按读者问题重组为定位→功能一览→快速开始→使用案例（10 场景）→参数速查（以 common/flag.go 70 flag 为真源）→维护指南→更新历史→关于；2025.11.25 大自述整体迁 docs/releases/2025-11.md（含 socks5 误报谜题、内存实测，原文保留）；剔除已失效的 fingerprint.txt 说明；删除 resources 工作副本目录内两份无引用历史 gz
 - 新增纯 Go 指纹重打包工具（BL-FP-002，用户拍板保留 gz 体积+显式打包脚本）：`go run ./mylib/finger/cmd/pack` 替代 gzip 外部命令（Windows 无内置 gzip），compress/gzip 标准库跨平台；json.Valid 前置校验防打包坏 JSON；mtime=0 + BestCompression 确定性输出（内容不变则 gz 字节不变）；README 维护说明与 resources/cmd.txt 同步改写
