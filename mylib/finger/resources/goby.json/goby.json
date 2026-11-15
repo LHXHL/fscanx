@@ -99030,6 +99030,7 @@
   }]
 }, {
   "name": "云杰URP财务管理系统",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99050,6 +99051,7 @@
   }]
 }, {
   "name": "Steedos-华炎魔方",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -99078,6 +99080,7 @@
   }]
 }, {
   "name": "Odoo",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e)||(f&&g)||(h&&i)||(j&&k)||(l&&m&&n)||(o&&p)||(q&&r)||(s&&t)",
   "rule": [{
     "label": "a",
@@ -99162,6 +99165,7 @@
   }]
 }, {
   "name": "agile-admin",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99174,6 +99178,7 @@
   }]
 }, {
   "name": "oasys OA",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99194,6 +99199,7 @@
   }]
 }, {
   "name": "JFinalOA",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99206,6 +99212,7 @@
   }]
 }, {
   "name": "勾股OA",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99226,6 +99233,7 @@
   }]
 }, {
   "name": "RuoYi Office-办公一体化平台",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -99254,6 +99262,7 @@
   }]
 }, {
   "name": "云网OA（YimiOA）",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99274,6 +99283,7 @@
   }]
 }, {
   "name": "Micro-OA",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99294,6 +99304,7 @@
   }]
 }, {
   "name": "心通达OA",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -99322,6 +99333,7 @@
   }]
 }, {
   "name": "致远互联-AnalyticsCloud",
+  "focus": true,
   "logic": "a||(b&&c)||d",
   "rule": [{
     "label": "a",
@@ -99342,6 +99354,7 @@
   }]
 }, {
   "name": "Skyeye-OA",
+  "focus": true,
   "logic": "a||(b&&c)",
   "rule": [{
     "label": "a",
@@ -99358,6 +99371,7 @@
   }]
 }, {
   "name": "信呼OA",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99378,6 +99392,7 @@
   }]
 }, {
   "name": "兰德网络-O2OA",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99430,6 +99445,7 @@
   }]
 }, {
   "name": "腾讯云-堡垒机",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99454,6 +99470,7 @@
   }]
 }, {
   "name": "FineUIMvc",
+  "focus": true,
   "logic": "a||b||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99474,6 +99491,7 @@
   }]
 }, {
   "name": "FineUI",
+  "focus": true,
   "logic": "a||b",
   "rule": [{
     "label": "a",
@@ -99486,6 +99504,7 @@
   }]
 }, {
   "name": "帆软-FineReport报表平台",
+  "focus": true,
   "logic": "a||b||c||d||(e&&f)||(g&&h)||(i&&j)||(k&&l)||(m&&n&&o)||(p&&q)||(r&&s)||(t&&u)||(v&&w)",
   "rule": [{
     "label": "a",
@@ -99582,6 +99601,7 @@
   }]
 }, {
   "name": "帆软软件-宕机监控工具",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -99598,6 +99618,7 @@
   }]
 }, {
   "name": "织信（INFORMAT ）低代码开发平台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99610,6 +99631,7 @@
   }]
 }, {
   "name": "易校科技-轻流无代码系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99650,6 +99672,7 @@
   }]
 }, {
   "name": "二哈微信平台管理系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99662,6 +99685,7 @@
   }]
 }, {
   "name": "策城软件-微信后台管理系统",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -99714,6 +99738,7 @@
   }]
 }, {
   "name": "微信专用H5页面",
+  "focus": true,
   "logic": "a",
   "rule": [{
     "label": "a",
@@ -99722,6 +99747,7 @@
   }]
 }, {
   "name": "思顶科技-微信后台管理系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99750,6 +99776,7 @@
   }]
 }, {
   "name": "新天智慧微平台-微信第三方管理平台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99762,6 +99789,7 @@
   }]
 }, {
   "name": "第三方微信公众平台管理系统",
+  "focus": true,
   "logic": "(a&&b)||(c&&d&&e)||(f&&g&&h)||(i&&j&&k)||(l&&m&&n)",
   "rule": [{
     "label": "a",
@@ -99822,6 +99850,7 @@
   }]
 }, {
   "name": "微信分销系统",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e&&f)",
   "rule": [{
     "label": "a",
@@ -99850,6 +99879,7 @@
   }]
 }, {
   "name": "微信营销系统",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -99866,6 +99896,7 @@
   }]
 }, {
   "name": "腾讯-企业微信-网页管理后台入口",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99878,6 +99909,7 @@
   }]
 }, {
   "name": "微信管理系统",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -99926,6 +99958,7 @@
   }]
 }, {
   "name": "普元-业务综合治理平台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99938,6 +99971,7 @@
   }]
 }, {
   "name": "普元-EOS平台-微服务",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)||(g&&h)",
   "rule": [{
     "label": "a",
@@ -99974,6 +100008,7 @@
   }]
 }, {
   "name": "普元-应用服务器-管理后台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -99986,6 +100021,7 @@
   }]
 }, {
   "name": "普元-应用服务器",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||e||f",
   "rule": [{
     "label": "a",
@@ -100014,6 +100050,7 @@
   }]
 }, {
   "name": "浪潮-政务审批平台",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100030,6 +100067,7 @@
   }]
 }, {
   "name": "浪潮-海量存储系统软件",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100042,6 +100080,7 @@
   }]
 }, {
   "name": "蓝信-管理后台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100054,6 +100093,7 @@
   }]
 }, {
   "name": "蓝信-安全移动工作平台",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -100074,6 +100114,7 @@
   }]
 }, {
   "name": "宝兰德-BES管理控制台",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100090,6 +100131,7 @@
   }]
 }, {
   "name": "东方通-TongWeb",
+  "focus": true,
   "logic": "(a&&b)||c",
   "rule": [{
     "label": "a",
@@ -100106,6 +100148,7 @@
   }]
 }, {
   "name": "东方通-THS管理控制台",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e)||(f&&g)",
   "rule": [{
     "label": "a",
@@ -100138,6 +100181,7 @@
   }]
 }, {
   "name": "中创-应用服务器软件-管理后台",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||e",
   "rule": [{
     "label": "a",
@@ -100162,6 +100206,7 @@
   }]
 }, {
   "name": "中创-应用服务器软件-InforSuite AS",
+  "focus": true,
   "logic": "(a&&b)||c||d",
   "rule": [{
     "label": "a",
@@ -100182,6 +100227,7 @@
   }]
 }, {
   "name": "普元-EOS平台",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -100210,6 +100256,7 @@
   }]
 }, {
   "name": "普元-ESB服务治理平台",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100226,6 +100273,7 @@
   }]
 }, {
   "name": "用友-YonBIP-数据应用服务模块",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e&&f)||(g&&h)||(i&&j&&k)",
   "rule": [{
     "label": "a",
@@ -100274,6 +100322,7 @@
   }]
 }, {
   "name": "用友NC",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -100302,6 +100351,7 @@
   }]
 }, {
   "name": "用友-NC 5.X版本",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)||(g&&h)",
   "rule": [{
     "label": "a",
@@ -100338,6 +100388,7 @@
   }]
 }, {
   "name": "用友NC-Cloud",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e)||(f&&g)",
   "rule": [{
     "label": "a",
@@ -100370,6 +100421,7 @@
   }]
 }, {
   "name": "用友-NC 4.X版本",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100382,6 +100434,7 @@
   }]
 }, {
   "name": "用友-NC 6.X版本",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -100402,6 +100455,7 @@
   }]
 }, {
   "name": "用友U8-CRM客户关系管理系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100414,6 +100468,7 @@
   }]
 }, {
   "name": "用友U8C",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100430,6 +100485,7 @@
   }]
 }, {
   "name": "用友U9C",
+  "focus": true,
   "logic": "(a&&b)||(c&&d&&e)",
   "rule": [{
     "label": "a",
@@ -100454,6 +100510,7 @@
   }]
 }, {
   "name": "用友GRP-U8-行政事业内控管理软件",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100470,6 +100527,7 @@
   }]
 }, {
   "name": "用友-畅捷通-畅捷CRM",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100482,6 +100540,7 @@
   }]
 }, {
   "name": "用友TurboCRM",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100494,6 +100553,7 @@
   }]
 }, {
   "name": "用友U8",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e)",
   "rule": [{
     "label": "a",
@@ -100518,6 +100578,7 @@
   }]
 }, {
   "name": "用友-畅捷通-CCERP",
+  "focus": true,
   "logic": "(a&&b&&c&&d)",
   "rule": [{
     "label": "a",
@@ -100538,6 +100599,7 @@
   }]
 }, {
   "name": "用友U8-CDM",
+  "focus": true,
   "logic": "(a&&b&&c&&d)",
   "rule": [{
     "label": "a",
@@ -100558,6 +100620,7 @@
   }]
 }, {
   "name": "用友-时空KSOA",
+  "focus": true,
   "logic": "(a&&b&&c&&d)",
   "rule": [{
     "label": "a",
@@ -100578,6 +100641,7 @@
   }]
 }, {
   "name": "用友GRP-U8-高校内控管理软件",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100594,6 +100658,7 @@
   }]
 }, {
   "name": "用友GRP-U8-Cloud",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -100614,6 +100679,7 @@
   }]
 }, {
   "name": "用友GRP-U8",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100626,6 +100692,7 @@
   }]
 }, {
   "name": "浪潮-HCM-Cloud-人力资源管理系统",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -100646,6 +100713,7 @@
   }]
 }, {
   "name": "浪潮-ClusterEngine集群管理平台",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100662,6 +100730,7 @@
   }]
 }, {
   "name": "用友-政务GRP-A++Cloud 政府财务云",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100678,6 +100747,7 @@
   }]
 }, {
   "name": "用友-移动系统管理",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100694,6 +100764,7 @@
   }]
 }, {
   "name": "浪潮-政务系统",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100710,6 +100781,7 @@
   }]
 }, {
   "name": "浪潮-天启防火墙",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100722,6 +100794,7 @@
   }]
 }, {
   "name": "浪潮ERP-GS企业管理系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100734,6 +100807,7 @@
   }]
 }, {
   "name": "浪潮-企业数字化平台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100746,6 +100820,7 @@
   }]
 }, {
   "name": "浪潮-政务云表单",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -100762,6 +100837,7 @@
   }]
 }, {
   "name": "浪潮-管理系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100774,6 +100850,7 @@
   }]
 }, {
   "name": "用友-PLM-企业产品创新管理平台",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -100794,6 +100871,7 @@
   }]
 }, {
   "name": "用友-YonBIP",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f&&g)||(h&&i&&j)||(k&&l)||(m&&n&&o)",
   "rule": [{
     "label": "a",
@@ -100858,6 +100936,7 @@
   }]
 }, {
   "name": "金蝶营销运营平台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -100870,6 +100949,7 @@
   }]
 }, {
   "name": "致远OA-A8",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||e||f||g",
   "rule": [{
     "label": "a",
@@ -100902,6 +100982,7 @@
   }]
 }, {
   "name": "致远OA-A6",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)||(g&&h)||(i&&j)",
   "rule": [{
     "label": "a",
@@ -100946,6 +101027,7 @@
   }]
 }, {
   "name": "金蝶云星空-BBC分销子系统",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e&&f)",
   "rule": [{
     "label": "a",
@@ -100974,6 +101056,7 @@
   }]
 }, {
   "name": "用友-U9",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e&&f)",
   "rule": [{
     "label": "a",
@@ -101002,6 +101085,7 @@
   }]
 }, {
   "name": "金蝶云苍穹",
+  "focus": true,
   "logic": "a||(b&&c&&d)",
   "rule": [{
     "label": "a",
@@ -101022,6 +101106,7 @@
   }]
 }, {
   "name": "金蝶OA-AI EBC协同云",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -101042,6 +101127,7 @@
   }]
 }, {
   "name": "金蝶云星瀚",
+  "focus": true,
   "logic": "(a&&b)||(c&&d&&e)",
   "rule": [{
     "label": "a",
@@ -101066,6 +101152,7 @@
   }]
 }, {
   "name": "金蝶云星空ERP-管理中心",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e)",
   "rule": [{
     "label": "a",
@@ -101090,6 +101177,7 @@
   }]
 }, {
   "name": "金蝶EAS Cloud",
+  "focus": true,
   "logic": "(a&&b)||(c&&d&&e)",
   "rule": [{
     "label": "a",
@@ -101114,6 +101202,7 @@
   }]
 }, {
   "name": "金蝶-Kingdee-K3-cloud",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e&&f)||(g&&h)",
   "rule": [{
     "label": "a",
@@ -101150,6 +101239,7 @@
   }]
 }, {
   "name": "金蝶Apusic中间件",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -101170,6 +101260,7 @@
   }]
 }, {
   "name": "金蝶Apusic企业服务总线服务器",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -101190,6 +101281,7 @@
   }]
 }, {
   "name": "协众软件-协众OA",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -101218,6 +101310,7 @@
   }]
 }, {
   "name": "红帆-HFOffice医微云",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)",
   "rule": [{
     "label": "a",
@@ -101238,6 +101331,7 @@
   }]
 }, {
   "name": "红帆-iOffice M2后台管理系统",
+  "focus": true,
   "logic": "(a&&b)||(c&&d&&e)||(f&&g)",
   "rule": [{
     "label": "a",
@@ -101270,6 +101364,7 @@
   }]
 }, {
   "name": "通达OA",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -101286,6 +101381,7 @@
   }]
 }, {
   "name": "九思软件-OA",
+  "focus": true,
   "logic": "a||(b&&c)",
   "rule": [{
     "label": "a",
@@ -101302,6 +101398,7 @@
   }]
 }, {
   "name": "华天动力OA 8000",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101314,6 +101411,7 @@
   }]
 }, {
   "name": "华天动力协同OA系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101326,6 +101424,7 @@
   }]
 }, {
   "name": "华天动力-业务流程管理系统",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101338,6 +101437,7 @@
   }]
 }, {
   "name": "蓝凌OA-EKP",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101350,6 +101450,7 @@
   }]
 }, {
   "name": "蓝凌-EIS智慧协同平台",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101362,6 +101463,7 @@
   }]
 }, {
   "name": "慧点科技-Indi.Office",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101374,6 +101476,7 @@
   }]
 }, {
   "name": "慧点科技-WE.Office",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101386,6 +101489,7 @@
   }]
 }, {
   "name": "金和OA-C6",
+  "focus": true,
   "logic": "(a&&b)||(c&&d)||(e&&f)",
   "rule": [{
     "label": "a",
@@ -101414,6 +101518,7 @@
   }]
 }, {
   "name": "致远互联-M3移动端",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101426,6 +101531,7 @@
   }]
 }, {
   "name": "致远互联-DEE中间件",
+  "focus": true,
   "logic": "(a&&b&&c)||d",
   "rule": [{
     "label": "a",
@@ -101446,6 +101552,7 @@
   }]
 }, {
   "name": "致远互联-FE协作办公平台",
+  "focus": true,
   "logic": "(a&&b&&c)",
   "rule": [{
     "label": "a",
@@ -101462,6 +101569,7 @@
   }]
 }, {
   "name": "致远OA",
+  "focus": true,
   "logic": "(a&&b&&c)||(d&&e&&f)",
   "rule": [{
     "label": "a",
@@ -101490,6 +101598,7 @@
   }]
 }, {
   "name": "致远互联-DEE可视化配置平台",
+  "focus": true,
   "logic": "a||(b&&c&&d)",
   "rule": [{
     "label": "a",
@@ -101510,6 +101619,7 @@
   }]
 }, {
   "name": "致远互联-电子政务协同管理平台G6",
+  "focus": true,
   "logic": "(a&&b)",
   "rule": [{
     "label": "a",
@@ -101522,6 +101632,7 @@
   }]
 }, {
   "name": "致远互联-Seeyon-Server",
+  "focus": true,
   "logic": "a",
   "rule": [{
     "label": "a",
