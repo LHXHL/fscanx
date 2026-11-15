@@ -192,6 +192,7 @@ fscanx -nmap -iface 10.202.100.100 -h 192.168.0.0/16
 | `-time` | tcp 超时秒（6；同时决定 gonmap 每端口 4 探针的总时长） |
 | `-wt` | web 请求超时秒（9） |
 | `-nmap` | 开启 gonmap 协议指纹识别 |
+| `-nofavicon` | 关闭 favicon 图标抓取与哈希指纹识别（默认开启，web 扫描每站点最多 2 个额外请求） |
 | `-np` | 跳过 icmp 验活 |
 | `-ping` | 用系统 ping 命令替代 icmp conn |
 | `-prate` | icmp 发包速率 M/s（0.1，实测最佳，调高可能漏资产） |

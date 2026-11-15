@@ -291,16 +291,20 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 	// 发送http请求，识别web产品
 	origUrl := targetInfo.Url // 目录扫描注册用原始入口 URL（下方跳转会改写 Url）
 	seeds := &seedCollector{presents: make(map[string]struct{})}
+	// pending 持链尾行（该次响应无后续跳转），链尾 favicon 探测合并后统一输出（BL-FP-005）
+	var pending scanPresents
 	err, reurl, ps := DoWebScan(targetInfo, 1, "")
 	seeds.add(ps)
 	if err != nil {
 		return err
 	}
+	handleScanLine(ps, reurl, &pending)
 	// 如果reurl是https，判断原始url是否就是https，如果不是则用https协议探测一遍
 	if reurl == "https" {
 		targetInfo.Url = strings.Replace(targetInfo.Url, "http://", "https://", 1)
 		err, reurl, ps = DoWebScan(targetInfo, 1, "")
 		seeds.add(ps)
+		handleScanLine(ps, reurl, &pending)
 		//还有跳转
 		if strings.Contains(reurl, "://") {
 			firstUrl := targetInfo.Url
@@ -310,6 +314,8 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 			if err != nil {
 				return
 			}
+			// scanType 3 只跟一层跳转，该行恒为链尾（返回的二次跳转不再跟随，维持原语义）
+			handleScanLine(ps, "", &pending)
 		}
 	} else {
 		//有url跳转
@@ -321,8 +327,11 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 			if err != nil {
 				return err
 			}
+			handleScanLine(ps, "", &pending)
 		}
 	}
+	// 链尾行输出：favicon 探测开启且命中时合并指纹；targetInfo.Url 此刻为最终 URL
+	emitFinalLineWithFavicon(pending, targetInfo.Url)
 	if err == nil && seeds.anyBodyOK {
 		// 目录扫描注册门槛：首页链至少一次响应 body 完整——err 不注册省 70 次
 		// 注定失败的请求；body 全黑洞不注册省 70 次注定超时的请求（根路径都拿不到
@@ -408,16 +417,47 @@ func GetCertRaw(TLS *tls.ConnectionState) string {
 // scanPresents DoWebScan 的呈现输出：keys 为指纹非空时的呈现 key，
 // bodyOK 标记本次响应 body 读取完整（根路径 body 黑洞的站点对目录扫描
 // 是纯超时浪费——首页链健康位是目录扫描的注册门槛，BL-DIR-001）。
+// linePrefix/lineProducts/lineSuffix 为 Product 行三段拆分（指纹区独立成段，
+// 供链尾 favicon 指纹合并重拼，BL-FP-005）；iconHrefs/iconInline 为本页
+// 解析出的 favicon 候选（零 IO，随行携带给链尾探测）。
 type scanPresents struct {
-	keys   []string
-	bodyOK bool
+	keys         []string
+	bodyOK       bool
+	linePrefix   string
+	lineProducts string
+	lineSuffix   string
+	iconHrefs    []string
+	iconInline   []byte
+}
+
+// hasLine 本响应是否拼出了 Product 行（err 路径不拼行）
+func (p scanPresents) hasLine() bool {
+	return p.linePrefix != "" || p.lineProducts != "" || p.lineSuffix != ""
+}
+
+// line 三段拼回完整行（无 favicon 合并时的原样输出形态）
+func (p scanPresents) line() string {
+	return p.linePrefix + p.lineProducts + p.lineSuffix
+}
+
+// handleScanLine 控制行输出时机（BL-FP-005）：中间行（reurl 非空，后面还有跳转）
+// 即时输出——跳转源页面指纹不带 favicon；链尾行（reurl 为空）暂存 pending，
+// 由 emitFinalLineWithFavicon 做 favicon 探测合并后统一输出。
+func handleScanLine(ps scanPresents, reurl string, pending *scanPresents) {
+	if !ps.hasLine() {
+		return
+	}
+	if reurl != "" {
+		common.LogSuccess(ps.line())
+		return
+	}
+	*pending = ps
 }
 
 // DoWebScan 单次 Web 探测。第三返回值为本次响应的呈现（见 scanPresents，
 // 供目录扫描差集判定与注册门槛使用，BL-DIR-001；不需要的调用方忽略即可）。
 func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (error, string, scanPresents) {
 	//scanType 1 初次访问，不进行跳转
-	//scanType 2 获取图标 /favicon.ico
 	//scanType 3 访问一些跳转的URL，例如从初次访问得到的302、location等
 	//scanType 4 初次访问响应400 -> 使用https重新扫描
 	var client *http.Client
@@ -557,6 +597,10 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 			*/
 		}
 	}
+	// 解析 favicon 候选（零 IO：body 已在内存，tokenizer 微秒级；候选随行携带，供链尾探测，BL-FP-005）
+	if pageURL, perr := url.Parse(targetInfo.Url); perr == nil {
+		out.iconHrefs, out.iconInline = ExtractIconCandidates(body, pageURL)
+	}
 	// 提取标题、备案号、版权信息
 	title, icp, copyRight, reurl = ExtractTitleAndICP(body)
 	title = normalizeTitle(title) // 与目录扫描 runDirTask 用同一规范化，保证呈现 key 一致
@@ -583,14 +627,12 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 		}
 	}
 	//如果是初次扫描/跳转url扫描：进行资产识别、标题提取、跳转url提取等
-	if scanType != 2 {
-		if reurl == "" {
-			redirURL, err1 := resp.Location() // 通过http头部location尝试获取跳转
-			if err1 == nil {
-				reurl = redirURL.String()
-				if reurl == targetInfo.Url { // || reurl == Url+"/" ，加了 / 有些时候确实页面不同
-					reurl = ""
-				}
+	if reurl == "" {
+		redirURL, err1 := resp.Location() // 通过http头部location尝试获取跳转
+		if err1 == nil {
+			reurl = redirURL.String()
+			if reurl == targetInfo.Url { // || reurl == Url+"/" ，加了 / 有些时候确实页面不同
+				reurl = ""
 			}
 		}
 	}
@@ -608,11 +650,13 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	}
 	result.WriteString("[+] Product ")
 	result.WriteString(fmt.Sprintf("%s\t%d\t(%s)\t", targetInfo.Url, resp.StatusCode, title))
+	productsOffset := result.Len() // 指纹区起点（链尾 favicon 指纹合并的插入基准，BL-FP-005）
 	firstWriteFlag := false
 	if products != "" && len(productSlice) >= 1 {
 		result.WriteString(strings.Join(productSlice, ", "))
 		firstWriteFlag = true
 	}
+	suffixOffset := result.Len() // 指纹区终点
 	if certInfo != "" {
 		if firstWriteFlag {
 			result.WriteString(", [Cert:")
@@ -687,7 +731,12 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	}
 
 	result.WriteString("\r\n")
-	common.LogSuccess(result.String())
+	// 行三段拆分存入 out，输出时机交调用方控制：中间行（还有跳转）即时输出，
+	// 链尾行经 favicon 探测合并后输出（handleScanLine / emitFinalLineWithFavicon，BL-FP-005）
+	full := result.String()
+	out.linePrefix = full[:productsOffset]
+	out.lineProducts = full[productsOffset:suffixOffset]
+	out.lineSuffix = full[suffixOffset:]
 
 	if reurl != "" {
 		return nil, reurl, out

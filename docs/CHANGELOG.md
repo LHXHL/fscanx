@@ -2,6 +2,14 @@
 
 ## 2026-11-15
 
+- BL-FP-005、BL-FOC-005 用户真机验收闭合（华府站输出 `[*若依-ruoyi], [*若依管理系统]` 双引擎带星号 + 未命中零干扰），从控制台移除；本日累计闭合 8 item，26 item 中 21 已验收
+
+- favicon 哈希命中路径的 focus 传递（BL-FOC-005）：fingers 库 focus 指纹经 favicon 哈希命中后输出 `[*产品名]`——补齐"双引擎均支持 focus"在 favicon 子路径的缺口（fingers 文本路径 fingers.go 三处与 goby 路径本就正确，唯 favicon 哈希在编译为 hash→name map 时丢失 focus）。3 处最小改动：FaviconsEngine 加 FocusNames 并行表（按指纹名记，md5/mmh3 通用）、fingers 编译循环填充、引擎聚合拷贝；HashMatch 命中后置 IsFocus。验证三层：favicon 包单测 / 生产引擎取证 MatchFavicon(华府图标)=`[*若依管理系统]` / 真机扫 www.huafurenjia.cn 输出 `[*若依-ruoyi], [*若依管理系统]` 双引擎带星号。插曲：复扫 demo.ruoyi.vip 一度误判回归，实为用户已将库哈希改为华府站点图标（基线漂移非代码缺陷）。附带：icon_hash.html 增加指纹片段生成（4 空格缩进与库文件逐字符一致，name/focus/tag 可填，一键复制）。
+
+- icon_hash.html 哈希工具双 bug 修复 + 若依指纹假哈希修正（BL-FP-005 真机验收反馈根因）：用户实测 www.huafurenjia.cn 不报"若依管理系统"，取证发现工具两处错误——①blueimp-md5 2.19.0 对 Uint8Array 输入走 String() 序列化路径，算出的是"字节十进制逗号串"的 md5（node 三组对照实证，f628... 即此产物）；②mmh3 函数实为 FNV-1a（offset 0x811c9dc5 + prime 0x01000193）冒名，且引擎真语义是 FOFA icon_hash（base64 每 76 字符换行 + 末尾换行后再 murmur3 x86_32，chainreactors encode.Mmh3Hash32 实证）。修复：md5 换 SparkMD5.ArrayBuffer、mmh3 换真 MurmurHash3 x86_32 + standBase64 输入，node 对双图标验证与引擎逐字节一致（含负数 mmh3）。库内若依条目假哈希（grep 确认污染仅 1 条）替换为若依官方 demo 实测真值（md5 e49fd30e.../mmh3 -1231872293），pack 重打包 validate 520 条全过，端到端扫 demo.ruoyi.vip 命中 `[若依管理系统]`（链尾行合并格式正确）。
+
+- favicon 图标抓取与哈希指纹识别（BL-FP-005）：补齐 BL-FP-003 hash-only 指纹库的生产链路——此前 FaviconEngine 哈希表已加载但扫描器从不抓图标、519 条哈希指纹全部闲置。新增 Plugins/faviconScan.go（三层候选：首页 data URI 内联→link 声明路径→/favicon.ico 兜底，预算 2 请求 64KB 上限拿到即停，含 base href 相对解析/非图标 rel 排除/base64 与百分号解码）；DoWebScan 产出行从内部即时输出改为三段拆分由调用方调度（中间行即时、链尾行 favicon 命中分词去重合并后输出，关闭/失败/未命中时逐字节零差异）；新增 `-nofavicon` 参数（默认开启）；清理 scanType 2 死代码。reviewer 独立验证 REQUEST_CHANGES 3 项已修（行尾悬挂逗号/非图标 data URI 占名额/测试补形态）+ deslop + 本地冒烟（python http.server 实证 GET /custom.ico 命中即停）+ 7 测试函数全绿 + Plugins 全量 ok。待用户真机验收。
+
 - BL-RDP-002 用户真机验收闭合（黑块消失），从控制台移除；附带裁定：-screen 空凭据+SSL 设计对 NLA 目标必然失败（认证先于图形阶段，取证 access denied 零 bitmap），属设计限制非回归，用户决策不改造；本日累计闭合 6 item，24 item 中 19 已验收
 
 - RDP 截屏黑块修复（BL-RDP-002）：根因一为能力协商宣告 DSTBLT/PATBLT/SCRBLT 绘制指令但 orders 事件全仓无消费方（解析即丢弃），服务器用指令绘制的区域永无像素——取消宣告退化为纯位图更新；根因二为 Bpp 色深映射错误（15bpp 误映射 1 字节、8bpp 缺失、default 零值无兜底）——修正为 FreeRDP 规范映射 + ToRGBA 按原始位深分支 + 未知位深跳过。Win11 实拍验证无黑块（视觉模型确认）；新增 Bpp/ToRGBA 单测。

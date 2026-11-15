@@ -96,6 +96,11 @@ func (engine *FingersEngine) Compile() error {
 				for _, md5 := range rule.Favicon.Md5 {
 					engine.Favicons.Md5Fingers[md5] = finger.Name
 				}
+				// focus 标记随 favicon 哈希传递（BL-FOC-005）：哈希表值只有 name，
+				// focus 经 FocusNames 并行表承载
+				if finger.Focus {
+					engine.Favicons.FocusNames[finger.Name] = true
+				}
 			}
 		}
 	}

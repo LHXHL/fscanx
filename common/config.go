@@ -108,6 +108,7 @@ var (
 	WebTimeout         int64
 	TmpSave            bool
 	NoPing             bool
+	NoFavicon          bool
 	UsePingExe         bool
 	Pocinfo            PocInfo
 	IsCheckPoc         bool

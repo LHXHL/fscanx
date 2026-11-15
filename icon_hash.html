@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Icon Hash Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
+<style>
+    body {
+        font-family: monospace;
+        background: #f6f6f6;
+        padding: 20px;
+    }
+    textarea, div#drop {
+        width: 100%;
+        height: 120px;
+        border: 2px dashed #aaa;
+        padding: 10px;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    pre {
+        background: #222;
+        color: #0f0;
+        padding: 10px;
+        overflow-x: auto;
+    }
+    img {
+        max-width: 128px;
+        max-height: 128px;
+        display: block;
+        margin-top: 10px;
+    }
+    .warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    .hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+    .fp-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 5px;
+        flex-wrap: wrap;
+    }
+    .fp-form input[type="text"] {
+        font-family: monospace;
+        border: 1px solid #aaa;
+        padding: 4px 6px;
+    }
+    #fingerprint {
+        color: #7fd7ff;
+        margin-top: 5px;
+    }
+    button {
+        margin-top: 8px;
+        padding: 6px 16px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<h2>Icon Hash Calculator (MD5 / MMH3)</h2>
+
+<!-- ===== 提示区域 ===== -->
+<div class="warning">
+    <strong>⚠️ 重要提示：</strong><br>
+    请<strong>粘贴本地 ICO 文件</strong>（从文件管理器复制文件后粘贴），<strong>不要从浏览器中右键复制图片</strong>。<br><br>
+    <strong>原因：</strong>浏览器打开 favicon.ico 后会将其解码为位图（PNG/BMP），右键复制图片时复制的是解码后的像素数据，而非原始 ICO 文件字节。这导致计算出的哈希与原始 favicon 不一致，无法用于指纹匹配。<br><br>
+    <strong>算法说明（2026-11-15 修正，与 fscanx 引擎 chainreactors/utils/encode 逐字节一致）：</strong>
+    <ul style="margin:5px 0 0 20px;">
+        <li><strong>MD5</strong> = 图标<strong>原始字节</strong>的标准 MD5（小写 hex）</li>
+        <li><strong>MMH3</strong> = FOFA icon_hash 语义：图标先标准 base64 编码（每 76 字符插换行、末尾补换行，等价 Python <code>base64.encodebytes</code>），再对 base64 字符串算 MurmurHash3 x86_32（种子 0，有符号 32 位）——<strong>不是</strong>对原始字节直接算</li>
+    </ul>
+    <strong>正确操作方式：</strong>
+    <ol style="margin:5px 0 0 20px;">
+        <li>在文件管理器中右键复制 <code>favicon.ico</code> 文件 → 回到此处 Ctrl+V 粘贴</li>
+        <li>或将 <code>favicon.ico</code> 文件拖拽到此处</li>
+        <li>或直接粘贴 favicon 的 URL 链接（受浏览器跨域限制，站点未开 CORS 会失败；失败请改用文件方式）</li>
+    </ol>
+</div>
+<!-- ===== 提示结束 ===== -->
+
+<div id="drop">
+    点击此处或 Ctrl+V 粘贴文件 / 链接
+</div>
+<div class="hint">支持：本地 ICO 文件（推荐）、URL 链接。不支持从浏览器复制的图片。MMH3 为 FOFA icon_hash 语义（base64 后 mmh3）。</div>
+
+<pre id="result">等待输入...</pre>
+<img id="preview">
+
+<h3>fingers_http.json 指纹片段</h3>
+<div class="fp-form">
+    产品名 <input type="text" id="fname" placeholder="如：若依管理系统" size="18">
+    <label><input type="checkbox" id="ffocus" checked> focus（重点关注）</label>
+    tag <input type="text" id="ftag" value="cms" size="10" title="逗号分隔，如 cms,oa">
+</div>
+<pre id="fingerprint">计算哈希后自动生成（可改产品名/tag 后实时更新）...</pre>
+<button id="copyBtn">复制指纹 JSON</button>
+
+<script>
+const drop = document.getElementById("drop");
+const result = document.getElementById("result");
+const preview = document.getElementById("preview");
+const fingerprintEl = document.getElementById("fingerprint");
+const copyBtn = document.getElementById("copyBtn");
+
+// 最近一次计算的哈希（表单控件变化时据此实时重生成指纹片段）
+let lastHash = null;
+
+drop.contentEditable = true;
+drop.focus();
+
+/* ========== MurmurHash3 x86_32（种子 0，输出有符号 32 位） ========== */
+function mmh3(bytes, seed) {
+    const c1 = 0xcc9e2d51, c2 = 0x1b873593;
+    let h1 = seed | 0;
+    const rem = bytes.length & 3;
+    const blocks = bytes.length >> 2;
+    for (let i = 0; i < blocks; i++) {
+        let k1 = bytes[i * 4] | bytes[i * 4 + 1] << 8 | bytes[i * 4 + 2] << 16 | bytes[i * 4 + 3] << 24;
+        k1 = Math.imul(k1, c1);
+        k1 = (k1 << 15) | (k1 >>> 17);
+        k1 = Math.imul(k1, c2);
+        h1 ^= k1;
+        h1 = (h1 << 13) | (h1 >>> 19);
+        h1 = (Math.imul(h1, 5) + 0xe6546b64) | 0;
+    }
+    let k1 = 0;
+    switch (rem) {
+        case 3: k1 ^= bytes[blocks * 4 + 2] << 16;
+        case 2: k1 ^= bytes[blocks * 4 + 1] << 8;
+        case 1:
+            k1 ^= bytes[blocks * 4];
+            k1 = Math.imul(k1, c1);
+            k1 = (k1 << 15) | (k1 >>> 17);
+            k1 = Math.imul(k1, c2);
+            h1 ^= k1;
+    }
+    h1 ^= bytes.length;
+    h1 ^= h1 >>> 16;
+    h1 = Math.imul(h1, 0x85ebca6b);
+    h1 ^= h1 >>> 13;
+    h1 = Math.imul(h1, 0xc2b2ae35);
+    h1 ^= h1 >>> 16;
+    return h1 | 0;
+}
+
+/* ========== 标准化 base64（等价 Go standBase64 / Python encodebytes） ========== */
+/* 标准 base64 字符串 + 每 76 字符插 \n + 末尾再补 \n */
+function standBase64(bytes) {
+    let bin = "";
+    const CHUNK = 0x8000; // 分块避免 fromCharCode.apply 栈溢出
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    const b64 = btoa(bin);
+    let out = "";
+    for (let i = 0; i < b64.length; i += 76) {
+        out += b64.slice(i, i + 76) + "\n";
+    }
+    return out;
+}
+
+/* ========== fingers_http.json 指纹片段生成 ========== */
+/* 键序 focus(仅勾选时输出，与引擎 omitempty 一致)/link/name/rule/tag；
+   4 空格缩进 + 4 空格基础前缀，与库文件数组内条目形态逐字符一致，粘贴即用 */
+function buildFingerprintJSON(md5Hash, mmh3Hash, name, focus, tags) {
+    const fp = {};
+    if (focus) {
+        fp.focus = true;
+    }
+    fp.link = "";
+    fp.name = name;
+    fp.rule = [{ favicon: { md5: [md5Hash], mmh3: [String(mmh3Hash)] } }];
+    fp.tag = tags;
+    return JSON.stringify(fp, null, 4)
+        .split("\n").map(function (line) { return "    " + line; }).join("\n");
+}
+
+function renderFingerprint() {
+    if (!lastHash) {
+        return;
+    }
+    const name = document.getElementById("fname").value.trim();
+    const focus = document.getElementById("ffocus").checked;
+    const tags = document.getElementById("ftag").value
+        .split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+    fingerprintEl.textContent = buildFingerprintJSON(lastHash.md5, lastHash.mmh3, name, focus, tags);
+}
+
+["fname", "ftag"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", renderFingerprint);
+});
+document.getElementById("ffocus").addEventListener("change", renderFingerprint);
+
+copyBtn.addEventListener("click", async function () {
+    if (!lastHash) {
+        copyBtn.textContent = "先计算哈希";
+        setTimeout(function () { copyBtn.textContent = "复制指纹 JSON"; }, 1500);
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(fingerprintEl.textContent);
+    } catch (e) {
+        // file:// 等环境 clipboard API 不可用时退路：选中后 execCommand
+        const range = document.createRange();
+        range.selectNodeContents(fingerprintEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("copy");
+    }
+    copyBtn.textContent = "已复制 ✓";
+    setTimeout(function () { copyBtn.textContent = "复制指纹 JSON"; }, 1500);
+});
+
+/* ========== 处理二进制 ========== */
+function processBuffer(buffer, sourceLabel) {
+    if (typeof SparkMD5 === "undefined") {
+        result.textContent = "❌ MD5 库（SparkMD5）未加载——CDN 不可达或被拦截。请检查网络后刷新页面重试。";
+        return;
+    }
+    const bytes = new Uint8Array(buffer);
+
+    // MD5：原始字节的标准 MD5（SparkMD5.ArrayBuffer 原生支持二进制输入）
+    const md5Hash = SparkMD5.ArrayBuffer.hash(buffer);
+
+    // MMH3：FOFA icon_hash 语义 = murmur3(standBase64(bytes))，
+    // base64 串为纯 ASCII，charCodeAt 即其 UTF-8 字节
+    const b64Str = standBase64(bytes);
+    const b64Bytes = new Uint8Array(b64Str.length);
+    for (let i = 0; i < b64Str.length; i++) {
+        b64Bytes[i] = b64Str.charCodeAt(i);
+    }
+    const mmh3Hash = mmh3(b64Bytes, 0);
+
+    result.textContent =
+`来源     : ${sourceLabel}
+MD5      : ${md5Hash}
+MMH3     : ${mmh3Hash}   (FOFA icon_hash 语义)
+Bytes    : ${bytes.length}`;
+
+    lastHash = { md5: md5Hash, mmh3: String(mmh3Hash) };
+    renderFingerprint();
+}
+
+/* ========== 从 URL 加载 ========== */
+function loadFromURL(url) {
+    result.textContent = "正在加载 URL...";
+    fetch(url, { mode: "cors" })
+        .then(res => res.arrayBuffer())
+        .then(buf => {
+            processBuffer(buf, "URL");
+            preview.src = url;
+        })
+        .catch(err => {
+            result.textContent = "加载失败（多半是跨域：站点未返回 CORS 头时浏览器禁止读取，请下载图标文件后拖拽进来）\n" + err;
+        });
+}
+
+/* ========== 粘贴事件 ========== */
+drop.addEventListener("paste", async (e) => {
+    e.preventDefault();
+    const items = e.clipboardData.items;
+
+    for (const item of items) {
+
+        // 文件（从文件管理器复制的 .ico 文件）
+        if (item.kind === "file") {
+            const file = item.getAsFile();
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                const buffer = await file.arrayBuffer();
+                processBuffer(buffer, "本地文件 (" + file.name + ")");
+                return;
+            }
+        }
+
+        // 图片（从浏览器复制的位图 → 警告）
+        if (item.type.startsWith("image")) {
+            result.textContent =
+`❌ 检测到你粘贴的是"图片"而非"ICO 文件"。
+
+原因：从浏览器右键复制图片时，复制的是解码后的位图数据（PNG/BMP），
+而非原始 favicon.ico 文件的二进制字节。
+计算出的哈希将与原始 favicon 不一致，无法用于指纹匹配。
+
+请改用以下方式：
+  1. 在文件管理器中复制 favicon.ico 文件 → Ctrl+V 粘贴到此处
+  2. 将 favicon.ico 文件拖拽到此处
+  3. 粘贴 favicon 的 URL 链接（受跨域限制）`;
+            return;
+        }
+
+        // 文本（URL）
+        if (item.type === "text/plain") {
+            item.getAsString(text => {
+                text = text.trim();
+                if (/^https?:\/\//i.test(text)) {
+                    loadFromURL(text);
+                } else {
+                    result.textContent = "不是有效 URL";
+                }
+            });
+            return;
+        }
+    }
+});
+</script>
+
+</body>
+</html>

@@ -102,6 +102,10 @@ func (engine *Engine) Compile() error {
 		for hash, name := range impl.Favicons.Mmh3Fingers {
 			engine.Favicon().Mmh3Fingers[hash] = name
 		}
+		// focus 标记随 favicon 哈希聚合（BL-FOC-005）
+		for name := range impl.Favicons.FocusNames {
+			engine.Favicon().FocusNames[name] = true
+		}
 	}
 
 	if impl := engine.FingerPrintHub(); impl != nil {

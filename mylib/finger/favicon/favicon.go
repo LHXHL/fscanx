@@ -9,12 +9,16 @@ func NewFavicons() *FaviconsEngine {
 	return &FaviconsEngine{
 		Md5Fingers:  make(map[string]string),
 		Mmh3Fingers: make(map[string]string),
+		FocusNames:  make(map[string]bool),
 	}
 }
 
 type FaviconsEngine struct {
 	Md5Fingers  map[string]string
 	Mmh3Fingers map[string]string
+	// FocusNames 记录带 focus 标记的指纹名（BL-FOC-005）：哈希表值只有 name，
+	// focus 经此并行表传递，HashMatch 命中后按 name 置 Framework.IsFocus
+	FocusNames map[string]bool
 }
 
 func (engine *FaviconsEngine) Compile() error {
@@ -31,13 +35,22 @@ func (engine *FaviconsEngine) Len() int {
 
 func (engine *FaviconsEngine) HashMatch(md5, mmh3 string) *common.Framework {
 	if engine.Md5Fingers[md5] != "" {
-		return common.NewFramework(engine.Md5Fingers[md5], common.FrameFromICO)
+		return engine.newFrame(engine.Md5Fingers[md5])
 	}
 
 	if engine.Mmh3Fingers[mmh3] != "" {
-		return common.NewFramework(engine.Mmh3Fingers[mmh3], common.FrameFromICO)
+		return engine.newFrame(engine.Mmh3Fingers[mmh3])
 	}
 	return nil
+}
+
+// newFrame 构造命中 Framework，focus 指纹按 FocusNames 置位 IsFocus（BL-FOC-005）
+func (engine *FaviconsEngine) newFrame(name string) *common.Framework {
+	frame := common.NewFramework(name, common.FrameFromICO)
+	if engine.FocusNames[name] {
+		frame.IsFocus = true
+	}
+	return frame
 }
 
 // WebMatch 实现Web指纹匹配

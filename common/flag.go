@@ -62,6 +62,7 @@ func Flag(Info *HostInfo) {
 	flag.BoolVar(&DoBrute, "br", false, "do brute?")
 	flag.IntVar(&BruteThread, "bt", 24, "Brute threads")
 	flag.BoolVar(&NoPing, "np", false, "not to ping")
+	flag.BoolVar(&NoFavicon, "nofavicon", false, "disable favicon fetch and hash fingerprint")
 	flag.BoolVar(&UsePingExe, "ping", false, "using ping cmd replace icmp conn")
 	flag.StringVar(&Outputfile, "o", "result.txt", "Outputfile")
 	flag.BoolVar(&TmpSave, "no", false, "not to save output log")
