@@ -244,8 +244,11 @@ fscanx -nmap -iface 10.202.100.100 -h 192.168.0.0/16
 | 参数 | 说明 |
 |------|------|
 | `-poc` | 开启 POC 扫描 |
-| `-pocname` | 按名称过滤（如 weblogic） |
-| `-pocpath` | POC 文件路径 |
+| `-pocname` | 按名称过滤（如 weblogic）；`all`=全量；留空=按指纹智能定向（命中产品才打对应 poc）并上 `always: true` 标记的 poc（无条件全打型，如 .git 目录探测，不依赖指纹） |
+| `-pocpath` | 外置 poc 目录（追加合并，内置 poc 仍生效） |
+| `pocs/` | 约定目录：二进制旁 `pocs/` 下 .yml 自动加载（同名覆盖内置），新增 poc 零编译 |
+| `binds.yaml` | 二进制旁外置绑定关系（指纹产品名→poc），与内置种子同 product 覆盖、异名追加（无条件全打型已迁至 poc yaml 自身 `always: true` 标记） |
+| `fscanx-web` | 独立维护端二进制（`cmd/fscanx-web`，前端 vue-element-plus-admin 见 `web/`）：poc 表单化编辑（下拉组合条件生成 CEL）、绑定编辑、指纹明文编辑与一键重打包；改前端后 `bash web/build.sh` 再 `go build` |
 | `-full` | 全量扫描（如 shiro 100 key） |
 | `-num` | poc 并发（30） |
 | `-cookie` | POC 请求 cookie |
