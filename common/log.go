@@ -57,6 +57,7 @@ func SaveLog() {
 	yeStyleHi := color.New(color.FgHiYellow, color.Bold)
 	cyanStyle := color.New(color.FgCyan)
 	preTextStyle := color.New(color.FgWhite)
+	redStyle := color.New(color.FgRed)
 
 	for result := range Results {
 		if fl == nil && IsSave {
@@ -81,7 +82,7 @@ func SaveLog() {
 								slice := strings.Split(*result, "\t")
 								preTextStyle.Print(slice[0] + "\t" + slice[1] + "\t")
 								yeStyleHi.Print(slice[2] + "\t")
-								whiteStyle.Println(strings.Join(slice[3:], "\t"))
+								printFpsTail(strings.Join(slice[3:], "\t"), whiteStyle, redStyle)
 							} else {
 								color.White(*result)
 							}
@@ -92,7 +93,7 @@ func SaveLog() {
 								slice := strings.Split(*result, "\t")
 								preTextStyle.Print(slice[0] + "\t" + slice[1] + "\t")
 								yeStyleHi.Print(slice[2] + "\t")
-								cyanStyle.Println(strings.Join(slice[3:], "\t"))
+								printFpsTail(strings.Join(slice[3:], "\t"), cyanStyle, redStyle)
 							} else {
 								color.Cyan(*result)
 							}
@@ -118,6 +119,28 @@ func SaveLog() {
 	if fl != nil {
 		fl.Close()
 	}
+}
+
+// printFpsTail 打印 Product 行指纹段（第 4 个 \t 段起）并换行（BL-FOC-006）：
+// [* 前缀 token（重点关注产品）用 redStyle，其余 token 与分隔符保持 baseStyle。
+// 不含 "[*" 时整段一次 baseStyle.Println，输出与旧渲染逐字节一致（Contains 门控，
+// 无 focus 行仅多一次子串扫描，且全部开销在 SaveLog 打印 goroutine，不触扫描 worker）。
+func printFpsTail(fps string, baseStyle, redStyle *color.Color) {
+	if !strings.Contains(fps, "[*") {
+		baseStyle.Println(fps)
+		return
+	}
+	for i, tok := range strings.Split(fps, ", ") {
+		if i > 0 {
+			baseStyle.Print(", ")
+		}
+		if strings.HasPrefix(tok, "[*") {
+			redStyle.Print(tok)
+		} else {
+			baseStyle.Print(tok)
+		}
+	}
+	fmt.Fprintln(color.Output)
 }
 
 func WriteFile(result string, fl *os.File) {
