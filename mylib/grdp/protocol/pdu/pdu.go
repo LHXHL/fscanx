@@ -202,9 +202,12 @@ func (c *Client) sendConfirmActivePDU() {
 	orderCapa := c.clientCapabilities[CAPSTYPE_ORDER].(*OrderCapability)
 	orderCapa.OrderFlags = NEGOTIATEORDERSUPPORT | ZEROBOUNDSDELTASSUPPORT | COLORINDEXSUPPORT | ORDERFLAGS_EXTRA_FLAGS
 	orderCapa.OrderSupportExFlags |= ORDERFLAGS_EX_ALTSEC_FRAME_MARKER_SUPPORT
-	orderCapa.OrderSupport[TS_NEG_DSTBLT_INDEX] = 1
-	orderCapa.OrderSupport[TS_NEG_PATBLT_INDEX] = 1
-	orderCapa.OrderSupport[TS_NEG_SCRBLT_INDEX] = 1
+	// BL-RDP-002: 绘制指令(DSTBLT/PATBLT/SCRBLT)解析后无绘制实现("orders"事件无消费方),
+	// 宣告支持会使服务器用指令绘制的区域(纯色填充/区域拷贝)在截屏中保持黑块——
+	// 取消宣告, 服务器将退化为纯位图更新
+	//orderCapa.OrderSupport[TS_NEG_DSTBLT_INDEX] = 1
+	//orderCapa.OrderSupport[TS_NEG_PATBLT_INDEX] = 1
+	//orderCapa.OrderSupport[TS_NEG_SCRBLT_INDEX] = 1
 	//orderCapa.OrderSupport[TS_NEG_LINETO_INDEX] = 1
 	//orderCapa.OrderSupport[TS_NEG_MEMBLT_INDEX] = 1
 	//orderCapa.OrderSupport[TS_NEG_MEM3BLT_INDEX] = 1

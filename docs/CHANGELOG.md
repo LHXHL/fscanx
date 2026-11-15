@@ -2,6 +2,10 @@
 
 ## 2026-11-15
 
+- BL-RDP-002 用户真机验收闭合（黑块消失），从控制台移除；附带裁定：-screen 空凭据+SSL 设计对 NLA 目标必然失败（认证先于图形阶段，取证 access denied 零 bitmap），属设计限制非回归，用户决策不改造；本日累计闭合 6 item，24 item 中 19 已验收
+
+- RDP 截屏黑块修复（BL-RDP-002）：根因一为能力协商宣告 DSTBLT/PATBLT/SCRBLT 绘制指令但 orders 事件全仓无消费方（解析即丢弃），服务器用指令绘制的区域永无像素——取消宣告退化为纯位图更新；根因二为 Bpp 色深映射错误（15bpp 误映射 1 字节、8bpp 缺失、default 零值无兜底）——修正为 FreeRDP 规范映射 + ToRGBA 按原始位深分支 + 未知位深跳过。Win11 实拍验证无黑块（视觉模型确认）；新增 Bpp/ToRGBA 单测。
+
 - BL-RDP-001 用户真机验收闭合（fscanx 主程序对 Win11/NLA 目标 RDP 爆破命中），从控制台移除；本日累计闭合 5 item，23 item 中 18 已验收
 
 - RDP NLA 认证回归修复（BL-RDP-001，BL-BLD-001 发现移交）：ComputeResponseV2 的 tempBuff 在 AV_PAIR 列表（已含 EOL）后多写 4 零，违反 MS-NLMP 2.2.2.2，NTProofStr/SessionBaseKey 全错——修复前主程序 RDP 爆破对 NLA 目标全废（正确口令也必失败）。三重裁定闭环：规范比对→单测向量恢复真跑 PASS→Win11 真机双对照（正确口令 flag=true / 错误口令 false）。附带：DERT 断言期望按真机实证更新（Version 字段无害演进）、rle CVAL 补长度守卫（C 直译 panic 缺陷）、TestSum 恢复真跑。探针沉淀 plans/scripts/go/rdpprobe、rdpcrack。

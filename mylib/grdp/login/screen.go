@@ -173,12 +173,14 @@ type Bitmap struct {
 	Data         []byte `json:"data"`
 }
 
+// Bpp 返回位深对应的每像素字节数(FreeRDP 规范映射: 8bpp→1, 15/16bpp→2, 24bpp→3, 32bpp→4);
+// 未知位深返回 0, 调用方须跳过该矩形(BL-RDP-002: 此前 15bpp 误映射 1、8bpp 缺失)
 func Bpp(BitsPerPixel uint16) (pixel int) {
 	switch BitsPerPixel {
-	case 15:
+	case 8:
 		pixel = 1
 
-	case 16:
+	case 15, 16:
 		pixel = 2
 
 	case 24:
@@ -188,7 +190,7 @@ func Bpp(BitsPerPixel uint16) (pixel int) {
 		pixel = 4
 
 	default:
-		glog.Error("-------------------------------------Bpp func. invalid bitmap data format")
+		glog.Error("-------------------------------------Bpp func. invalid bitmap data format:", BitsPerPixel)
 	}
 	return
 }
@@ -197,18 +199,20 @@ func BitmapDecompress(bitmap *pdu.BitmapData) []byte {
 	return core.Decompress(bitmap.BitmapDataStream, int(bitmap.Width), int(bitmap.Height), Bpp(bitmap.BitsPerPixel))
 }
 
-func ToRGBA(pixel int, i int, data []byte) (r, g, b, a uint8) {
+// ToRGBA 按原始位深(BitsPerPixel, 非字节数)解码像素颜色
+func ToRGBA(bitsPerPixel int, i int, data []byte) (r, g, b, a uint8) {
 	a = 255
-	switch pixel {
-	case 1:
+	switch bitsPerPixel {
+	case 8:
+		// 8bpp 为调色板索引, 未实现调色板同步(FASTPATH_UPDATETYPE_PALETTE), 以灰度近似
+		r, g, b = data[i], data[i], data[i]
+	case 15:
 		rgb555 := core.Uint16BE(data[i], data[i+1])
 		r, g, b = core.RGB555ToRGB(rgb555)
-	case 2:
+	case 16:
 		rgb565 := core.Uint16BE(data[i], data[i+1])
 		r, g, b = core.RGB565ToRGB(rgb565)
-	case 3, 4:
-		fallthrough
-	default:
+	default: // 24/32bpp: BGR(A) 字节序
 		r, g, b = data[i+2], data[i+1], data[i]
 	}
 
@@ -421,25 +425,28 @@ func (g *Client) ScreenShot(domain, user, pwd string, timeout int64, rdpProtocol
 				data = BitmapDecompress(&v)
 				IsCompress = false
 			}
+			// BitsPerPixel 存原始位深(非字节数), 供 ToRGBA 区分 15/16bpp 等色彩格式
 			b := Bitmap{int(v.DestLeft), int(v.DestTop), int(v.DestRight), int(v.DestBottom),
-				int(v.Width), int(v.Height), Bpp(v.BitsPerPixel), IsCompress, data}
+				int(v.Width), int(v.Height), int(v.BitsPerPixel), IsCompress, data}
 			bs = append(bs, b)
 		}
 		var (
-			pixel      int
 			i          int
 			r, g, b, a uint8
 		)
 
 		for _, bm := range bs {
 			i = 0
-			pixel = bm.BitsPerPixel
+			step := Bpp(uint16(bm.BitsPerPixel))
+			if step == 0 {
+				continue // 未知位深跳过该矩形, 防零步死循环/越界(BL-RDP-002)
+			}
 			m := image.NewRGBA(image.Rect(0, 0, bm.Width, bm.Height))
 			for y := 0; y < bm.Height; y++ {
 				for x := 0; x < bm.Width; x++ {
-					r, g, b, a = ToRGBA(pixel, i, bm.Data)
+					r, g, b, a = ToRGBA(bm.BitsPerPixel, i, bm.Data)
 					c := color.RGBA{R: r, G: g, B: b, A: a}
-					i += pixel
+					i += step
 					m.Set(x, y, c)
 				}
 			}
