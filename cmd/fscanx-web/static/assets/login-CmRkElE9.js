@@ -1,0 +1,1 @@
+import{t as e}from"./request-Dif1zM5V.js";var t=t=>e.post({url:`/mock/user/login`,data:t}),n=()=>e.get({url:`/mock/user/loginOut`}),r=()=>e.get({url:`/api/routes`});export{t as n,n as r,r as t};

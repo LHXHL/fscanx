@@ -1,0 +1,1 @@
+import{t as e}from"./request-Dif1zM5V.js";var t=()=>e.get({url:`/api/pocs`}),n=t=>e.get({url:`/api/poc`,params:{name:t}}),r=t=>e.put({url:`/api/poc`,data:t}),i=t=>e.delete({url:`/api/poc`,params:{name:t}}),a=t=>e.post({url:`/api/validate`,data:{expression:t}});export{a,r as i,n,t as r,i as t};
