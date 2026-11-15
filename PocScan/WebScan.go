@@ -87,8 +87,12 @@ func initpoc() {
 		fmt.Println("[-] init poc error: no embedded poc loaded")
 	}
 	if dir := exePocsDir(); dir != "" {
-		if n := loadPocsFromDir(dir, c); n > 0 {
-			fmt.Printf("[+] load %d pocs from %s\n", n, dir)
+		// 约定目录不存在是正常态（多数用户无外置 poc），静默跳过不报错；
+		// 显式 -pocpath 的错误仍由 loadPocsFromDir 打印（打错路径需要可见）。
+		if fi, statErr := os.Stat(dir); statErr == nil && fi.IsDir() {
+			if n := loadPocsFromDir(dir, c); n > 0 {
+				fmt.Printf("[+] load %d pocs from %s\n", n, dir)
+			}
 		}
 	}
 	if common.PocPath != "" {
@@ -129,7 +133,7 @@ func (c *pocCollector) list() []*lib.Poc { return c.pocs }
 func loadEmbeddedPocs(c *pocCollector) (count int) {
 	entries, err := Pocs.ReadDir("pocs")
 	if err != nil {
-		fmt.Printf("[-] init poc error: %v", err)
+		fmt.Printf("[-] init poc error: %v\n", err)
 		return 0
 	}
 	for _, one := range entries {
@@ -169,7 +173,7 @@ func loadPocsFromDir(dir string, c *pocCollector) (count int) {
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("[-] init poc error: %v", err)
+		fmt.Printf("[-] init poc error: %v\n", err)
 	}
 	return
 }

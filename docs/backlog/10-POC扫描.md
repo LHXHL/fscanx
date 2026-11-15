@@ -106,6 +106,7 @@ POC 扫描模块：修复并重构 Web POC 检测的触发与加载机制。起�
 - 2026-11-15：立项（Mode B0 共识修订后批准）。开放点：`./pocs/` 基准目录、binds.yaml schema 细节（方案阶段定）。
 - 2026-11-15：执行完成，四场景实测全过 + binds 单测 4/4。设计决策落定：①基准目录=**二进制所在目录**下 pocs/（os.Executable 推导；内网工具目录习惯，cd 不影响；go run 开发场景指向 temp 无妨，用 -pocpath）②binds schema=顶层 binds 数组，元素 product（fingers 引擎输出产品名）/always/pocs（取 poc yaml name 字段），文件不存在返回 nil 正常态③同名覆盖=**替换保位**（slice+index map），保证 filterPoc 遍历顺序稳定可测。initpoc 重构为 pocCollector 收集器三层加载（内置 embed → 约定目录 → -pocpath），binds 由 loadBindsFile 接线进全局 PocBinds（003 直接消费）；原内置加载静默跳过坏 yml 的行为保持不变。待用户真机验收。
 - 2026-11-15：验收闭合（用户无真机环境，委托 vulhub docker 靶场代验，同 001 靶场）。四条全过且有容器侧第三方证据（docker access log）：B2 约定目录外置新 poc 零参数执行（`[+] load 1 pocs from ...` + `[+] PocScan ... poc-yaml-accept-echo` 命中 + 容器日志 `GET /accept-echo-marker`）；B3 同名覆盖可证伪闭环——`-pocpath` 指向同名 status==999 永不命中的覆盖版 → 无命中行且容器日志实证 `GET /override-marker-tp`（覆盖版在发包），去掉 `-pocpath` 内置版即恢复命中；B4 `-pocname all` 命中计数 2（内置 thinkphp RCE + 外置 echo）= 全量含外置。验收条件全部满足，置已验收。
+- 2026-11-15：**002 回归修复轮（用户报告：exe 旁无 pocs/ 目录时报 CreateFile 错且黏行）**。根因两条：① exePocsDir 注释写明"存在与否由调用方判断"但 initpoc 实际未判断——约定目录不存在（多数用户正常态）时 filepath.Walk 首层返回 CreateFile 错误被当异常打印；② loadEmbeddedPocs/loadPocsFromDir 两处 fmt.Printf 错误输出缺换行，与后续成功行黏连。修复：initpoc 补 os.Stat+IsDir 守卫（约定目录不存在=正常态静默跳过，对齐 002 "存在才加载"设计语义）；显式 -pocpath 路径错误的报错保留可见（打错路径需要知道）并补换行。复现验证：无 pocs/ 目录跑 -poc 零报错且 thinkphp RCE 命中；-pocpath 指向不存在目录报错独立成行且扫描继续。
 
 ## BL-POC-003 指纹定向触发管道
 
