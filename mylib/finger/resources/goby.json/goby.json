@@ -4017,7 +4017,7 @@
 }, {
   "name": "万户网络-ezOFFICE",
   "focus": true,
-  "logic": "b||c||d||e",
+  "logic": "b||c||d||e||za||(zb&&zc)",
   "rule": [{
     "label": "b",
     "feature": "EZOFFICEUSERNAME",
@@ -4033,6 +4033,18 @@
   }, {
     "label": "e",
     "feature": "/defaultroot/js/cookie.js",
+    "is_equal": true
+  }, {
+    "label": "za",
+    "feature": "Location: /defaultroot/portal.jsp?access=",
+    "is_equal": true
+  }, {
+    "label": "zb",
+    "feature": "var whirRootPath",
+    "is_equal": true
+  }, {
+    "label": "zc",
+    "feature": "Logon!logon.action",
     "is_equal": true
   }]
 }, {
@@ -5025,7 +5037,7 @@
 }, {
   "name": "泛微-云桥e-Bridge",
   "focus": true,
-  "logic": "(a&&b) ||c",
+  "logic": "(a&&b) ||c||(za&&zb&&zc)",
   "rule": [{
     "label": "a",
     "feature": "content=\\\"泛微云桥e-Bridge\\\"",
@@ -5037,6 +5049,18 @@
   }, {
     "label": "c",
     "feature": "泛微云桥e-Bridge",
+    "is_equal": true
+  }, {
+    "label": "za",
+    "feature": "ace-icon",
+    "is_equal": true
+  }, {
+    "label": "zb",
+    "feature": "tenantInfo.name",
+    "is_equal": true
+  }, {
+    "label": "zc",
+    "feature": "/register",
     "is_equal": true
   }]
 }, {
@@ -7594,7 +7618,7 @@
   }]
 }, {
   "name": "红帆-ioffice",
-  "logic": "a||b|| (c&&d&&e) ||f||g",
+  "logic": "a||b|| (c&&d&&e) ||f||g||(za&&zb)||(zc&&zd)",
   "rule": [{
     "label": "a",
     "feature": "iOffice.net",
@@ -7622,6 +7646,22 @@
   }, {
     "label": "g",
     "feature": "Hongfan. All Rights Reserved",
+    "is_equal": true
+  }, {
+    "label": "za",
+    "feature": "ioffice_logo.png",
+    "is_equal": true
+  }, {
+    "label": "zb",
+    "feature": "__EVENTTARGET",
+    "is_equal": true
+  }, {
+    "label": "zc",
+    "feature": "/ioffice/WebResource.axd",
+    "is_equal": true
+  }, {
+    "label": "zd",
+    "feature": "WebForm_AutoFocus('txtpwd');",
     "is_equal": true
   }]
 }, {
@@ -16714,7 +16754,7 @@
   }]
 }, {
   "name": "微擎-公众号管理系统",
-  "logic": "a||b||c||d||e||f",
+  "logic": "a||b||c||d||e||f||za||(zb&&zc)||(zd&&ze)||(zf&&zg)||zh||(zi&&zj)||zk||zl||(zm&&zn&&zo)||(zp&&zq)||zr||(zs&&zt)||(zu&&zv)",
   "rule": [{
     "label": "a",
     "feature": "微擎 - 公众平台自助引擎",
@@ -16738,6 +16778,94 @@
   }, {
     "label": "f",
     "feature": "Powered by WE7.CC",
+    "is_equal": true
+  }, {
+    "label": "za",
+    "feature": "we7-modal-dialog modal-dialog we7-form",
+    "is_equal": true
+  }, {
+    "label": "zb",
+    "feature": "Powered by 微擎",
+    "is_equal": true
+  }, {
+    "label": "zc",
+    "feature": "http://www.w7.cc/",
+    "is_equal": true
+  }, {
+    "label": "zd",
+    "feature": "Powered by 微擎",
+    "is_equal": true
+  }, {
+    "label": "ze",
+    "feature": "formcheck()",
+    "is_equal": true
+  }, {
+    "label": "zf",
+    "feature": "Powered by 微擎",
+    "is_equal": true
+  }, {
+    "label": "zg",
+    "feature": "we7-form",
+    "is_equal": true
+  }, {
+    "label": "zh",
+    "feature": "Powered by [**微擎**]",
+    "is_equal": true
+  }, {
+    "label": "zi",
+    "feature": "we7-form",
+    "is_equal": true
+  }, {
+    "label": "zj",
+    "feature": "return formcheck()",
+    "is_equal": true
+  }, {
+    "label": "zk",
+    "feature": "content=\"微擎,微信,微信公众平台,w7.cc\"",
+    "is_equal": true
+  }, {
+    "label": "zl",
+    "feature": "Powered by <a href=\"http://www.w7.cc\">",
+    "is_equal": true
+  }, {
+    "label": "zm",
+    "feature": "微擎 - 公众平台自助引擎",
+    "is_equal": true
+  }, {
+    "label": "zn",
+    "feature": "www.w7.cc",
+    "is_equal": true
+  }, {
+    "label": "zo",
+    "feature": "login",
+    "is_equal": true
+  }, {
+    "label": "zp",
+    "feature": "./index.php?c=utility&a=code&r=",
+    "is_equal": true
+  }, {
+    "label": "zq",
+    "feature": "公众平台",
+    "is_equal": true
+  }, {
+    "label": "zr",
+    "feature": "Powered by <a href=\"http://www.we7.cc\">",
+    "is_equal": true
+  }, {
+    "label": "zs",
+    "feature": "Powered by W7.CC",
+    "is_equal": true
+  }, {
+    "label": "zt",
+    "feature": "we7-form",
+    "is_equal": true
+  }, {
+    "label": "zu",
+    "feature": "Powered by W7.CC",
+    "is_equal": true
+  }, {
+    "label": "zv",
+    "feature": "微擎,微信,微信公众平台,w7.cc",
     "is_equal": true
   }]
 }, {
@@ -97544,10 +97672,18 @@
 }, {
   "name": "致远互联-M1移动端",
   "focus": true,
-  "logic": "a",
+  "logic": "a||(za&&zb)",
   "rule": [{
     "label": "a",
     "feature": "M1-Server 已启动",
+    "is_equal": true
+  }, {
+    "label": "za",
+    "feature": "M1-Server 已启动，您可以使用移动设备登录M1",
+    "is_equal": true
+  }, {
+    "label": "zb",
+    "feature": "#F5F5DC",
     "is_equal": true
   }]
 }, {
@@ -98894,6 +99030,2506 @@
   }, {
     "label": "f",
     "feature": "loader-wrapper",
+    "is_equal": true
+  }]
+}, {
+  "name": "云杰URP财务管理系统",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "urp-wap.css",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "weui-footer",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/Account/GetLoginMehtods",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "云杰URP",
+    "is_equal": true
+  }]
+}, {
+  "name": "Steedos-华炎魔方",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "BUILDER6_PUBLIC_SETTINGS",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "steedos",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "amis",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "@steedos-widgets",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "steedos_favicon_url",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "amis",
+    "is_equal": true
+  }]
+}, {
+  "name": "Odoo",
+  "logic": "(a&&b&&c)||(d&&e)||(f&&g)||(h&&i)||(j&&k)||(l&&m&&n)||(o&&p)||(q&&r)||(s&&t)",
+  "rule": [{
+    "label": "a",
+    "feature": "odoo",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/web/static/img/logo2.png",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/web/database/change_password",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "odoo.session_info",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "var odoo",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "oe_login_form",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "odoo.session_info",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "/web/login",
+    "is_equal": true
+  }, {
+    "label": "i",
+    "feature": "odoo.__session_info__",
+    "is_equal": true
+  }, {
+    "label": "j",
+    "feature": "Powered by Odoo",
+    "is_equal": true
+  }, {
+    "label": "k",
+    "feature": "web.layout.odooscript",
+    "is_equal": true
+  }, {
+    "label": "l",
+    "feature": "odoo",
+    "is_equal": true
+  }, {
+    "label": "m",
+    "feature": "/web/static/img/logo2.png",
+    "is_equal": true
+  }, {
+    "label": "n",
+    "feature": "/web/database/change_password",
+    "is_equal": true
+  }, {
+    "label": "o",
+    "feature": "odoo.session_info",
+    "is_equal": true
+  }, {
+    "label": "p",
+    "feature": "var odoo",
+    "is_equal": true
+  }, {
+    "label": "q",
+    "feature": "/web/login",
+    "is_equal": true
+  }, {
+    "label": "r",
+    "feature": "odoo.session_info",
+    "is_equal": true
+  }, {
+    "label": "s",
+    "feature": "oe_login_form",
+    "is_equal": true
+  }, {
+    "label": "t",
+    "feature": "odoo.session_info",
+    "is_equal": true
+  }]
+}, {
+  "name": "agile-admin",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "AgileAdmin",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "animation-delay",
+    "is_equal": true
+  }]
+}, {
+  "name": "oasys OA",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "UserName/TeL",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "欢迎使用OA办公自动化系统",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "cont_form_login",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "modal-p",
+    "is_equal": true
+  }]
+}, {
+  "name": "JFinalOA",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "#jfinaloa",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "morris.css",
+    "is_equal": true
+  }]
+}, {
+  "name": "勾股OA",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "info-status",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Powered by GouguOPEN",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "gougutab",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "Powered by GouguOPEN",
+    "is_equal": true
+  }]
+}, {
+  "name": "RuoYi Office-办公一体化平台",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "yudao-vben-antd",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Vben Admin",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "Vben Admin",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "/jse",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "Vben Admin",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "content=\"Vben\"",
+    "is_equal": true
+  }]
+}, {
+  "name": "云网OA（YimiOA）",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "yimioa_mobile_qrcode.png",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "QRCodeimg",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "云网OA",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "zui.css",
+    "is_equal": true
+  }]
+}, {
+  "name": "Micro-OA",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "aspNetHidden",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Micro-OA",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "aspNetHidden",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "/Views/UserCenter/Js/Login.js",
+    "is_equal": true
+  }]
+}, {
+  "name": "心通达OA",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "/img/replaceImg/theme20/LOGO.png",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "scanLogin",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "xoajq",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "mainCon",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "/file/pc/ispiritXOASetup.exe",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "loginPart",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-AnalyticsCloud",
+  "logic": "a||(b&&c)||d",
+  "rule": [{
+    "label": "a",
+    "feature": "北京致远互联软件股份有限公司",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "AnalyticsCloud 分析云",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/newportal/",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "AnalyticsCloud 分析云",
+    "is_equal": true
+  }]
+}, {
+  "name": "Skyeye-OA",
+  "logic": "a||(b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: /tpl/index/login.html",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "skyeyeVersion",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "winui.css",
+    "is_equal": true
+  }]
+}, {
+  "name": "信呼OA",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "mode/plugin/jquery-rockmodels.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "webmain",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "rockmenuli",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "webmain",
+    "is_equal": true
+  }]
+}, {
+  "name": "兰德网络-O2OA",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "../o2_core",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "../o2_lib",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯-Web应用防火墙",
+  "logic": "a||b",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: TencentWAF",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "T-Sec-Waf: Std",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯云-COS对象存储",
+  "logic": "a||b",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: tencent-cos",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "x-cos-request-id: 12223123123123131231",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯云-直播服务MCP Server",
+  "logic": "a",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: MCP_VCLOUD_LIVE",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯-STGW安全网关",
+  "logic": "a",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: stgw",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯云-堡垒机",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "tencentbh",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "tea-btn",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯-企业邮箱",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "exmail.qq.com",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "login_panel_split",
+    "is_equal": true
+  }]
+}, {
+  "name": "FineUIMvc",
+  "logic": "a||b||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "res.axd?js=F.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "res.axd?css=F.css",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "res.axd",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "'FineUIMvc'",
+    "is_equal": true
+  }]
+}, {
+  "name": "FineUI",
+  "logic": "a||b",
+  "rule": [{
+    "label": "a",
+    "feature": "/web/ui/fineui.min.css",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/FineUI.css\"",
+    "is_equal": true
+  }]
+}, {
+  "name": "帆软-FineReport报表平台",
+  "logic": "a||b||c||d||(e&&f)||(g&&h)||(i&&j)||(k&&l)||(m&&n&&o)||(p&&q)||(r&&s)||(t&&u)||(v&&w)",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: /webroot/ReportServer",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Location: /WebReport/ReportServer",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "Location: /report/ReportServer",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "Location: /webroot/decision/login",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "fineServletURL",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "/decision/file",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "content=\"FineReport\"",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "DeploySuccess",
+    "is_equal": true
+  }, {
+    "label": "i",
+    "feature": "content=\"FineReport\"",
+    "is_equal": true
+  }, {
+    "label": "j",
+    "feature": "DeploySuccess",
+    "is_equal": true
+  }, {
+    "label": "k",
+    "feature": "content=\"FineReport\"",
+    "is_equal": true
+  }, {
+    "label": "l",
+    "feature": "DeploySuccess",
+    "is_equal": true
+  }, {
+    "label": "m",
+    "feature": "dec-login",
+    "is_equal": true
+  }, {
+    "label": "n",
+    "feature": "Dec.fineServletURL",
+    "is_equal": true
+  }, {
+    "label": "o",
+    "feature": "/decision",
+    "is_equal": true
+  }, {
+    "label": "p",
+    "feature": "Dec.fineServletURL",
+    "is_equal": true
+  }, {
+    "label": "q",
+    "feature": "loginType",
+    "is_equal": true
+  }, {
+    "label": "r",
+    "feature": "fineServletURL",
+    "is_equal": true
+  }, {
+    "label": "s",
+    "feature": "/decision/file",
+    "is_equal": true
+  }, {
+    "label": "t",
+    "feature": "content=\"FineReport\"",
+    "is_equal": true
+  }, {
+    "label": "u",
+    "feature": "DeploySuccess",
+    "is_equal": true
+  }, {
+    "label": "v",
+    "feature": "content=\"FineReport\"",
+    "is_equal": true
+  }, {
+    "label": "w",
+    "feature": "fs-login",
+    "is_equal": true
+  }]
+}, {
+  "name": "帆软软件-宕机监控工具",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "DecCst",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "dec-login",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "Dec.fineServletURL",
+    "is_equal": true
+  }]
+}, {
+  "name": "织信（INFORMAT ）低代码开发平台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "informat-loader",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "window.paceOptions",
+    "is_equal": true
+  }]
+}, {
+  "name": "易校科技-轻流无代码系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/api/qmc/tab/logo/QFLOW",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "appFavicon",
+    "is_equal": true
+  }]
+}, {
+  "name": "飞书-应用",
+  "logic": "a||(b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: https://accounts.feishu.cn/open-apis/authen/v1/authorize",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "window.isKA = false",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "window.rootDomain = 'feishu.cn'",
+    "is_equal": true
+  }]
+}, {
+  "name": "飞书-企业私有部署版",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "window.brand=\"feishu\"",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "window.isPrivateKA = true",
+    "is_equal": true
+  }]
+}, {
+  "name": "二哈微信平台管理系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "rha_login",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/mp/mp/index.html",
+    "is_equal": true
+  }]
+}, {
+  "name": "策城软件-微信后台管理系统",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "/home/login?top=Y",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "helpBlock",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/home/login?top=Y",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "http://www.cchmis.cn",
+    "is_equal": true
+  }]
+}, {
+  "name": "企业微信扫码登录页",
+  "logic": "a||(b&&c)||(d&&e)",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: https://login.work.weixin.qq.com/wwlogin/sso/login/",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "wwLogin_qrcode_head_logo",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "企业微信",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "window.__wxgspeeds",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "js_single_page_container",
+    "is_equal": true
+  }]
+}, {
+  "name": "微信开放平台扫码登录页",
+  "logic": "a",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: https://open.weixin.qq.com/connect/qrconnect",
+    "is_equal": true
+  }]
+}, {
+  "name": "微信专用H5页面",
+  "logic": "a",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: https://open.weixin.qq.com/connect/oauth2/authorize?appid=",
+    "is_equal": true
+  }]
+}, {
+  "name": "思顶科技-微信后台管理系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "http://www.siding.cn/",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "layui-form-item",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯-政务微信-网页管理后台入口",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "政务",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/wework_admin/loginpage",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "RES_CDN",
+    "is_equal": true
+  }]
+}, {
+  "name": "新天智慧微平台-微信第三方管理平台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "hdnUserPwd",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "login-mainly",
+    "is_equal": true
+  }]
+}, {
+  "name": "第三方微信公众平台管理系统",
+  "logic": "(a&&b)||(c&&d&&e)||(f&&g&&h)||(i&&j&&k)||(l&&m&&n)",
+  "rule": [{
+    "label": "a",
+    "feature": "新天智慧微平台",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "js/Tool.js",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "微信公众平台管理系统 </title>",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "登录",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "微信公众平台 </title>",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "登录",
+    "is_equal": true
+  }, {
+    "label": "i",
+    "feature": "微信公众平台管理系统</title>",
+    "is_equal": true
+  }, {
+    "label": "j",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "k",
+    "feature": "登录",
+    "is_equal": true
+  }, {
+    "label": "l",
+    "feature": "微信公众平台</title>",
+    "is_equal": true
+  }, {
+    "label": "m",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "n",
+    "feature": "登录",
+    "is_equal": true
+  }]
+}, {
+  "name": "微信分销系统",
+  "logic": "(a&&b&&c)||(d&&e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "微信分销系统 </title>",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "登录",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "微信分销系统</title>",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "登录",
+    "is_equal": true
+  }]
+}, {
+  "name": "微信营销系统",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "微信营销系统</title>",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "登录",
+    "is_equal": true
+  }]
+}, {
+  "name": "腾讯-企业微信-网页管理后台入口",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/wework_admin/loginpage",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "RES_CDN",
+    "is_equal": true
+  }]
+}, {
+  "name": "微信管理系统",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "微信管理系统</title>",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "</form>",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "登录",
+    "is_equal": true
+  }]
+}, {
+  "name": "钉钉统一身份认证",
+  "logic": "a||(b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "/user/dingtalk/login",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "isLoginPageWithSSG",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "dingding",
+    "is_equal": true
+  }]
+}, {
+  "name": "钉钉宜搭",
+  "logic": "a||(b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "Set-Cookie: Domain=aliwork.com",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "钉钉宜搭",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "yida-global-theme",
+    "is_equal": true
+  }]
+}, {
+  "name": "普元-业务综合治理平台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "EOSDEBUG",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/default/org.gocom.abframe.auth.LoginManager.verifyCode.biz.ext",
+    "is_equal": true
+  }]
+}, {
+  "name": "普元-EOS平台-微服务",
+  "logic": "(a&&b)||(c&&d)||(e&&f)||(g&&h)",
+  "rule": [{
+    "label": "a",
+    "feature": "EOSDEBUG",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": ".ext'",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "EOSDEBUG",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": ".ext\"",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "EOSDEBUG",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": ".biz.ext'",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "EOSDEBUG",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": ".biz.ext\"",
+    "is_equal": true
+  }]
+}, {
+  "name": "普元-应用服务器-管理后台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "j_security_check",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/resource/community-theme/images/PAS.png",
+    "is_equal": true
+  }]
+}, {
+  "name": "普元-应用服务器",
+  "logic": "(a&&b)||(c&&d)||e||f",
+  "rule": [{
+    "label": "a",
+    "feature": "<b>Primeton AppServer</b>",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Primeton Technologies",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "<h3>Primeton AppServer",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "HTTP状态",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "X-Powered-By: Primeton AppServer",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "Server: Primeton AppServer",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-政务审批平台",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "/icity",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "jquery.ztree.js",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "浪潮",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-海量存储系统软件",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "浪潮存储",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Modules/Login/Themes/Default/Images/login_dks01_1.gif",
+    "is_equal": true
+  }]
+}, {
+  "name": "蓝信-管理后台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "loginModeMV",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "noticeMainIndex",
+    "is_equal": true
+  }]
+}, {
+  "name": "蓝信-安全移动工作平台",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "assets/js/lanxin-api",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "window.LOCAL_AUTH",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "src=/work/emc/assets",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "/work/emc/vendor/vendor.dll.js",
+    "is_equal": true
+  }]
+}, {
+  "name": "宝兰德-BES管理控制台",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "Baolande",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "BES Developer Team",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/console/index.action",
+    "is_equal": true
+  }]
+}, {
+  "name": "东方通-TongWeb",
+  "logic": "(a&&b)||c",
+  "rule": [{
+    "label": "a",
+    "feature": "<title>TongWeb Server",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "<h3>TongWeb Server",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "Server: TongWeb Server",
+    "is_equal": true
+  }]
+}, {
+  "name": "东方通-THS管理控制台",
+  "logic": "(a&&b&&c)||(d&&e)||(f&&g)",
+  "rule": [{
+    "label": "a",
+    "feature": "东方通科技股份有限公司",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "login.do",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "user_name",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "zui.min.css",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "/console/user/passwdView",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "/static/css/tong.css",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "submit_form",
+    "is_equal": true
+  }]
+}, {
+  "name": "中创-应用服务器软件-管理后台",
+  "logic": "(a&&b)||(c&&d)||e",
+  "rule": [{
+    "label": "a",
+    "feature": "InforSuite AS</title>",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/console/",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "InforSuite AS</title>",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "djConfig",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "InforSuite AS</title><link href=\"/static/css/app",
+    "is_equal": true
+  }]
+}, {
+  "name": "中创-应用服务器软件-InforSuite AS",
+  "logic": "(a&&b)||c||d",
+  "rule": [{
+    "label": "a",
+    "feature": "Administration Console</a>",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "getIP()",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "X-Powered-By: Inforsuite Application Server",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "Server: Inforsuite Application Server",
+    "is_equal": true
+  }]
+}, {
+  "name": "普元-EOS平台",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "eos-web.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "eos_pageMask_div",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "eos-web.js",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "_eosFlowAction",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "eos-web.js",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "coframe",
+    "is_equal": true
+  }]
+}, {
+  "name": "普元-ESB服务治理平台",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "nui.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/coframe/auth/login/login.jsp",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "onCheckUserId",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-YonBIP-数据应用服务模块",
+  "logic": "(a&&b&&c)||(d&&e&&f)||(g&&h)||(i&&j&&k)",
+  "rule": [{
+    "label": "a",
+    "feature": "数据应用服务",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "You need to enable JavaScript",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/bi/portal/",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "数据应用服务",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "You need to enable JavaScript",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "子应用加载中",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "/bi/portal/login",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "<title>Analytics Cloud",
+    "is_equal": true
+  }, {
+    "label": "i",
+    "feature": "/bi/portal/static/media/logo",
+    "is_equal": true
+  }, {
+    "label": "j",
+    "feature": "用友网络",
+    "is_equal": true
+  }, {
+    "label": "k",
+    "feature": "项目分析",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友NC",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "UFIDA Software",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "集中管理",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "UFIDA Software",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "mainTable",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "../Client/Uclient/UClient.dmg",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "chkbox_jumpme",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-NC 5.X版本",
+  "logic": "(a&&b)||(c&&d)||(e&&f)||(g&&h)",
+  "rule": [{
+    "label": "a",
+    "feature": "2011 UFIDA",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "mainTable",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "2010 UFIDA",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "nc_img",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "2009 UFIDA",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "logo/images/nc_logo_bg.gif",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "2008 UFIDA",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "ncLogo",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友NC-Cloud",
+  "logic": "(a&&b&&c)||(d&&e)||(f&&g)",
+  "rule": [{
+    "label": "a",
+    "feature": "platform/pub/welcome.do",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "html/downloadBroswer.html",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "browserVersion",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "yonyou-yyy.js",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "../../../../uap/rbac",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "yonyou-yyy.js",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "padding: 10px",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-NC 4.X版本",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "2006 UFIDA",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "logo/images/nc_logo_bg.gif",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-NC 6.X版本",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "../Client/Uclient/UClient.dmg",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "chkbox_jumpme",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "2015 UFIDA",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "mainTable",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友U8-CRM客户关系管理系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "\\u8425\\u9500\\u670d\\u52a1\\u7ba1\\u7406",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "U8.AA.LoginBO.ErrorDuaLogin",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友U8C",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "U8C",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "cloud云端之旅",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "img/arr.png",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友U9C",
+  "logic": "(a&&b)||(c&&d&&e)",
+  "rule": [{
+    "label": "a",
+    "feature": "《用友云隐私条款》",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/images/u9-record.png",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "shuoming",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "ToU9C",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "boxU9",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友GRP-U8-行政事业内控管理软件",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "行政事业",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "R9iPortal/index.jsp",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "r9_login_mod",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-畅捷通-畅捷CRM",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "jsddm_close",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "www.chanjet.com",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友TurboCRM",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "Ext.EventObject.ENTER",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "watchor.php",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友U8",
+  "logic": "(a&&b&&c)||(d&&e)",
+  "rule": [{
+    "label": "a",
+    "feature": "/indexbusiness.jsp",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "用友",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "login_module",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "U8远程接入官方网站",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "MM_preloadImages",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-畅捷通-CCERP",
+  "logic": "(a&&b&&c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "login_mkbh",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "innerlogin.jsp",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "btclick",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "productCCERP.jpg",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友U8-CDM",
+  "logic": "(a&&b&&c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "login_mkbh",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "innerlogin.jsp",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "btclick",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "productCDM.jpg",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-时空KSOA",
+  "logic": "(a&&b&&c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "login_mkbh",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "innerlogin.jsp",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "btclick",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "productKSOA.jpg",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友GRP-U8-高校内控管理软件",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "R9iPortal/index.jsp",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "r9_login_mod",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "高校内控",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友GRP-U8-Cloud",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "u8Global.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "ivu-form",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "u8Global.js",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "U8Cloud",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友GRP-U8",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "R9iPortal/index.jsp",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "r9_login_mod",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-HCM-Cloud-人力资源管理系统",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "h-c-main-frame",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "window.hcm_env_post",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "hcm_env_pre",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "hcm-footer-tab",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-ClusterEngine集群管理平台",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "tscelogo.png",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "ClusterEngine",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "label.main",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-政务GRP-A++Cloud 政府财务云",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "foundation-datepicker.css",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "datetimepickerValue",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "getYearRgcode.do",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-移动系统管理",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "databasesettingCtr.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "txtPwd",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "register.jsp",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-政务系统",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "inspur",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "政务",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "_eventId",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-天启防火墙",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "Welcome TQ-2000",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "glyphicon-user",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮ERP-GS企业管理系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/cwbase/web/gsprtf/main.aspx",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "content_MainPageUrl",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-企业数字化平台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/framework/assets/style/themes/default/gsp-cloud-web.css",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "updateVcode",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-政务云表单",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "云表单",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "inspur",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "_eventId",
+    "is_equal": true
+  }]
+}, {
+  "name": "浪潮-管理系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "img/inspur_logo.png",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "row-fluid",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-PLM-企业产品创新管理平台",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "javaws.exe",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "plmpwd",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/getLan?method=initLanguage",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "plmuser",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-YonBIP",
+  "logic": "(a&&b)||(c&&d)||(e&&f&&g)||(h&&i&&j)||(k&&l)||(m&&n&&o)",
+  "rule": [{
+    "label": "a",
+    "feature": "window._YMSHOST_",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "yonbiplogin",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "window._YMSHOST_",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "yonbiplogin",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "hashchange",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "yonbip/",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "changeUrl",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "window._YMSHOST_",
+    "is_equal": true
+  }, {
+    "label": "i",
+    "feature": "yonbiplogin",
+    "is_equal": true
+  }, {
+    "label": "j",
+    "feature": "iuap/",
+    "is_equal": true
+  }, {
+    "label": "k",
+    "feature": "Set-Cookie: _WorkbenchCross_",
+    "is_equal": true
+  }, {
+    "label": "l",
+    "feature": "Access-Control-Expose-Headers: X-Ymc-Access-Data",
+    "is_equal": true
+  }, {
+    "label": "m",
+    "feature": "getHostForGlobal",
+    "is_equal": true
+  }, {
+    "label": "n",
+    "feature": "/yonbip-loginpage/main.js",
+    "is_equal": true
+  }, {
+    "label": "o",
+    "feature": "os_fe_isLogin",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶营销运营平台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/resource/httpConnectStat.jsp",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "金蝶",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远OA-A8",
+  "logic": "(a&&b)||(c&&d)||e||f||g",
+  "rule": [{
+    "label": "a",
+    "feature": "/seeyon/main.do?method=login",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/autoinstall/A8",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/seeyon/common/images/A8/favicon.ico",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "login_text_div",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "/seeyon/common/all-min.css?V=V8",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "致远A8+协同管理软件",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "/seeyon/common/images/A8/favicon.ico",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远OA-A6",
+  "logic": "(a&&b)||(c&&d)||(e&&f)||(g&&h)||(i&&j)",
+  "rule": [{
+    "label": "a",
+    "feature": "/seeyon/main.do?method=login",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/autoinstall/A6",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/seeyon/common/images/A6/favicon.ico",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "login_text_div",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "/yyoa/",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "A6_name.png",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "/yyoa/",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "seeyonDownLoadPic",
+    "is_equal": true
+  }, {
+    "label": "i",
+    "feature": "/yyoa/",
+    "is_equal": true
+  }, {
+    "label": "j",
+    "feature": "A6协同",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶云星空-BBC分销子系统",
+  "logic": "(a&&b&&c)||(d&&e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "form-control",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "BBCVersionPics",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/ftl/bos/login.js",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "kdimgContainer",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "client-kd",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "bbcInfo",
+    "is_equal": true
+  }]
+}, {
+  "name": "用友-U9",
+  "logic": "(a&&b&&c)||(d&&e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "/u9/u9.html",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "infoCompany",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "AllInfomationForLogin",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "loginFootInner",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "errorMsgShow",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "用友",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶云苍穹",
+  "logic": "a||(b&&c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "Location: formId=mc_main_console#/dform",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "./mc/css/login-mc.css",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "mc/img/favicon.ico",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "login-phone",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶OA-AI EBC协同云",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "/oa/cmcloud/userBehavior.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Get_Cookie",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/oa/cmcloud/userBehavior.js",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "Get_Cookie",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶云星瀚",
+  "logic": "(a&&b)||(c&&d&&e)",
+  "rule": [{
+    "label": "a",
+    "feature": "\"window.__kd_cdnPath__\"",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "find_pwd",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "kd_cloud_title",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "client-kd",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "kdesign.min.css",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶云星空ERP-管理中心",
+  "logic": "(a&&b&&c)||(d&&e)",
+  "rule": [{
+    "label": "a",
+    "feature": "window.KDResVer",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "管理中心",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "kd.ui.login.css",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "k3CloudManagementCenter",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "/ClientBin/Kingdee.BOS.XPF.App.xap",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶EAS Cloud",
+  "logic": "(a&&b)||(c&&d&&e)",
+  "rule": [{
+    "label": "a",
+    "feature": "Set-Cookie: EASSESSIONID",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Set-Cookie: NAPRoutID",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/eassso/common",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "easSessionId",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "loginForm",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶-Kingdee-K3-cloud",
+  "logic": "(a&&b&&c)||(d&&e&&f)||(g&&h)",
+  "rule": [{
+    "label": "a",
+    "feature": "jqueryk3cloudex.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "KDLogin",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "k3cloud/HTML5",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "jqueryk3cloudex.js",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "silverlightControlHost",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "K3CloudHub.js",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "url=/K3Cloud/HTML5",
+    "is_equal": true
+  }, {
+    "label": "h",
+    "feature": "<title></title>",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶Apusic中间件",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: JDK",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Server: Apusic",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "Server: Apusic Application Server",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "Server: JDK",
+    "is_equal": true
+  }]
+}, {
+  "name": "金蝶Apusic企业服务总线服务器",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: Apusic Enterprise Service Bus",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Server: Servlet",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "<ADDRESS>Apusic Enterprise Service Bus",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "<tr bgcolor",
+    "is_equal": true
+  }]
+}, {
+  "name": "协众软件-协众OA",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "Set-Cookie: CNOAOASESSID",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Set-Cookie: CNOA_language",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "scripts/cnoa.extra.js",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "CNOA_LOGIN_DLOGIN",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "CNOA_LOGIN_USERNAME",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "resources/css/cnoa.all.css",
+    "is_equal": true
+  }]
+}, {
+  "name": "红帆-HFOffice医微云",
+  "logic": "(a&&b)||(c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "./js/flow/jquery.HFContextMenu.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "hf-dialog",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "./js/flow/jquery.HFContextMenu.js",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "./js/gante/lib",
+    "is_equal": true
+  }]
+}, {
+  "name": "红帆-iOffice M2后台管理系统",
+  "logic": "(a&&b)||(c&&d&&e)||(f&&g)",
+  "rule": [{
+    "label": "a",
+    "feature": "<h1>iOffice M2后台管理系统",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Hui-iconfont",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "iOffice",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "TenantId",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "/Content/Site.css",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "广州红帆",
+    "is_equal": true
+  }, {
+    "label": "g",
+    "feature": "/Account/LogOn?class=form",
+    "is_equal": true
+  }]
+}, {
+  "name": "通达OA",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "/templates/",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "UNAME.focus()",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "CheckForm",
+    "is_equal": true
+  }]
+}, {
+  "name": "九思软件-OA",
+  "logic": "a||(b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "Set-Cookie: Path=/jsoa;",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "jsoaUserPwd",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/jsoa/webmail/ajax_util.js",
+    "is_equal": true
+  }]
+}, {
+  "name": "华天动力OA 8000",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "action=\"/OAapp/WebObjects/OAapp.woa/wo/com.oa8000",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "src=\"/htoa/js",
+    "is_equal": true
+  }]
+}, {
+  "name": "华天动力协同OA系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "<htng-login-download-app",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/OAapp/htpages/app/module/",
+    "is_equal": true
+  }]
+}, {
+  "name": "华天动力-业务流程管理系统",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "__EVENTVALIDATION",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/OAapp/WebObjects/OAapp.woa/wo/com.oa8000",
+    "is_equal": true
+  }]
+}, {
+  "name": "蓝凌OA-EKP",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "sys/ui/extend/theme/default/style/icon.css",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "Com_IncludeFile",
+    "is_equal": true
+  }]
+}, {
+  "name": "蓝凌-EIS智慧协同平台",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "蓝凌软件 版权所有",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "src=\"/JSResource/JSResource.aspx?resourceFile=Landray.EIS.Common\"",
+    "is_equal": true
+  }]
+}, {
+  "name": "慧点科技-Indi.Office",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "www/mobile-version.txt",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "indicons_src/",
+    "is_equal": true
+  }]
+}, {
+  "name": "慧点科技-WE.Office",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/dojo/smartdot/css/dojo_smartdot.css",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "office.nsf",
+    "is_equal": true
+  }]
+}, {
+  "name": "金和OA-C6",
+  "logic": "(a&&b)||(c&&d)||(e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "jhqy_land(inti)",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "金和软件",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "c6/Jhsoft.Web.login/PassWord.aspx",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "navigator.appVersion",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "../JHsoft.UI.Lib/skin/default/skin.css",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "../JHSoft.Web.AddMenu",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-M3移动端",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "M3-Server 已启动，您可以使用移动",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "<title>M3 Server",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-DEE中间件",
+  "logic": "(a&&b&&c)||d",
+  "rule": [{
+    "label": "a",
+    "feature": "dee_admin",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "login_box_name",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "media=\"screen\"/>",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "Set-Cookie: deeServerSeesionId",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-FE协作办公平台",
+  "logic": "(a&&b&&c)",
+  "rule": [{
+    "label": "a",
+    "feature": "FE协作办公平台",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "用友软件",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "/static/picture/login-logo.png",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远OA",
+  "logic": "(a&&b&&c)||(d&&e&&f)",
+  "rule": [{
+    "label": "a",
+    "feature": "AddFavorite",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "pageHref",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "辅助程序安装",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "辅助安装程序",
+    "is_equal": true
+  }, {
+    "label": "e",
+    "feature": "pageHref",
+    "is_equal": true
+  }, {
+    "label": "f",
+    "feature": "AddFavorite",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-DEE可视化配置平台",
+  "logic": "a||(b&&c&&d)",
+  "rule": [{
+    "label": "a",
+    "feature": "Set-Cookie: deeClientSeesionId",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "dee_admin",
+    "is_equal": true
+  }, {
+    "label": "c",
+    "feature": "login_box_name",
+    "is_equal": true
+  }, {
+    "label": "d",
+    "feature": "media=\"screen\"/>",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-电子政务协同管理平台G6",
+  "logic": "(a&&b)",
+  "rule": [{
+    "label": "a",
+    "feature": "/seeyon/common/js/passwdcheck.js",
+    "is_equal": true
+  }, {
+    "label": "b",
+    "feature": "/seeyon/common/images/G6/favicon.ico",
+    "is_equal": true
+  }]
+}, {
+  "name": "致远互联-Seeyon-Server",
+  "logic": "a",
+  "rule": [{
+    "label": "a",
+    "feature": "Server: Seeyon-Server",
     "is_equal": true
   }]
 }]

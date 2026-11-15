@@ -1025,7 +1025,9 @@
             {
                 "favicon": {
                     "md5": [
-                        "ed0044587917c76d08573577c8b72883"
+                        "ed0044587917c76d08573577c8b72883",
+                        "89769d49e479bb3aa829190aacb3c97d",
+                        "f320dc136acbccda3cfa51ffdfb8fab6"
                     ],
                     "mmh3": [
                         "-759108386"
@@ -6082,6 +6084,10 @@
         "rule": [
             {
                 "favicon": {
+                    "md5": [
+                        "a342fe863a8e41dff2a55410c7f118c5",
+                        "54b4bf8bd6951c19ae77e286589b0e85"
+                    ],
                     "mmh3": [
                         "-617743584"
                     ]
@@ -8154,6 +8160,10 @@
         "rule": [
             {
                 "favicon": {
+                    "md5": [
+                        "f84fcbff81812677c5427dbb7efef47a",
+                        "61f67fee0c476bbb00c8a503a716c80a"
+                    ],
                     "mmh3": [
                         "1183274548"
                     ]
@@ -8518,6 +8528,417 @@
         ],
         "tag": [
             "cms"
+        ]
+    },
+    {
+        "name": "致远互联-AnalyticsCloud",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "06df70debc95cd7eee8efbbb1807b110"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "致远OA-A8",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "52be1bb8669080af4ece24ed34d117a4"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "致远OA-A6",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "f7ba73c7a76a08d41c766485314658d7"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "华天动力协同OA系统",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "b7093d421dbebf3fdd76545d4457673a"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "蓝凌OA-EKP",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "302464c3f6207d57240649926cfc7bd4"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "九思软件-OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "fc171c32d6d99f006b1ade860753a9db"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "万户网络-ezOFFICE",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "fa1f01d0392d60663d8ce936fe06096a"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "金和OA-C6",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "0c8b24e8b9e6325f33fe2e5b0a646edd"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "红帆-HFOffice医微云",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "f6d5473e0db29c01d7dea5eff452b5b5"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "协众软件-协众OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "b684337bfa0561ffbbd99b0d992b9a45"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "金蝶-Kingdee-K3-cloud",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "b9ff56afd5416a2db227c1d8148f1811",
+                        "24a3554ef79eb8118fe7b8a9bac14545"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "金蝶EAS Cloud",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "e9406d83779323efa737d2a3832ed8c9"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "金蝶云星瀚",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "f0538fdc9398944bda26e1dca92ab2c4"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "金蝶OA-AI EBC协同云",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "eccaffeab1aca7a646b129413c553ca6"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "用友-YonBIP-数据应用服务模块",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "4f3003642bf102dcefa1eadd42d686b8"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "用友U8",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "9b13db044fc2558258312b5a5f9a6871"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "用友-畅捷通-畅捷CRM",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "223dcd70f982801e9177078a818a9b59"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "用友GRP-U8",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "b41be1ccc6f9f2894e0cfcf23acf5fc0"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "浪潮-政务系统",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "eb3e9d3deac2bc93c0a48f5fc6946d14"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "普元-应用服务器-管理后台",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "9fcfb1f2d5b2d7180e2e53f4eb51dc9e"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "宝兰德-BES管理控制台",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "3a56eea9f1f6d613c9430340b29af872"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "微擎-公众号管理系统",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "50f443b58e0cccdac1968f9c3f7217bc",
+                        "16774d9655a461762e646d94dfcc3a58",
+                        "eab7a9f8c6061fa42ab57d90d475cc87"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "易校科技-轻流无代码系统",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "11ebda904809c9375f83ffb4f9d3b500"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "织信（INFORMAT ）低代码开发平台",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "f5b412b02cb7045f7096c28c3bbdf114"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "腾讯-企业邮箱",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "32dcc581961e06dfb9a0ddb11a9cc46d"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "腾讯云-堡垒机",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "6f0a3220a15262401196afa3f126274f"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "兰德网络-O2OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "233b090942ef3726fab223078af42164"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "勾股OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "007e0ff63ea93510d0fce7e706cbda83"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "RuoYi Office-办公一体化平台",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "1cf35f0cf4f32c9c14a636acf0dc76bf"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "Micro-OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "f06c20133f62bcef11fd8c5bfa003cb6"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "心通达OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "0ca7c46a7fee6152dd2c133e81e70dfa"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "oasys OA",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "127f7a2c67045447809551d5ea903351"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "agile-admin",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "ad143a54944ce48eefb3af0059db4dc9"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "name": "云杰URP财务管理系统",
+        "rule": [
+            {
+                "favicon": {
+                    "md5": [
+                        "b8a984abbc9447f093de75c3d4946634"
+                    ]
+                }
+            }
         ]
     }
 ]
