@@ -83,10 +83,10 @@ var DefaultPorts = "21,22,23,25,80,81,82,83,84,85,86,87,88,89,90,91,92,98,99,110
 var PortsArrayHasPlugin = []string{}
 
 type HostInfo struct {
-	Host    string
-	Ports   string
-	Url     string
-	PocName []string //要测试的poc名，在PocDatas中的。仅字符串部分包含就会测试
+	Host   string
+	Ports  string
+	Url    string
+	Frames []string //指纹识别命中的原始产品名（fingers 引擎输出，含 favicon），BL-POC-003 供 POC 智能定向查 binds
 }
 
 type PocInfo struct {

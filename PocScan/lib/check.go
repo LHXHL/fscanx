@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"fmt"
 	"github.com/google/cel-go/cel"
-	"github.com/killmonday/fscanx/PocScan/info"
 	"github.com/killmonday/fscanx/common"
 	"math/rand"
 	"net/http"
@@ -536,15 +535,6 @@ func evalset1(env *cel.Env, variableMap map[string]interface{}, k string, expres
 		variableMap[k] = fmt.Sprintf("%v", out)
 	}
 	return err, fmt.Sprintf("%v", variableMap[k])
-}
-
-func CheckInfoPoc(infostr string) string {
-	for _, poc := range info.PocDatas {
-		if strings.Contains(infostr, poc.Name) {
-			return poc.Alias
-		}
-	}
-	return ""
 }
 
 func GetHeader(header map[string]string) (output string) {

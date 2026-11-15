@@ -125,9 +125,8 @@ func TestScanByChan(t *testing.T) {
 //		// 端口探测、协议识别结束后，从探测结果列表alivePortInfoSlice中获取 ip、port、识别出的协议，然后进一步对端口上的应用服务进行识别、提取更多有用信息，如http、smb、rdp等
 //		for _, portInfoOfAlive := range alivePortInfoSlice {
 //			targetInfo := common.HostInfo{
-//				Host:    portInfoOfAlive.ip,
-//				Ports:   portInfoOfAlive.port,
-//				PocName: inputInfo.PocName,
+//				Host:  portInfoOfAlive.ip,
+//				Ports: portInfoOfAlive.port,
 //			}
 //			protocol := portInfoOfAlive.protocol
 //			if protocol == "" {
@@ -177,10 +176,9 @@ func TestScanByChan(t *testing.T) {
 //	//扫描纯url
 //	for _, url := range common.Urls {
 //		targetInfo := common.HostInfo{
-//			Host:    inputInfo.Host,
-//			Ports:   inputInfo.Ports,
-//			Url:     url,
-//			PocName: inputInfo.PocName,
+//			Host:  inputInfo.Host,
+//			Ports: inputInfo.Ports,
+//			Url:   url,
 //		}
 //		CallScanTaskByProtocolAsync("http", &targetInfo, &wg)
 //	}

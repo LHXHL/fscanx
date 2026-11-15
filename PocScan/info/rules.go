@@ -11,11 +11,6 @@ type Md5Data struct {
 	Md5Str string
 }
 
-type PocData struct {
-	Name  string
-	Alias string
-}
-
 var RuleDatas = []RuleData{
 	{"宝塔", "code", "(app.bt.cn/static/app.png|安全入口校验失败|<title>入口校验失败</title>|href=\"http://www.bt.cn/bbs)"},
 	{"深信服防火墙类产品", "code", "(SANGFOR FW)"},
@@ -292,23 +287,4 @@ var Md5Datas = []Md5Data{
 	{"ATLASSIAN-Confluence", "b91d19259cf480661ef93b67beb45234"},
 	{"activemq", "05664fb0c7afcd6436179437e31f3aa6"},
 	{"coremail", "ad74ff8f9a2f630fc2c5e6b3aa0a5cb8"},
-}
-
-var PocDatas = []PocData{
-	{"致远OA", "seeyon"},
-	{"泛微OA", "weaver"},
-	{"通达OA", "tongda"},
-	{"蓝凌OA", "landray"},
-	{"ThinkPHP", "thinkphp"},
-	{"Nexus", "nexus"},
-	{"齐治堡垒机", "qizhi"},
-	{"weaver-ebridge", "weaver-ebridge"},
-	{"weblogic", "weblogic"},
-	{"zabbix", "zabbix"},
-	{"VMware vSphere", "vmware"},
-	{"Jboss", "jboss"},
-	{"用友", "yongyou"},
-	{"用友IUFO", "yongyou"},
-	{"coremail", "coremail"},
-	{"金山", "kingsoft"},
 }

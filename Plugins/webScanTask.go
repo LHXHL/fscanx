@@ -250,6 +250,8 @@ func WebScanController(targetInfo *common.HostInfo) error {
 	}()
 	if common.Scantype == "webpoc" {
 		//仅PoC扫描。用户设置扫描类型是poc扫描，仅做poc扫描
+		ensureURL(targetInfo) // BL-POC-001：非 URL 输入路径构造 Url，防 PocScan 空 Url 越界 panic
+		detectProductsSilent(targetInfo) // BL-POC-003：先静默取首页指纹，供智能定向（无命中不打）
 		PocScan.PocScan(targetInfo)
 		return nil
 	}
@@ -266,20 +268,30 @@ func WebScanController(targetInfo *common.HostInfo) error {
 	return err
 }
 
+// ensureURL 为无 Url 的目标（-h ip -p port 输入路径）构造标准 URL。
+// BL-POC-001 提取：WebScanWorker 与 webpoc 直达分支共用——后者此前跳过构造，
+// PocScan 对空 Url 做字符串切片取 buf[:3] 越界 panic 被 recover 吞掉，表现为零请求。
+func ensureURL(targetInfo *common.HostInfo) {
+	if targetInfo.Url != "" {
+		return // 已有 Url（-u / -dp 输入）不重写，防止用 Ports 占位值覆盖
+	}
+	switch targetInfo.Ports {
+	case "80":
+		targetInfo.Url = fmt.Sprintf("http://%s", targetInfo.Host)
+	case "443":
+		targetInfo.Url = fmt.Sprintf("https://%s", targetInfo.Host)
+	default:
+		host := fmt.Sprintf("%s:%s", targetInfo.Host, targetInfo.Ports)
+		protocol := IdentifyProtocol(host, common.TcpTimeout)
+		targetInfo.Url = fmt.Sprintf("%s://%s:%s", protocol, targetInfo.Host, targetInfo.Ports)
+	}
+}
+
 func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 	//处理url并调用web扫描逻辑、web跳转控制及扫描等
 	if targetInfo.Url == "" {
 		// 如果url为空，说明输入是ip，此处构造url
-		switch targetInfo.Ports {
-		case "80":
-			targetInfo.Url = fmt.Sprintf("http://%s", targetInfo.Host)
-		case "443":
-			targetInfo.Url = fmt.Sprintf("https://%s", targetInfo.Host)
-		default:
-			host := fmt.Sprintf("%s:%s", targetInfo.Host, targetInfo.Ports)
-			protocol := IdentifyProtocol(host, common.TcpTimeout)
-			targetInfo.Url = fmt.Sprintf("%s://%s:%s", protocol, targetInfo.Host, targetInfo.Ports)
-		}
+		ensureURL(targetInfo)
 	} else {
 		// url存在，说明输入的是域名资产，检查格式是否符合标准url，不符合就构造一下。否则不做任何操作
 		if !strings.Contains(targetInfo.Url, "://") {
@@ -331,7 +343,7 @@ func WebScanWorker(targetInfo *common.HostInfo) (err error) {
 		}
 	}
 	// 链尾行输出：favicon 探测开启且命中时合并指纹；targetInfo.Url 此刻为最终 URL
-	emitFinalLineWithFavicon(pending, targetInfo.Url)
+	emitFinalLineWithFavicon(pending, targetInfo.Url, targetInfo)
 	if err == nil && seeds.anyBodyOK {
 		// 目录扫描注册门槛：首页链至少一次响应 body 完整——err 不注册省 70 次
 		// 注定失败的请求；body 全黑洞不注册省 70 次注定超时的请求（根路径都拿不到
@@ -640,6 +652,11 @@ func DoWebScan(targetInfo *common.HostInfo, scanType int, firstUrl string) (erro
 	// 检测web指纹
 	frames, err := Engine.DetectContent(body)
 	products := frames.String()
+
+	// BL-POC-003：原始产品名随 HostInfo 携带（favicon 命中在链尾另行补充），供 POC 智能定向查 binds
+	for name := range frames {
+		targetInfo.Frames = append(targetInfo.Frames, name)
+	}
 
 	// 处理web识别的结果
 	result := strings.Builder{}

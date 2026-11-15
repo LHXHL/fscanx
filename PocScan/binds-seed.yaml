@@ -1,0 +1,86 @@
+# BL-POC-003 内置绑定种子：由 plans/scripts/gen_binds_seed.go 从内置 poc 库生成快照。
+# product 为 fingers 引擎输出产品名形态；外置 binds.yaml 同 product 覆盖、异名追加。
+binds:
+  - product: seeyon
+    pocs:
+      - poc-yaml-seeyon-a6-employee-info-leak
+      - poc-yaml-seeyon-a6-test-jsp-sql
+      - poc-yaml-seeyon-ajax-unauthorized-access
+      - poc-yaml-seeyon-cnvd-2020-62422-readfile
+      - poc-yaml-seeyon-oa-a8-m-information-disclosure
+      - poc-yaml-seeyon-oa-cookie-leak
+      - poc-yaml-seeyon-session-leak
+      - poc-yaml-seeyon-setextno-jsp-sql
+      - poc-yaml-seeyon-unauthoried
+      - poc-yaml-seeyon-wooyun-2015-0108235-sqli
+      - poc-yaml-seeyon-wooyun-2015-148227
+  - product: weaver
+    pocs:
+      - poc-yaml-weaver-E-Cology-getSqlData-sqli
+      - poc-yaml-weaver-ebridge-file-read
+      - poc-yaml-weaver-oa-arbitrary-file-upload
+      - poc-yaml-weaver-oa-eoffice-v9-upload-getshell
+  - product: tongda
+    pocs:
+      - poc-yaml-tongda-meeting-unauthorized-access
+      - poc-yaml-tongda-oa-v11.9-api.ali.php-fileupload
+      - tongda-insert-sql-inject
+      - tongda-user-session-disclosure
+      - tongda-v2017-uploadfile
+  - product: landray
+    pocs:
+      - poc-yaml-landray-oa-custom-jsp-fileread
+  - product: thinkphp
+    pocs:
+      - poc-yaml-thinkphp-v6-file-write
+      - poc-yaml-thinkphp5-controller-rce
+      - poc-yaml-thinkphp5023-method-rce
+  - product: nexus
+    pocs:
+      - poc-yaml-nexus-cve-2019-7238
+      - poc-yaml-nexus-cve-2020-10199
+      - poc-yaml-nexus-cve-2020-10204
+      - poc-yaml-nexus-default-password
+      - poc-yaml-nexusdb-cve-2020-24571-path-traversal
+  - product: qizhi
+    pocs:
+      - poc-yaml-qizhi-fortressaircraft-unauthorized
+  - product: weaver-ebridge
+    pocs:
+      - poc-yaml-weaver-ebridge-file-read
+  - product: weblogic
+    pocs:
+      - poc-yaml-weblogic-console-weak
+      - poc-yaml-weblogic-cve-2017-10271
+      - poc-yaml-weblogic-cve-2019-2725
+      - poc-yaml-weblogic-cve-2019-2729-1
+      - poc-yaml-weblogic-cve-2019-2729-2
+      - poc-yaml-weblogic-cve-2020-14750
+      - poc-yaml-weblogic-ssrf
+  - product: zabbix
+    pocs:
+      - poc-yaml-zabbix-authentication-bypass
+      - poc-yaml-zabbix-cve-2016-10134-sqli
+      - poc-yaml-zabbix-default-password
+  - product: vmware
+    pocs:
+      - poc-yaml-CVE-2022-22954-VMware-RCE
+      - poc-yaml-vmware-vcenter-arbitrary-file-read
+      - poc-yaml-vmware-vcenter-cve-2021-21985-rce
+      - poc-yaml-vmware-vcenter-unauthorized-rce-cve-2021-21972
+      - poc-yaml-vmware-vrealize-cve-2021-21975-ssrf
+  - product: jboss
+    pocs:
+      - poc-yaml-CVE-2017-7504-Jboss-serialization-RCE
+      - poc-yaml-jboss-cve-2010-1871
+      - poc-yaml-jboss-unauth
+  - product: yongyou
+    pocs:
+      - poc-yaml-yongyou-u8-oa-sqli
+  - product: coremail
+    pocs:
+      - poc-yaml-coremail-cnvd-2019-16798
+  - product: kingsoft
+    pocs:
+      - poc-yaml-kingsoft-v8-default-password
+      - poc-yaml-kingsoft-v8-file-read

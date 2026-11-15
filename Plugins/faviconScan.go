@@ -261,7 +261,9 @@ func mergeFaviconLine(prefix, products, suffix string, frames fpcommon.Framework
 
 // emitFinalLineWithFavicon 链尾行统一出口：favicon 探测开启且命中时先合并指纹再输出，
 // 关闭/失败/未命中时原样输出（与无本功能时逐字节一致）。无行（pending 为空）时 no-op。
-func emitFinalLineWithFavicon(p scanPresents, finalURL string) {
+// BL-POC-003：favicon 命中的产品名同步进 targetInfo.Frames，供 POC 智能定向
+// （favicon-only 产品——无文本特征——的定向依赖此处）。
+func emitFinalLineWithFavicon(p scanPresents, finalURL string, targetInfo *common.HostInfo) {
 	if !p.hasLine() {
 		return
 	}
@@ -270,6 +272,9 @@ func emitFinalLineWithFavicon(p scanPresents, finalURL string) {
 		if icon := detectSiteFavicon(finalURL, p.iconHrefs, p.iconInline); len(icon) > 0 {
 			if frames := matchFaviconFrames(icon); len(frames) > 0 {
 				line = mergeFaviconLine(p.linePrefix, p.lineProducts, p.lineSuffix, frames)
+				for name := range frames {
+					targetInfo.Frames = append(targetInfo.Frames, name)
+				}
 			}
 		}
 	}

@@ -395,10 +395,9 @@ ScanIpContainPort:
 	// 3.对于url目标，直接web扫描
 	for _, url := range common.Urls {
 		targetInfo := common.HostInfo{
-			Host:    inputInfo.Host,
-			Ports:   inputInfo.Ports,
-			Url:     url,
-			PocName: inputInfo.PocName,
+			Host:  inputInfo.Host,
+			Ports: inputInfo.Ports,
+			Url:   url,
 		}
 		CallScanTaskByProtocolAsync("http", &targetInfo, &wg)
 	}

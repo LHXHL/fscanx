@@ -93,6 +93,7 @@ func InitHttpClient(HttpProxy string, Timeout time.Duration) error {
 
 type Poc struct {
 	Name   string  `yaml:"name"`
+	Always bool    `yaml:"always"` // 无条件全打型（如 .git 目录探测）：空 -pocname 智能定向时无条件执行，不依赖指纹命中
 	Set    StrMap  `yaml:"set"`
 	Sets   ListMap `yaml:"sets"`
 	Rules  []Rules `yaml:"rules"`
@@ -197,18 +198,6 @@ type Detail struct {
 	Version     string   `yaml:"version"`
 }
 
-func LoadMultiPoc(Pocs embed.FS, pocname string) []*Poc {
-	var pocs []*Poc
-	for _, f := range SelectPoc(Pocs, pocname) {
-		if p, err := LoadPoc(f, Pocs); err == nil {
-			pocs = append(pocs, p)
-		} else {
-			fmt.Println("[-] load poc ", f, " error:", err)
-		}
-	}
-	return pocs
-}
-
 func LoadPoc(fileName string, Pocs embed.FS) (*Poc, error) {
 	p := &Poc{}
 	yamlFile, err := Pocs.ReadFile("pocs/" + fileName)
@@ -223,20 +212,6 @@ func LoadPoc(fileName string, Pocs embed.FS) (*Poc, error) {
 		return nil, err
 	}
 	return p, err
-}
-
-func SelectPoc(Pocs embed.FS, pocname string) []string {
-	entries, err := Pocs.ReadDir("pocs")
-	if err != nil {
-		fmt.Println(err)
-	}
-	var foundFiles []string
-	for _, entry := range entries {
-		if strings.Contains(entry.Name(), pocname) {
-			foundFiles = append(foundFiles, entry.Name())
-		}
-	}
-	return foundFiles
 }
 
 func LoadPocbyPath(fileName string) (*Poc, error) {

@@ -262,6 +262,10 @@ func ParseScantype(Info *HostInfo) {
 			PortsInput = Webport
 		case "webonly":
 			PortsInput = Webport
+		case "webpoc":
+			// BL-POC-001：webpoc 此前落 default 拿 PluginPortMap 的调度键 1000003 当端口
+			// （永远非法），-m webpoc 对 ip 输入零发现零请求；与 web/webonly 对齐用 Webport
+			PortsInput = Webport
 		case "ms17010":
 			PortsInput = "445"
 		case "cve20200796":

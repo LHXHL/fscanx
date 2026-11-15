@@ -362,7 +362,7 @@ func TestNoFaviconDisable(t *testing.T) {
 		lineProducts: "http://x/",
 		lineSuffix:   "\t200\t(t)\tPHP",
 	}
-	emitFinalLineWithFavicon(p, srv.URL)
+	emitFinalLineWithFavicon(p, srv.URL, &common.HostInfo{})
 	if requested {
 		t.Fatal("NoFavicon 开启时不应发起任何图标请求")
 	}
