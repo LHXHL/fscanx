@@ -324,7 +324,9 @@ func (n *NTLMv2) ComputeResponseV2(respKeyNT, respKeyLM, serverChallenge, client
 	tempBuff.Write(clientChallenge)
 	tempBuff.Write([]byte{0x00, 0x00, 0x00, 0x00})
 	tempBuff.Write(serverInfo)
-	tempBuff.Write([]byte{0x00, 0x00, 0x00, 0x00})
+	// 注: [MS-NLMP] 2.2.2.2 NTLMv2 blob 到 AV_PAIR 列表结尾为止, serverInfo(TargetInfo) 已以
+	// MSV_AV_EOL(4 零) 结尾, 不再追加 padding(此前多写 4 零导致 NTProofStr/SessionBaseKey 全错,
+	// NLA 认证必失败, BL-RDP-001 修复)
 
 	ntBuf := bytes.NewBuffer(serverChallenge)
 	ntBuf.Write(tempBuff.Bytes())

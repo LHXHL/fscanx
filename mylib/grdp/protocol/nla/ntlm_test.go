@@ -24,10 +24,8 @@ func TestNewNegotiateMessage(t *testing.T) {
 }
 
 func TestNTLMv2_ComputeResponse(t *testing.T) {
-	// 2026-11-15 取证: LM 响应与期望一致(HMAC 基础正确), 但 NT 摘要与 SessionBaseKey 不符,
-	// 实际输出 blob 尾部比期望多 4 字节 0(ntlm.go ComputeResponseV2 tempBuff 末尾多写),
-	// 嫌疑为重构改坏 NTLMv2 响应构造 → RDP NLA 认证可能失效, 修复需真机 RDP 验证
-	t.Skip("断言自 974150e 起未运行过, 现实现与上游向量不符(多 4 字节 0 嫌疑), 待专项修复(见 BL-BLD-001 状态记录)")
+	// BL-RDP-001 修复后恢复真跑: 此前实现 tempBuff 末尾多写 4 零(违反 [MS-NLMP] 2.2.2.2),
+	// 导致 NT 摘要与 SessionBaseKey 与本向量不符, 已删(BL-BLD-001 状态记录有取证链)
 	ntlm := nla.NewNTLMv2("", "", "")
 
 	ResponseKeyNT, _ := hex.DecodeString("39e32c766260586a9036f1ceb04c3007")

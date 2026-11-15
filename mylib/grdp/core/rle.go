@@ -6,6 +6,11 @@ import (
 )
 
 func CVAL(p *[]uint8) int {
+	if len(*p) == 0 {
+		// FreeRDP C 直译缺守卫: 输入耗尽时 C 读越界返回垃圾, Go 直接 panic;
+		// 补 0 填充语义对齐 C 行为, 防御截断/异常码流(BL-RDP-001)
+		return 0
+	}
 	a := int((*p)[0])
 	*p = (*p)[1:]
 	return a

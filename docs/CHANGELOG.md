@@ -2,6 +2,10 @@
 
 ## 2026-11-15
 
+- BL-RDP-001 用户真机验收闭合（fscanx 主程序对 Win11/NLA 目标 RDP 爆破命中），从控制台移除；本日累计闭合 5 item，23 item 中 18 已验收
+
+- RDP NLA 认证回归修复（BL-RDP-001，BL-BLD-001 发现移交）：ComputeResponseV2 的 tempBuff 在 AV_PAIR 列表（已含 EOL）后多写 4 零，违反 MS-NLMP 2.2.2.2，NTProofStr/SessionBaseKey 全错——修复前主程序 RDP 爆破对 NLA 目标全废（正确口令也必失败）。三重裁定闭环：规范比对→单测向量恢复真跑 PASS→Win11 真机双对照（正确口令 flag=true / 错误口令 false）。附带：DERT 断言期望按真机实证更新（Version 字段无害演进）、rle CVAL 补长度守卫（C 直译 panic 缺陷）、TestSum 恢复真跑。探针沉淀 plans/scripts/go/rdpprobe、rdpcrack。
+
 - 重构遗留编译与测试债务修复（BL-BLD-001）：5 个构建失败包全修复（cmd 三工具补 fingers import、examples 改 NewWappalyzeEngine、rdpgfx 补回 ChannelSender 字段）+ 4 个测试文件编译修复（engine_test int→string×2、cssp_test 字节字面量、ntlm_test API 更名）+ 14 个测试数据判据 skip 化（数据裁剪自愈判据）。go build ./... 零错误、finger 域 6 包测试全 ok。重要发现：RDP NLA 认证回归嫌疑（ComputeResponseV2 blob 多 4 字节 0，LM 正确 NT 不符，待真机裁定）、DERT 编码漂移、rle 越界——三处真问题测试 skip 注明待专项。
 
 - BL-FOC-001~004 用户真机验收闭合（重点标记 `[*产品名]` 输出正常、若依指纹命中），从控制台移除；本日累计闭合 4 item，21 item 中 17 已验收
