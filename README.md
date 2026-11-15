@@ -12,8 +12,8 @@ fscan 是一款开源的企业内网资产梳理软件，fscanx 是基于它的�
 | 大网段智能探测 | A/B 段先用网关位采样（默认 1,2,253,254 的 80 端口 + icmp）筛出存活 C 段再细扫 | `-auto` `-am` `-ap` `-ai` `-atime` |
 | 端口扫描 | 区间/列表/文件/默认 80 端口集，可增删 | `-p` `-pa` `-pn` `-portf` `-t` |
 | 协议指纹识别 | gonmap 引擎，30+ 常见协议探针优选（http/ssh/smb/rdp/mysql/redis...），socks5 下无误报 | `-nmap` |
-| web 指纹识别 | fingers（hash-only：favicon/body 哈希，零误报）+ goby（布尔逻辑文本指纹）双引擎，重点资产标记，指纹库可自行维护 | — |
-| 目录扫描 | 每个存活站点用内置 70 条指纹导向路径探隐藏后台（/seeyon/、/druid/...），只报新指纹 | `-dir` `-dirf` |
+| web 指纹识别 | fingers（hash-only：favicon/body 哈希，零误报）+ goby（布尔逻辑文本指纹）双引擎；favicon 图标自动抓取哈希识别；重点关注产品输出 `[*产品名]` 终端红色高亮；指纹库可自行维护 | `-nofavicon` |
+| 目录扫描 | 每个存活站点用内置 76 条指纹导向路径探隐藏后台（/seeyon/、/druid/...），只报新指纹 | `-dir` `-dirf` |
 | web 信息收集 | 标题、多形态 js 跳转提取、https 证书（CN/O/OU/域名）、邮箱、copyright | `-tn` `-wt` |
 | ip 归属地 | 同目录放 qqwry.dat 自动加载，输出 ip 定位 | — |
 | 弱口令爆破 | smb/ssh/ftp/rdp/mysql/mssql/redis/... 自定义用户口令字典 | `-br` `-bt` `-user` `-pwd` `-userf` `-pwdf` |
@@ -140,7 +140,7 @@ fscanx -socks5 socks5://127.0.0.1:1080 -h 192.168.1.1/24 -br -p 21,22,445,3306,6
 fscanx -h 192.168.1.1/24 -br -p 445 -user administrator,admin -pwd 123456,admin
 ```
 
-**（9）rdp 探测 / 截图 / 爆破**。`-screen` 对 win2003+ 的 RDP/SSL 协议免登录截屏（仅 NLA 协议的机器截屏为黑），rdp 传图延迟高，`-time` 调大些：
+**（9）rdp 探测 / 截图 / 爆破**。`-screen` 对 win2003+ 免登录截屏（适用于 NLA 关闭的目标；NLA 目标握手即需凭据，免登录截屏不适用），rdp 传图延迟高，`-time` 调大些：
 
 ```bash
 fscanx -h 192.168.181.1/24 -p 3389 -nmap -screen -time 18
@@ -274,6 +274,10 @@ fscanx -nmap -iface 10.202.100.100 -h 192.168.0.0/16
 
 指纹编写参考 [fingers SDK 文档](https://wiki.chainreactors.red/libs/fingers/sdk/#%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C)。goby 库历史垃圾指纹多、易误报，已清理过两轮（2025.10 与 2026.11），遇到新误报继续清。
 
+**favicon 哈希指纹**：浏览器本地打开根目录 `icon_hash.html`，输入目标 url（或上传 ico 文件）即得 md5/mmh3 双哈希，产出的指纹片段（4 空格缩进与库文件一致）可直接贴进 `fingers_http.json`。
+
+**重点关注标记（focus）**：goby 条目加 `"focus": true`、fingers 条目加 `focus: true`，命中后输出 `[*产品名]` 并在终端红色高亮（落盘文件保持纯文本）。护网常见脆弱产品（Shiro/Fastjson/泛微/致远/用友/若依等）已打标 452 条。
+
 **协议探针**：修改 `mylib/finger/nmap/` 相关探针数据源可增删协议识别；注意每端口 gonmap 探测超时只够 4 个探针（`-time` 的 4 倍），加探针需同步评估。
 
 **结果表格化**：FscanOutput 脚本把 result.txt 转成直观表格（端口/存活段/系统/弱口令/web 产品分表），打包成 exe 后直接把 result.txt 拖上去即可。
@@ -284,6 +288,7 @@ fscanx -nmap -iface 10.202.100.100 -h 192.168.0.0/16
 
 > 逐条细粒度更新进 [docs/CHANGELOG.md](docs/CHANGELOG.md)，此处保留版本级时间线。
 
+- **2026.11.15**，指纹重点关注与 favicon 图标识别：focus 产品输出 `[*产品名]` 终端红色高亮（goby 护网脆弱产品打标 452 条，favicon 哈希命中路径双引擎均传递标记）；favicon 图标自动抓取 md5/mmh3 哈希识别（默认开启，`-nofavicon` 关闭，每站点最多 2 个额外请求）；修复 RDP 两处协议层缺陷——NLA 认证构造回归（修复前对 NLA 目标爆破必失败）与截屏黑块（低色深映射 + 绘制指令能力宣告退化）；目录扫描内置路径 70→76 条。
 - **2026.11.14**，fingers 指纹库误报清理：删除六类高危误报指纹 60 条 + 2 字中文公司名特征，4349→4289；新增纯 Go 重打包工具 `cmd/pack` 替代 gzip 命令依赖。
 - **2026.11.14**，fingers 指纹库裁剪为 hash-only：清理后误报仍偏高，删除全部文本特征指纹（3770 条整删 + 124 条混合指纹只留哈希），4289→519，fingers 只保留 favicon/body 哈希类零误报特征，文本识别由 goby 引擎承担。
 - **2026.11.14**，新增指纹导向目录扫描 `-dir`/`-dirf`：轮询环调度流量均摊、四道判定闸免疫软 404、站点聚合输出，发现根路径之外的隐藏后台。

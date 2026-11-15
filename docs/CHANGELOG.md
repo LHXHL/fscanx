@@ -2,6 +2,8 @@
 
 ## 2026-11-15
 
+- README 与当前实现总览同步近几天功能：功能表补 favicon 图标抓取识别与 focus `[*产品名]` 红色高亮、目录字典 70→76 条；rdp 案例修正截屏描述（黑块已修，NLA 目标免登录截屏属设计限制不适用）；维护指南补 icon_hash.html 哈希工具与 focus 打标方法；更新历史加 2026.11.15 版本级条目；实现总览补 faviconScan.go 行与 log.go focus 红色、核对日期 11-13→11-15。
+
 - focus 产品终端红色高亮（BL-FOC-006）：`[+] Product` 行指纹段内 `[*产品名]` token 整体红色打印（FgRed，与 `[+]` 漏洞行同语义），其余 token 白/青交替不变。common/log.go 新增 `printFpsTail`：`Contains(fps, "[*")` 门控——无 focus 行走原 Println 路径逐字节不变（零性能影响，着色全在 SaveLog 打印 goroutine）；命中按 `, ` 分 token 逐段 Print（全走 color.Output，Windows conhost 翻译路径不变）。落盘文件/JSON 写原始串不经渲染，保持纯文本；`-nocolor` 不受影响。单测 4 用例（无 focus 逐字节回归/focus 红码包裹/段首段尾含版本/空段 3 段 DC banner 行不 panic），build+vet+common/Plugins/finger 全量测试通过；用户真机验收通过，闭合。
 
 - BL-FP-005、BL-FOC-005 用户真机验收闭合（华府站输出 `[*若依-ruoyi], [*若依管理系统]` 双引擎带星号 + 未命中零干扰），从控制台移除；本日累计闭合 8 item，26 item 中 21 已验收（另：FOC-006 同日闭合，累计 9 item，27 item 中 22 已验收）
