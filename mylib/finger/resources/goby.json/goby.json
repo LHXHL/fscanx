@@ -10599,12 +10599,8 @@
   }]
 }, {
   "name": "debian-操作系统",
-  "logic": "a||b",
+  "logic": "b",
   "rule": [{
-    "label": "a",
-    "feature": "Debian",
-    "is_equal": true
-  }, {
     "label": "b",
     "feature": "<h1>Welcome to nginx on Debian!</h1>",
     "is_equal": true
