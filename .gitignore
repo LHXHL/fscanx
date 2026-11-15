@@ -22,3 +22,9 @@ fx
 qqwry.dat
 masscan_linux
 .claude/skills/project-control-plane/scripts/__pycache__/check-sync.cpython-310.pyc
+
+# fscanx-web 前端（vue-element-plus-admin monorepo，BL-FOC-004 前端重做）
+web/node_modules/
+web/apps/*/dist*/
+web/**/node_modules/
+web/**/.cache/
