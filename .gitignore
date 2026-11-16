@@ -33,3 +33,4 @@ cmd/fscanx-web/static/assets/
 # 运行时数据与本地产物
 binds.db
 binds.yaml
+finger.db

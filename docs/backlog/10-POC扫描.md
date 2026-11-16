@@ -9,8 +9,9 @@ POC 扫描模块：修复并重构 Web POC 检测的触发与加载机制。起�
 | BL-POC-003 | 指纹定向触发管道 | P1 | 已完成 | 已验收 |
 | BL-POC-004 | 独立 fscanx-web 维护端一期 | P2 | 已完成 | 已验收 |
 | BL-POC-005 | 绑定关系页交互重构 + POC 页快捷绑定 | P1 | 已完成 | 已验收 |
-| BL-POC-006 | 指纹库 SQLite 存储化 | P2 | 未开始 | 未验收 |
+| BL-POC-006 | 指纹库 SQLite 化 + 结构化条目编辑（CRUD） | P1 | 已完成 | 已验收 |
 | BL-POC-007 | fscanx-web 登录认证（默认账号） | P1 | 已完成 | 已验收 |
+| BL-POC-008 | 内置 POC 写回编辑（保存目标：内置源 / 外置） | P1 | 已完成 | 已验收 |
 
 ## BL-POC-001 触发层修复：-poc 零请求止血
 
@@ -275,51 +276,60 @@ POC 扫描模块：修复并重构 Web POC 检测的触发与加载机制。起�
 - 2026-11-16：验收条件全勾（实测证据见各条），置已完成+待验收。UI 观感（排版/交互手感）待用户浏览器确认后验收闭合。
 - 2026-11-16：验收闭合（用户浏览器实测确认测试通过）。置已验收。
 
-## BL-POC-006 指纹库 SQLite 存储化
+## BL-POC-006 指纹库 SQLite 化 + 结构化条目编辑（CRUD）
 
 - 模块：POC 扫描
-- 优先级：P2
-- 状态：未开始
+- 优先级：P1
+- 状态：已完成
 - 当前阶段：持续迭代
-- 价值：指纹维护从"textarea 整文手改 + 全文回写"升级为单条目 CRUD（增删改查按条目落库，免整文搬移）；SQLite 主存 + 明文 JSON 快照双轨后，手改文件自动吸收、重打包管线不变、扫描器零改动（与 BL-POC-005 的 binds 存储化同模式，方向用户已认可）。
+- 价值：指纹维护从"textarea 整文手改数千条 JSON"升级为条目列表+结构化表单+完整增删改复制——修改面收敛到单条、格式由重生成器保证，改完 pack 供下次编译；生效模型不变（保持编译嵌入，用户 2026-11-16 重申"指纹不需要外置，只修改内置指纹 json"）。
 - 关联模块文档：docs/modules/10-POC扫描模块.md
-- 关联计划：—（未开始）
-- 关联代码：cmd/fscanx-web/binds_db.go（同模式参照）、cmd/fscanx-web/api_finger.go、mylib/finger/resources/、mylib/finger/packlib/
-- 验收状态：未验收
+- 关联计划：plans/2026-11-16-BL-POC-006-指纹结构化CRUD.md
+- 关联代码：cmd/fscanx-web/finger_db.go、cmd/fscanx-web/api_finger.go、cmd/fscanx-web/finger_db_test.go、web/apps/admin/src/views/Finger/Finger.vue、web/apps/admin/src/api/finger/index.ts
+- 验收状态：已验收
 
 ### 方案（立项时必填）
 
-- **做什么**：参照 binds_db.go 模式把两份指纹明文（goby.json / fingers_http.json）的条目级维护迁入 SQLite（指纹库主存，按数据源分表、条目以 JSON blob 落库保结构零建模成本）：单条目增删改查 API；每次变更后按既有格式重生成明文 JSON（temp+rename 原子写）并记录哈希；读写前哈希对齐吸收手改（与 binds 同机制）；pack 重打包链路消费明文 JSON 不变（产物 .gz 供编译嵌入，扫描器零改动）；web 端指纹页从 textarea 整文编辑升级为条目列表 + 单条目表单/JSON 编辑。
-- **为什么**：现状指纹维护是"textarea 整文改 + 整文回写"——单条目修改要人肉定位数千条 JSON 中的目标段，格式敏感（BL-POC-004 曾踩 \u 转义/整体重序列化坑）；条目级 CRUD 后修改面收敛到单条目，格式由重生成器保证。用户在 BL-POC-005 验收轮明确认可同方向（"并且指纹也可以这样做"）。
-- **怎么做**：fingerprint.db（条目表 + meta 哈希表）→ 明文 JSON 重生成器（按源格式序列化，格式契约=pack 现行输入）→ 哈希吸收（同 binds）→ API 按页面接口命名规范（/api/finger_list 等）→ 前端条目列表页。
-- **为什么这么做**：与 binds 存储化同一分层决策（DB 主存 + 文件快照 + 哈希吸收 + 墓碑语义如需删指纹条目）；pack 管线与扫描器零改动（明文 JSON 仍是 pack 唯一输入）；否决"运行时外挂加载指纹"（用户既定拍板：指纹保持内嵌）。
+- **做什么**：参照 binds_db.go 模式把两份指纹明文的条目级维护迁入 SQLite（finger.db 放二进制旁，同 binds.db 位；条目按 **(file, rowid) 复合定位**——实测 fingers_http 有 30 组重名条目，name 不构成身份；条目以原始 JSON 字节落库保结构零建模成本）：单条增删改复制 API（/api/finger_list、/api/finger_add、/api/finger_edit、/api/finger_delete，按项目命名规范；旧 GET/PUT /api/finger 整文端点退役，POST /api/pack 保留）；每次变更后重生成明文——**未动条目原文字节原样保留**，改动/新增条目按所在源格式契约序列化（goby：2 空格缩进+首行 `[{`+无结尾换行；fingers_http：4 空格缩进+无结尾换行），temp+rename 原子写 + sha256 记录；读写前哈希对齐吸收手改（文件被手改→以文件为准全量吸收进 DB，同 binds 机制）；web 端指纹页从 textarea 整文升级为条目列表（file 切换+搜索+分页）+ 单条结构化表单（goby：name/focus/rule[label,feature,is_equal]；fingers_http：name/link/focus/tag/favicon md5/mmh3）+ **条目级降级原文编辑**（降级判据：logic 不是本条 rule label 的 &&/|| 布尔式、或条目含表单 schema 外字段/rule 异形嵌套 → 整条走原文编辑，同 POC 编辑器 form/source 双模式先例）。
+- **为什么**：现状整文 textarea 手改单条要人肉定位数千条 JSON 段，格式敏感（BL-POC-004 曾踩 \u 转义/整体重序列化坑）；条目级 CRUD 后修改面收敛单条、格式由重生成器保证。用户 2026-11-16 主动诉求"和 POC 编辑器一样易用"+确认完整 CRUD 范围（含新增/删除/复制）。
+- **怎么做**：finger_db.go（条目表+meta 哈希表；DB 空→首启从 repoRoot 明文全量导入原始字节+建哈希基线）→ 明文重生成器（按源格式契约）→ API 四端点（go1.20 无方法路由，按 binds_* 先例逐个注册 handler）→ 前端 Finger.vue 条目化重构（列表+表单+降级原文编辑）。
+- **为什么这么做**：与 binds 存储化同一分层决策（DB 主存+文件快照+哈希吸收）。**不做墓碑**——binds 墓碑为防"DB 删行后 embed 种子复活"（引擎消费 {product,[]} 空覆盖），指纹权威只有 DB 一层、快照由 DB 重生成，不存在复活路径；删除语义=删除即消失，手改明文把条目加回→哈希失配吸收→按手改内容复活（尊重手改）。否决"未动条目也整体重序列化"——两源格式契约不同（2/4 空格），统一序列化=全库格式漂移，恰是本 item 要消灭的事。否决"运行时外挂加载"（用户既定拍板：保持编译嵌入，编译时机用户自行掌握）。
 
 ### 范围
 
-- cmd/fscanx-web/（finger_db.go 存储 + api_finger.go 改造）
-- 前端指纹页条目化改造
-- mylib/finger 明文 JSON 格式契约固化（重生成器与 pack 输入一致）
+- cmd/fscanx-web/finger_db.go（新：存储层）+ api_finger.go 改造（旧整文端点退役、新四端点、pack 保留）
+- web/apps/admin/src/views/Finger/Finger.vue 条目化重构（列表+表单+降级原文编辑）
+- 明文 JSON 格式契约固化（按源序列化规则，pack 输入不变）
 
 ### 不做
 
 - 指纹运行时外挂加载（保持编译嵌入）
 - 引擎 Match 逻辑变更
-- 指纹内容治理（误报清理等归 05 模块）
+- 指纹内容治理（误报清理归 05 模块）
+- 批量导入（整文粘贴多条新增）——另立
+- ehole/fingerprinthub 等其他数据源条目化（仅 goby/fingers_http 两明文）
 
 ### 验收条件
 
-- [ ] 单条目增删改后明文 JSON 重生成与 pack 字节兼容（pack 产物 md5 与手改等价基线一致）
-- [ ] 手改明文 JSON 被吸收进 DB（哈希对齐），坏 JSON 显式报错
-- [ ] 条目级 API 与 UI CRUD 实测闭环
-- [ ] headless 产物版交互链零 console 错误
+- [x] 条目列表（file 切换+搜索+分页）可用；单条结构化编辑 round-trip 一致——实测覆盖四类条目：goby 纯 rule（Comtrend）语义深度相等 0 差/7200、含 focus（Kedacom-NVR 命中）、fingers_http 纯 favicon（jira 字段级 round-trip 一致/全库规范化语义 0 差）、含 default_port（portainer 原文同文编辑 md5 零漂移）
+- [x] 新增/删除/复制实测闭环：删除后明文该条消失（553 条）；手改明文把该条加回（回写备份字节）→哈希失配吸收→复活且明文逐字节=手改；新增/复制真实库实测（修复后复测，见状态记录）
+- [x] 重生成格式逐字节契约：真实库种子后两明文 md5 与备份一致（8a10fc7a/0f835d6e）；pack 产物 md5 三方全等（web pack==CLI pack==原始基线 9f449a93/fa5cd883）
+- [x] 降级判据生效：portainer（default_port）UI 锁定原文模式实测；单测缩进契约+审查 agent 扫描全库确认无误进表单条目
+- [x] 手改坏 JSON 显式报错（信封提示"解析失败…修正后重试"），报错后明文 md5 原状、listProducts 正常返回且不产出坏数据
+- [x] 旧 GET/PUT /api/finger 退役（GET 实测 404），新端点行为正确，前端零残留调用（getFingerApi/putFingerApi 已删）
+- [x] headless 产物版交互链零 console 错误（14/14）；go build ./... 过（build+vet+单测全绿）
+- [x] 文档五件套同步 + check-sync 无 HIGH（收尾执行）
 
 ### 依赖
 
-- BL-POC-005（存储层模式与墓碑语义先例）
+- BL-POC-005（binds_db.go 存储层模式与哈希吸收先例，已闭合）
 
 ### 状态记录
 
 - 2026-11-16：方向立项草案（用户在 BL-POC-005 范围确认时批注"并且指纹也可以这样做"）。优先级 P2 为草拟值，**待用户确认优先级后 committed 转 Mode D**。
+- 2026-11-16：**升级立项（Mode B0 澄清 + 独立审查 REQUEST_CHANGES 修订后用户批准 P1）**。范围从"SQLite 存储化"升级为"存储化+结构化条目 CRUD"：完整增删改复制、列表搜索分页、按源 schema 表单+条目级降级原文；拍死两项契约——旧整文端点退役（前端整文读写随本 item 改造）、生效模型保持 pack+重编译（用户明示"指纹不需要外置，只修改内置指纹 json"，编译时机用户自行掌握）。审查必改项修订：①条目身份改 (file, rowid) 复合主键（fingers_http 实测 30 组重名，name 不唯一）②重生成契约改"未动条目字节保留"（goby 实测 2 空格缩进+首行 `[{`+无尾换行，原"4 空格统一"会全库漂移）③删墓碑机制（权威单层无复活路径，删除+手改加回=尊重手改吸收复活）④表单 schema 补 focus/default_port 长尾字段覆盖 ⑤API 退役决策与验收补齐。数据勘察入档（审查 agent 实测）：goby 7200 条（564 含 focus、logic 422 个不同值、2 处嵌套异形 rule）；fingers_http 554 条（hash-only 547、mmh3 列表型、default_port 5 条/level 1 条/非 favicon rule 形态若干、favicon.path 2 处、无结尾换行）。
+- 2026-11-16：**执行完成（Mode D 四层验证）**。交付三层（详见 plans/2026-11-16-BL-POC-006-指纹结构化CRUD.md）：①存储层 finger_db.go——自研 JSON 数组扫描器逐字节切分（json.Decoder InputOffset 会前视吞间隙，弃用）{前缀/逐间隙分隔符/后缀/元素原文字节} 模板；seed/absorb/regenerate（temp+rename+sha256）；(file,id) 主键、无墓碑。②API 四端点+copy，两源 canonical 序列化（缩进契约 goby ("","  ")/fingers ("    ","    ")，键序=name/focus/link/rule/tag 实测约定），form 模式拒绝 schema 外键；旧整文端点退役。③前端 Finger.vue 条目化（列表+表单/原文双模式弹窗+判定降级锁定）。**Reviewer 轮（sonnet，10 findings：1C/1H/2M/6L）全处置**：C serializeFingerArray 间隙越界（add/copy 后元素数>间隙数→提交后 panic→DB/明文分叉，agent 独立复刻实证 index out of range）→ serialize 复用末间隙修复+新增字节契约回归锁；H fingerEdit 缺 absorb（编辑重生成覆灭未吸收手改）→补对齐+live 验证手改存活；M 空数组种子丢 `[`（含 prefix/suffix 区间重叠二次修正）；M 新增弹窗原文模式死控件→新增态禁用；L md5>1 元素降级/schema 外键拒绝/RowsAffected 错误直传/add 回归测试补齐。**如实记录一处异常**：首版一轮 live add 曾返回 saved 而该版代码该路径经实证必 panic——成因未复现，该轮证据作废，以修复后全链复测为准。**验证（修复后）**：真实库 7200/554 种子后两明文 md5 零漂移；四类条目 round-trip（语义深度相等 0 差/7200、jira 字段级一致、portainer 原文同文 md5 零漂移）；add/copy live 复测通过（7201/命中 2）+编辑不覆灭手改（手改标记存活+编辑生效）；删除→手改回写→吸收复活且明文逐字节=手改；pack 三方 md5 全等；坏 JSON 显式报错+明文原状+listProducts 不受污染；旧端点 404；单测全绿；UI headless 产物版 14/14 零 console 错误；终态真实文件四 md5 恢复基线。置已完成+待验收（UI 观感待用户浏览器确认）。
+- 2026-11-16：验收闭合（用户真机实测通过，含绑定产品弹窗性能修复后的完整链路）。置已验收。
 
 ## BL-POC-007 fscanx-web 登录认证（默认账号）
 
@@ -371,3 +381,56 @@ POC 扫描模块：修复并重构 Web POC 检测的触发与加载机制。起�
 - 2026-11-16：用户指令"现在需要登录，那就搞一个默认账号admin/admin123"直接立项（视为范围批准，P1 立即执行）。免登录是 BL-POC-004 期临时形态（main.ts 注入 accessToken:'local'），permission.ts 守卫与拦截器的 401 登出链路本就按真实认证设计，本次只是补上服务端。
 - 2026-11-16：执行完成。交付：auth.go（凭据常量 admin/admin123 + crypto/rand 内存会话 token + /api/user/login|logout + authMiddleware：/api/* 除 login 白名单，无效 token 返 200+{code:401} 信封）；main.go 路由+中间件+横幅打印账号；前端登录/登出 API 换真实端点、删 main.ts 注入与未用 import。验证：单测 7/7、headless 产物版登录全链 9/9（重定向/错误提示/登录/加载/刷新保持/登出/再拦截/伪造 token 401 自动登出/零非预期错误）、curl 重启失效与授权写/无 token 写 401。**意外发现（方法学）**：构建顺序坑——go build 先于 web/build.sh 时二进制 embed 旧前端，浏览器拿旧 UI 造成假失败（登录提交打到 /mock/user/login），正确顺序=前端产物先行再 go build；与 go:embed 产物版终验教训同源已入记忆。附带收益：认证门同时封死了此前 reviewer 提到的跨站无预检盲写面。置已完成+待验收。
 - 2026-11-16：验收闭合（用户浏览器实测确认测试通过）。置已验收。
+- 2026-11-16：**性能回归修复轮（用户报告：POC 页点"绑定产品"卡顿 7-8 秒）**。排查证据：服务端三 API 合计 <150ms（binds_list 2-12ms、products 50-73ms、pocs 47-52ms）排除后端；headless 实测点击→弹窗 15.58s——瓶颈为弹窗内 `el-select multiple` 对产品名全集（goby 7200+fingers 554 去重后近万项）全量渲染 el-option DOM（Element Plus 非虚拟化选择器的挂载开销）。修复：换虚拟化选择器 `el-select-v2`（options 数组形态，只渲染可视区），实测点击→弹窗 **0.15s**；展开/输入过滤（近万项仅渲染 3 项可视项）/多选/确认写盘功能链复测通过；POC 页 11 项 UI 回归零破坏。绑定关系页产品名控件为 el-autocomplete（输入才过滤）不受同类问题影响。教训入档：**下拉候选可能到近万量级时禁用普通 el-select 全量 v-for**，须用 select-v2 虚拟化或 autocomplete 惰性渲染。
+
+## BL-POC-008 内置 POC 写回编辑（保存目标：内置源 / 外置）
+
+- 模块：POC 扫描
+- 优先级：P1
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：内置 POC 在 web 端修改后写回内置源目录（PocScan/pocs/），下次 go build 自然带上——"想内置进二进制的 POC"编辑-固化闭环打通；外置保存路径保留不变。
+- 关联模块文档：docs/modules/10-POC扫描模块.md
+- 关联计划：plans/2026-11-16-BL-POC-008-内置POC写回编辑.md
+- 关联代码：cmd/fscanx-web/api_poc.go、cmd/fscanx-web/api_poc_target_test.go、web/apps/admin/src/views/Poc/Poc.vue、web/apps/admin/src/api/poc/index.ts
+- 验收状态：已验收
+
+### 方案（立项时必填）
+
+- **做什么**：POC 编辑器保存时可选写回目标——内置源（`<repoRoot>/PocScan/pocs/<embed 真实文件名>`，下次编译生效）或外置（现有 pocs/ 覆盖语义，零编译即生效）。配套：listPocs/getPoc 透出 embed 真实文件名与来源，getPoc 新增 source 参数按来源定位（同名内置/外置并存时打开哪条改哪条，列表行以 (source, name) 复合标识）；putPoc 新增 target 参数（取值沿用既有契约词 built-in|external），target=built-in 时校验目标文件已存在于 `<repoRoot>/PocScan/pocs/`（root 未指向仓库或文件不存在→明确拒绝，仅可外置）；落盘双重校验（yaml round-trip + CEL 编译）复用。前端保存区加目标选择（内置来源 POC 默认内置源，外置 POC 仅外置）。
+- **为什么**：内置 POC 经 go:embed 编进二进制运行时只读，现状编辑内置 POC 只能另存外置副本，把修改固化进下次编译产物没有入口（2026-11-16 用户明确提出，并明示"下次 go build 自然带上，编译时机用户自己知道"）。
+- **怎么做**：api_poc.go 改造（pocItem 加 File 字段、getPoc/putPoc 加 source/target 参数、内置写回路径与存在性校验）+ Poc.vue 保存目标选择 UI；扫描器零改动。
+- **为什么这么做**：写回源文件直接符合用户语义；用 embed 真实文件名避免 name→文件名推导出错（内置文件名与 name 不保证一致）；目标文件必须已存在——防止 -root 指向版本不同的检出时凭空造文件；显式选目标而非自动双写，避免内置/外置静默分叉；保存目标枚举沿用 pocItem.Source 既有词 built-in|external 不新造 internal。
+
+### 范围
+
+- cmd/fscanx-web/api_poc.go（pocItem/getPoc/putPoc 改造）
+- web/apps/admin/src/views/Poc/Poc.vue（保存目标选择 UI）
+
+### 不做
+
+- 新建 POC 直写内置源（新建仍走外置）
+- 外置→内置迁移（外置 POC 固化进二进制暂无入口，需时另立）
+- 外置文件名可配置（维持 sanitizeName(name).yml；覆盖按 POC name 字段匹配，文件名=name 是列表合并视图对齐的最简约定）
+- go build 自动触发（编译时机用户自行掌握）
+- 列表同名双行合并展示改造
+- fscanx 扫描器本体改动（加载覆盖语义不变）
+
+### 验收条件
+
+- [x] 编辑内置来源 POC 选"写回内置源"：PocScan/pocs/ 对应源文件内容更新（沙箱实测 marker 落盘）；外置 pocs/ 零新文件且既有文件字节不变（md5 实测）；未重编译时 listPocs 保持 embed 真源；重编译后新内容生效（重建二进制 grep marker=1，恢复后归零）
+- [x] -root 未指向仓库、或目标文件在 PocScan/pocs/ 不存在时：内置保存被拒绝且提示明确（实测缺文件拒绝信封；指错检出场景由内容同一性守卫覆盖——单测身份回落+守卫子测试）
+- [x] 同名内置+外置并存：编辑内置行保存→内置源文件更新且外置同名文件字节不变（反向同理）；两条各自打开内容互不串（双向字节+内容实测）
+- [x] 写回内置源落盘前校验生效（坏 yaml/坏 CEL 被拦截，源文件 md5 前后一致）
+- [x] headless 产物版交互链零 console 错误（11/11）；go build ./... 过（build+vet+test 全绿）
+- [x] 文档五件套同步 + check-sync 无 HIGH（收尾执行，见状态记录）
+
+### 依赖
+
+- 无（BL-POC-004 编辑器与校验链已闭合）
+
+### 状态记录
+
+- 2026-11-16：立项（Mode B0 澄清 + 独立审查修订后用户批准 P1，批准连做 BL-POC-008→006）。用户拍板模型：编辑内置 POC 写回内置源目录供下次编译，"保存到外置"保留；编译时机用户自行掌握。审查修订：保存目标枚举统一 built-in|external；验收"旧二进制行为不变"（恒真不可测）改为外置目录字节不变+未重编译 API 内容不变的可操作断言；补 getPoc source 参数契约与"目标文件必须已存在"防错仓写回；不做清单补"外置→内置迁移不做"。
+- 2026-11-16：**执行完成（Mode D 四层验证）**。交付：①后端 api_poc.go——pocItem/pocDetail 透出 file/source；getPoc 收 source 参数（built-in 编辑视图**仓库源文件优先**防写回后重载 embed 陈旧基底二次覆盖，身份不符回落 embed；listPocs 保持 embed 真源）；putPoc 加 target=built-in|external（内置写回：embedPocByName 按 yaml 校验后的 name 服务端解析目标文件名 + 存在性/内容同一性/改名三守卫 + temp+rename 原子写）；groups 形态放行且 groups 内 rule 过 CEL 编译；poc 域错误面统一 httpErrorf 信封。②前端 Poc.vue/api——行点击传整行按 (source,name) 定位，保存目标 radio（仅内置来源行出现，默认内置源）+ 提示行，删除外置对内置行禁用，reopenCurrent 按保存目标重开，API 错误带 code 后 catch 去重 toast。③新增 api_poc_target_test.go（source 三语义/身份回落/写回成功/四守卫/groups 放行/原子写无残留）。**验收条件修订**：原文"未重编译时 getPoc 返回内置内容不变"修订为 getPoc(built-in) 读仓库源文件最新内容——写回后编辑器重载 embed 旧版会以陈旧基底二次保存覆盖写回成果（跨刷新丢数据路径）；listPocs 保持 embed 真源语义不变。**意外发现并修复存量 bug**：来源列 el-table formatter 签名错位（`(_,__,row)` 第三参实为 cellValue，`"external".source` 恒 undefined）致来源列**恒显"内置"**、外置行不可辨识——修为 (row) 一参签名。**Reviewer 轮（sonnet，10 findings：1H/3M/6L）全处置**：H groups 放行（原"rules 为空"校验使 31/386 groups 形态任何目标均不可保存且报错误导）、M reopen 锚定保存目标、M 版本偏斜身份守卫（getPoc 回落+putPoc 拒绝）、M 改名守卫、L 错误面信封化/getPoc·deletePoc/gofmt/原子写/新增单测/双 toast 去重已修；L CRLF 归一化（写回统一 LF，autocrlf=true 下 git 无感）与 -addr 非回环并发写为已知取舍记录在案。验证：go build/vet/test 全绿；沙箱 API 实测（写回/三类拒绝/双行互不串写双向字节/坏 yaml+CEL 拦截且源文件不破坏/改名守卫/groups 保存/原子写无残留）；重编译 embed 携带新内容 grep 证实（真实源树临时写入→编译→字节级恢复→归零，git 干净）；UI headless 产物版 11/11 零 console 错误。置已完成+待验收（UI 观感待用户浏览器确认后验收闭合）。
+- 2026-11-16：验收闭合（用户真机实测通过）。置已验收。

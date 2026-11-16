@@ -28,8 +28,9 @@ import (
 // pocItem 列表项。
 type pocItem struct {
 	Name   string `json:"name"`
-	Source string `json:"source"` // built-in | external
-	Always bool   `json:"always"` // 无条件全打型标记（列表可视化）
+	Source string `json:"source"`         // built-in | external
+	Always bool   `json:"always"`         // 无条件全打型标记（列表可视化）
+	File   string `json:"file,omitempty"` // 文件名（内置=embed 真实文件名，内置源写回定位用）
 }
 
 // stepView 编辑视图的单步 rule：全字段结构化 + 谓词树（Tree 为 null 表示该步
@@ -60,13 +61,15 @@ type kvListsView struct {
 
 // pocDetail 编辑视图：结构化字段 + yaml 原文。
 type pocDetail struct {
-	Name   string       `json:"name"`
-	Always bool         `json:"always"`
-	Set    []kvView     `json:"set"`
+	Name   string        `json:"name"`
+	Source string        `json:"source"` // 本次定位来源 built-in | external（编辑上下文）
+	File   string        `json:"file"`   // 文件名（内置=embed 真实文件名，内置源写回定位）
+	Always bool          `json:"always"`
+	Set    []kvView      `json:"set"`
 	Sets   []kvListsView `json:"sets"`
-	Steps  []stepView   `json:"steps"`
-	Form   bool         `json:"form"` // 表单可承载（groups 等长尾形态为 false）
-	Yaml   string       `json:"yaml"` // 原文（源码模式与段落保真基底）
+	Steps  []stepView    `json:"steps"`
+	Form   bool          `json:"form"` // 表单可承载（groups 等长尾形态为 false）
+	Yaml   string        `json:"yaml"` // 原文（源码模式与段落保真基底）
 }
 
 // pocHandler 同 path 的方法分发（go1.20 无方法路由模式）。
@@ -93,7 +96,7 @@ func (s *server) listPocs(w http.ResponseWriter, r *http.Request) {
 			n := e.Name()
 			if strings.HasSuffix(n, ".yml") || strings.HasSuffix(n, ".yaml") {
 				if p, _ := lib.LoadPoc(n, PocScan.Pocs); p != nil && p.Name != "" {
-					items = append(items, pocItem{Name: p.Name, Source: "built-in", Always: p.Always})
+					items = append(items, pocItem{Name: p.Name, Source: "built-in", Always: p.Always, File: n})
 				}
 			}
 		}
@@ -113,7 +116,7 @@ func listExternalPocs(dir string) (items []pocItem) {
 		}
 		if strings.HasSuffix(path, ".yml") || strings.HasSuffix(path, ".yaml") {
 			if p, _ := lib.LoadPocbyPath(path); p != nil && p.Name != "" {
-				items = append(items, pocItem{Name: p.Name, Source: "external", Always: p.Always})
+				items = append(items, pocItem{Name: p.Name, Source: "external", Always: p.Always, File: info.Name()})
 			}
 		}
 		return nil
@@ -121,24 +124,60 @@ func listExternalPocs(dir string) (items []pocItem) {
 	return
 }
 
-// findPocFile 按 name 定位 poc 文件（外置优先——与加载覆盖语义一致），返回 yaml 原文。
-func (s *server) findPocFile(name string) (yamlText string, external bool, ok bool) {
-	if ext := listExternalPocs(s.pocsDir); len(ext) > 0 {
+// findPocFile 按 name+source 定位 poc 文件，返回 yaml 原文、文件名与实际来源。
+// source=external 只查外置；source=built-in 仓库内置源文件优先（repoRoot/PocScan/pocs，
+// 那是下次编译的真实内容——写回后编辑器重载必须拿到新源而非 embed 旧版，防以陈旧
+// 基底二次保存覆盖写回成果）、embed 兜底；source 为空保持旧行为（外置优先——与加载
+// 覆盖语义一致）。
+func (s *server) findPocFile(name, source string) (yamlText string, file string, src string, ok bool) {
+	if source != "built-in" {
 		_ = filepath.Walk(s.pocsDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil || info == nil || info.IsDir() {
 				return nil
 			}
+			if !strings.HasSuffix(path, ".yml") && !strings.HasSuffix(path, ".yaml") {
+				return nil
+			}
 			if p, _ := lib.LoadPocbyPath(path); p != nil && p.Name == name {
 				if raw, err := os.ReadFile(path); err == nil {
-					yamlText, external, ok = string(raw), true, true
+					yamlText, file, src, ok = string(raw), info.Name(), "external", true
 				}
 			}
 			return nil
 		})
-		if ok {
+		if ok || source == "external" {
 			return
 		}
 	}
+	embedFile, embedText, found := embedPocByName(name)
+	if !found {
+		return
+	}
+	file, src = embedFile, "built-in"
+	if s.repoRoot != "" {
+		if raw, err := os.ReadFile(s.builtinSourcePath(embedFile)); err == nil {
+			var cur lib.Poc
+			// 内容同一性：-root 指向其他版本检出时同文件名可能装的是别的 POC，
+			// 解析不出同名 POC 就回落 embed，不给编辑器贴错标签
+			if yaml.Unmarshal(raw, &cur) == nil && cur.Name == name {
+				yamlText, ok = string(raw), true
+				return
+			}
+		}
+	}
+	yamlText, ok = embedText, true
+	return
+}
+
+// builtinSourcePath 内置源目录（-root 下 PocScan/pocs/）某文件的完整路径——读取与写回
+// 共用同一拼装，防两处路径漂移。
+func (s *server) builtinSourcePath(file string) string {
+	return filepath.Join(s.repoRoot, "PocScan", "pocs", file)
+}
+
+// embedPocByName 在内置 embed 库按 name 查找，返回真实文件名与原文（写回内置源时
+// 服务端解析目标文件名——不信任客户端传路径，name 已在落盘前与 yaml 校验一致）。
+func embedPocByName(name string) (file, yamlText string, ok bool) {
 	entries, err := PocScan.Pocs.ReadDir("pocs")
 	if err != nil {
 		return
@@ -150,7 +189,7 @@ func (s *server) findPocFile(name string) (yamlText string, external bool, ok bo
 		}
 		if p, _ := lib.LoadPoc(n, PocScan.Pocs); p != nil && p.Name == name {
 			if raw, err := PocScan.Pocs.ReadFile("pocs/" + n); err == nil {
-				yamlText, external, ok = string(raw), false, true
+				return n, string(raw), true
 			}
 			return
 		}
@@ -161,15 +200,17 @@ func (s *server) findPocFile(name string) (yamlText string, external bool, ok bo
 func (s *server) getPoc(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
-		http.Error(w, "缺少 name", 400)
+		httpErrorf(w, "缺少 name")
 		return
 	}
-	yamlText, _, ok := s.findPocFile(name)
+	yamlText, file, src, ok := s.findPocFile(name, r.URL.Query().Get("source"))
 	if !ok {
-		http.Error(w, "未找到 poc: "+name, 404)
+		httpErrorf(w, "未找到 poc: %s（外置行可能已被外部删除）", name)
 		return
 	}
-	writeJSON(w, pocFromYaml(name, yamlText, s))
+	d := pocFromYaml(name, yamlText, s)
+	d.Source, d.File = src, file
+	writeJSON(w, d)
 }
 
 // pocFromYaml yaml 原文 → 结构化编辑视图（全 rules 步骤化 + 谓词树反解析）。
@@ -208,8 +249,10 @@ func pocFromYaml(name, yamlText string, s *server) pocDetail {
 
 // putPocReq 写入请求：表单模式（多步结构化）或源码模式。
 type putPocReq struct {
-	Mode string `json:"mode"` // form | raw
-	Name string `json:"name"`
+	Mode   string `json:"mode"`   // form | raw
+	Target string `json:"target"` // 保存目标：built-in（写回内置源，下次编译生效）| external（默认，外置覆盖立即生效）
+	Name   string `json:"name"`
+	File   string `json:"file"` // 打开时的文件名（target=built-in 时作改名守卫：与 name 解析出的文件不一致即拒）
 	// form 模式
 	Always   bool          `json:"always"`
 	Set      []kvView      `json:"set"`
@@ -239,7 +282,7 @@ func (s *server) putPoc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Name == "" {
-		http.Error(w, "name 不能为空", 400)
+		httpErrorf(w, "name 不能为空")
 		return
 	}
 	var yamlText string
@@ -247,54 +290,115 @@ func (s *server) putPoc(w http.ResponseWriter, r *http.Request) {
 	case "form":
 		text, err := s.renderPocYAML(&req)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			httpErrorf(w, "%s", err.Error())
 			return
 		}
 		yamlText = text
 	case "raw":
 		yamlText = req.Yaml
 	default:
-		http.Error(w, "mode 须为 form 或 raw", 400)
+		httpErrorf(w, "mode 须为 form 或 raw")
 		return
 	}
 	// 落盘前双重校验：可解析为 Poc + name 一致 + 每条 expression 编译通过
 	var p lib.Poc
 	if err := yaml.Unmarshal([]byte(yamlText), &p); err != nil {
-		http.Error(w, "yaml 解析失败: "+err.Error(), 400)
+		httpErrorf(w, "yaml 解析失败: %v", err)
 		return
 	}
 	if p.Name == "" || p.Name != req.Name {
-		http.Error(w, "yaml 的 name 为空或与请求 name 不一致", 400)
+		httpErrorf(w, "yaml 的 name 为空或与请求 name 不一致")
 		return
 	}
-	if len(p.Rules) == 0 {
-		http.Error(w, "rules 为空", 400)
+	// groups 形态（31/386，无顶层 rules）同样放行保存——只拦两种形态皆空
+	if len(p.Rules) == 0 && len(p.Groups) == 0 {
+		httpErrorf(w, "rules/groups 均为空")
 		return
 	}
 	env, err := s.envWithSetVars(p.Set)
 	if err != nil {
-		http.Error(w, "构造变量环境失败: "+err.Error(), 500)
+		httpErrorf(w, "构造变量环境失败: %v", err)
 		return
 	}
 	for i, rule := range p.Rules {
 		if strings.TrimSpace(rule.Expression) == "" {
-			http.Error(w, fmt.Sprintf("第 %d 条 rule 缺少 expression", i+1), 400)
+			httpErrorf(w, "第 %d 条 rule 缺少 expression", i+1)
 			return
 		}
 		if _, iss := env.Compile(rule.Expression); iss.Err() != nil {
-			http.Error(w, fmt.Sprintf("第 %d 条 rule 的 expression 编译失败: %v", i+1, iss.Err()), 400)
+			httpErrorf(w, "第 %d 条 rule 的 expression 编译失败: %v", i+1, iss.Err())
 			return
 		}
 	}
-	if err := os.MkdirAll(s.pocsDir, 0755); err != nil {
-		http.Error(w, "创建外置目录失败: "+err.Error(), 500)
+	// groups 内 rule 同样过编译校验（保持"落盘前校验"语义完整）
+	for _, gi := range p.Groups {
+		for i, rule := range gi.Value {
+			if strings.TrimSpace(rule.Expression) == "" {
+				httpErrorf(w, "groups %s 第 %d 条 rule 缺少 expression", gi.Key, i+1)
+				return
+			}
+			if _, iss := env.Compile(rule.Expression); iss.Err() != nil {
+				httpErrorf(w, "groups %s 第 %d 条 rule 的 expression 编译失败: %v", gi.Key, i+1, iss.Err())
+				return
+			}
+		}
+	}
+	// 保存目标：external=外置覆盖（默认，立即生效）；built-in=写回内置源（下次编译生效）。
+	// 内置目标文件名由 embed 库按（已与 yaml 校验一致的）name 服务端解析，且必须已存在——
+	// 防 -root 指向其他检出时凭空造文件。错误走 httpErrorf 信封（BL-POC-005 已验证：
+	// 非 2xx 纯文本被前端 axios 丢弃，指导性提示到不了用户）。
+	var targetPath string
+	switch req.Target {
+	case "", "external":
+		if err := os.MkdirAll(s.pocsDir, 0755); err != nil {
+			httpErrorf(w, "创建外置目录失败: %v", err)
+			return
+		}
+		targetPath = filepath.Join(s.pocsDir, sanitizeName(req.Name)+".yml")
+	case "built-in":
+		embedFile, _, found := embedPocByName(p.Name)
+		if !found {
+			httpErrorf(w, "内置库中不存在 %s（新建或改名的 POC 只能保存到外置 pocs/）", p.Name)
+			return
+		}
+		// 改名守卫：打开的是 A 文件却要写进 B 的内置源文件（改名为另一内置已有名）→ 拒
+		if req.File != "" && req.File != embedFile {
+			httpErrorf(w, "检测到重命名（%s → %s），内置源写回不支持改名，请保存到外置 pocs/", req.File, embedFile)
+			return
+		}
+		if s.repoRoot == "" {
+			httpErrorf(w, "未配置 -root，无法写回内置源，仅可保存到外置 pocs/")
+			return
+		}
+		targetPath = s.builtinSourcePath(embedFile)
+		if _, err := os.Stat(targetPath); err != nil {
+			httpErrorf(w, "内置源文件不存在: %s（-root 未指向本仓库或版本不一致），仅可保存到外置 pocs/", targetPath)
+			return
+		}
+		// 内容同一性守卫：-root 指向其他版本检出时同文件名可能装的是别的 POC，覆盖即改错文件
+		if raw, err := os.ReadFile(targetPath); err == nil {
+			var cur lib.Poc
+			if err := yaml.Unmarshal(raw, &cur); err != nil || cur.Name == "" || cur.Name != p.Name {
+				httpErrorf(w, "内置源文件 %s 当前内容解析异常或为其他 POC（name=%q），为避免覆盖错误文件已拒绝；可保存到外置 pocs/", targetPath, cur.Name)
+				return
+			}
+		}
+	default:
+		httpErrorf(w, "target 须为 built-in 或 external")
 		return
 	}
-	if err := os.WriteFile(filepath.Join(s.pocsDir, sanitizeName(req.Name)+".yml"), []byte(yamlText), 0644); err != nil {
-		http.Error(w, "写盘失败: "+err.Error(), 500)
+	// temp+rename 原子写（防中途崩溃留撕裂 yaml 进 embed/加载；与 BL-POC-006 指纹快照同约定）
+	tmp := targetPath + ".fscanx-web.tmp"
+	if err := os.WriteFile(tmp, []byte(yamlText), 0644); err != nil {
+		httpErrorf(w, "写盘失败: %v", err)
 		return
 	}
-	writeJSON(w, map[string]string{"status": "saved", "file": filepath.Join(s.pocsDir, sanitizeName(req.Name)+".yml")})
+	if err := os.Rename(tmp, targetPath); err != nil {
+		_ = os.Remove(tmp)
+		httpErrorf(w, "落盘失败: %v", err)
+		return
+	}
+	writeJSON(w, map[string]string{"status": "saved", "file": targetPath, "target": req.Target})
 }
 
 // envWithSetVars 在基础环境上声明 set 变量（与求值端 lib/eval.go 前缀类型规则同源：
@@ -482,7 +586,7 @@ func extraTopLevelSections(yamlText string) string {
 func (s *server) deletePoc(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
-		http.Error(w, "缺少 name", 400)
+		httpErrorf(w, "缺少 name")
 		return
 	}
 	found := false
@@ -498,7 +602,7 @@ func (s *server) deletePoc(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if !found {
-		http.Error(w, "外置目录未找到该 poc（内置 poc 不可删除）: "+name, 404)
+		httpErrorf(w, "外置目录未找到该 poc（内置 poc 不可删除）: %s", name)
 		return
 	}
 	writeJSON(w, map[string]string{"status": "deleted"})
@@ -526,9 +630,4 @@ func sanitizeName(name string) string {
 		s = "unnamed"
 	}
 	return s
-}
-
-// sortNames 供列表排序（保持输出稳定）。
-func sortNames(items []pocItem) {
-	sort.Slice(items, func(i, j int) bool { return items[i].Name < items[j].Name })
 }

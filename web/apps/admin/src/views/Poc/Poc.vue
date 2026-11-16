@@ -9,9 +9,9 @@
         </div>
       </template>
       <el-input v-model="keyword" placeholder="搜索名称..." clearable size="small" style="margin-bottom: 8px" />
-      <el-table :data="filtered" highlight-current-row height="620" size="small" @row-click="(row: PocItem) => openPoc(row.name)">
+      <el-table :data="filtered" highlight-current-row height="620" size="small" @row-click="openPoc">
         <el-table-column prop="name" label="名称" show-overflow-tooltip />
-        <el-table-column label="来源" width="110" prop="source" :formatter="(_: unknown, __: unknown, row: PocItem) => (row.source === 'external' ? '外置' : '内置') + (row.always ? '·always' : '')" />
+        <el-table-column label="来源" width="110" prop="source" :formatter="(row: PocItem) => (row.source === 'external' ? '外置' : '内置') + (row.always ? '·always' : '')" />
       </el-table>
     </el-card>
 
@@ -172,8 +172,23 @@
       </div>
 
       <div style="margin-top: 12px">
-        <el-button type="primary" :loading="saving" @click="save">保存到外置 pocs/</el-button>
-        <el-button type="danger" plain :disabled="!selName" @click="remove">删除外置</el-button>
+        <!-- 保存目标（BL-POC-008）：仅内置来源行出现选择，默认写回内置源；外置/新建仅外置 -->
+        <el-radio-group
+          v-if="selSource === 'built-in' && selFile"
+          v-model="saveTarget"
+          size="small"
+          style="margin-right: 12px"
+        >
+          <el-radio-button value="built-in">内置源（下次编译生效）</el-radio-button>
+          <el-radio-button value="external">外置 pocs/（立即生效）</el-radio-button>
+        </el-radio-group>
+        <el-button type="primary" :loading="saving" @click="save">
+          {{ saveTarget === 'built-in' ? '保存到内置源' : '保存到外置 pocs/' }}
+        </el-button>
+        <el-button type="danger" plain :disabled="!selName || selSource === 'built-in'" @click="remove">删除外置</el-button>
+      </div>
+      <div v-if="saveTarget === 'built-in'" class="hint" style="margin-left: 0">
+        写回仓库内置源 PocScan/pocs/{{ selFile }}，重新编译后随二进制生效；当前运行的扫描器仍执行内置旧版
       </div>
     </el-card>
 
@@ -194,18 +209,18 @@
       </div>
       <div class="dlg-field">
         <label>新增绑定</label>
-        <el-select
+        <!-- el-select-v2 虚拟化列表：产品名全集近万项，普通 el-select 全量渲染 option 会让弹窗挂载卡顿数秒 -->
+        <el-select-v2
           v-model="bindProducts"
           multiple
           filterable
           collapse-tags
           collapse-tags-tooltip
           :reserve-keyword="false"
+          :options="productOptions"
           placeholder="从指纹库产品名选择（可输入过滤）"
           style="flex: 1"
-        >
-          <el-option v-for="n in allProducts" :key="n" :label="n" :value="n" />
-        </el-select>
+        />
       </div>
       <div class="hint">移除绑定请到「绑定关系」页；确认后写盘 binds.yaml，重跑扫描器生效</div>
       <template #footer>
@@ -251,6 +266,9 @@ interface StepRow {
 const keyword = ref('')
 const pocs = ref<PocItem[]>([])
 const selName = ref('')
+const selSource = ref<'built-in' | 'external' | ''>('') // 当前编辑行来源（BL-POC-008 保存目标上下文）
+const selFile = ref('') // 当前编辑行文件名（内置=embed 真实文件名）
+const saveTarget = ref<'built-in' | 'external'>('external') // 保存目标：内置来源行默认写回内置源
 const mode = ref<'form' | 'raw'>('form')
 const rawYaml = ref('')
 const baseYaml = ref('') // 打开时原文：表单保存时 detail/groups 等未暴露段保真继承
@@ -317,10 +335,24 @@ const loadList = async () => {
   pocs.value = res.data.pocs ?? []
 }
 
-const openPoc = async (name: string) => {
+// 保存后重开当前 POC：按实际保存目标优先定位行（内置行存外置后，编辑器应显示刚保存的
+// 外置内容而非内置旧基底）；内置来源行写回后 getPoc 读仓库源文件（最新源）。
+const reopenCurrent = async () => {
+  const rows = pocs.value
+  const hit =
+    rows.find((p) => p.name === selName.value && p.source === saveTarget.value) ||
+    rows.find((p) => p.name === selName.value)
+  if (hit) await openPoc(hit)
+}
+
+const openPoc = async (row: PocItem) => {
   try {
-    const res = await getPocApi(name)
-    selName.value = name
+    const res = await getPocApi(row.name, row.source)
+    selName.value = row.name
+    selSource.value = row.source
+    selFile.value = res.data.file || row.file || ''
+    // 内置来源行默认写回内置源；外置行/新建仅外置（BL-POC-008）
+    saveTarget.value = row.source === 'built-in' && selFile.value ? 'built-in' : 'external'
     rawYaml.value = res.data.yaml
     baseYaml.value = res.data.yaml
     formLoaded.value = true
@@ -349,13 +381,16 @@ const openPoc = async (name: string) => {
       rawNote.value = ''
       mode.value = 'form'
     }
-  } catch (e) {
-    ElMessage.error(String(e))
+  } catch (e: any) {
+    if (!e?.code) ElMessage.error(String(e)) // API 错误由拦截器统一 toast
   }
 }
 
 const newPoc = () => {
   selName.value = ''
+  selSource.value = ''
+  selFile.value = ''
+  saveTarget.value = 'external'
   form.name = 'poc-yaml-'
   form.always = false
   setRows.value = []
@@ -412,6 +447,8 @@ const save = async () => {
       const payload = {
         mode: 'form' as const,
         name: form.name.trim(),
+        target: saveTarget.value,
+        file: selFile.value || undefined,
         always: form.always,
         set: setRows.value.filter((kv) => kv.key.trim()).map((kv) => ({ key: kv.key.trim(), value: kv.value })),
         sets: setListRows.value
@@ -421,20 +458,35 @@ const save = async () => {
         baseYaml: baseYaml.value
       }
       const res = await putPocApi(payload)
-      ElMessage.success('已保存：' + res.data.file)
+      ElMessage.success(
+        saveTarget.value === 'built-in'
+          ? '已写回内置源（重新编译后生效）：' + res.data.file
+          : '已保存：' + res.data.file
+      )
       selName.value = form.name.trim()
       await loadList()
       // 重新打开刷新 baseYaml（渲染产物成为新的保真基底）
-      await openPoc(selName.value)
+      await reopenCurrent()
     } else {
-      const res = await putPocApi({ mode: 'raw', name: form.name.trim() || selName.value, yaml: rawYaml.value })
-      ElMessage.success('已保存：' + res.data.file)
+      const res = await putPocApi({
+        mode: 'raw',
+        name: form.name.trim() || selName.value,
+        yaml: rawYaml.value,
+        target: saveTarget.value,
+        file: selFile.value || undefined
+      })
+      ElMessage.success(
+        saveTarget.value === 'built-in'
+          ? '已写回内置源（重新编译后生效）：' + res.data.file
+          : '已保存：' + res.data.file
+      )
       selName.value = form.name.trim() || selName.value
       await loadList()
-      await openPoc(selName.value)
+      await reopenCurrent()
     }
-  } catch (e) {
-    ElMessage.error(String(e))
+  } catch (e: any) {
+    // API 错误已带 code 且由拦截器 onError 统一 toast，此处只补本地异常避免双重提示
+    if (!e?.code) ElMessage.error(String(e))
   } finally {
     saving.value = false
   }
@@ -451,8 +503,8 @@ const remove = async () => {
     ElMessage.success('已删除')
     selName.value = ''
     await loadList()
-  } catch (e) {
-    ElMessage.error(String(e))
+  } catch (e: any) {
+    if (!e?.code) ElMessage.error(String(e)) // API 错误由拦截器统一 toast
   }
 }
 
@@ -465,6 +517,9 @@ const pocBinds = ref<Array<{ product: string; pocs: string[] }>>([])
 
 // 该 POC 已绑定的产品（只读展示；移除走绑定关系页）
 const boundProducts = computed(() => pocBinds.value.filter((b) => (b.pocs ?? []).includes(selName.value)).map((b) => b.product))
+
+// el-select-v2 的 options 形态（{label, value}），由产品名全集派生
+const productOptions = computed(() => allProducts.value.map((n) => ({ label: n, value: n })))
 
 const openBind = async () => {
   bindProducts.value = []

@@ -7,6 +7,7 @@ export interface PocItem {
   name: string
   source: 'built-in' | 'external'
   always: boolean
+  file?: string // 文件名（内置=embed 真实文件名，内置源写回定位用）
 }
 
 export interface CondNode {
@@ -33,6 +34,8 @@ export interface StepView {
 
 export interface PocDetail {
   name: string
+  source: 'built-in' | 'external' // 本次定位来源（编辑上下文）
+  file?: string // 文件名（内置=embed 真实文件名）
   always: boolean
   set: Array<{ key: string; value: string }>
   sets: Array<{ key: string; values: string[] }>
@@ -56,6 +59,8 @@ export interface PutStepPayload {
 export interface PutPocPayload {
   mode: 'form' | 'raw'
   name: string
+  target?: 'built-in' | 'external' // 保存目标：内置源（下次编译生效）/ 外置 pocs/（默认，立即生效）
+  file?: string // 打开时的文件名（target=built-in 时作改名守卫）
   // form
   always?: boolean
   set?: Array<{ key: string; value: string }>
@@ -70,8 +75,8 @@ export const listPocsApi = () => {
   return request.get<{ pocs: PocItem[] }>({ url: '/api/pocs' })
 }
 
-export const getPocApi = (name: string) => {
-  return request.get<PocDetail>({ url: '/api/poc', params: { name } })
+export const getPocApi = (name: string, source?: string) => {
+  return request.get<PocDetail>({ url: '/api/poc', params: { name, source } })
 }
 
 export const putPocApi = (data: PutPocPayload) => {
