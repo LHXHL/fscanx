@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-11-16
+
+- BL-POC-005（绑定关系页交互重构 + binds SQLite 化 + POC 页快捷绑定）与 BL-POC-007（登录认证 admin/admin123）用户浏览器实测验收闭合，控制台移除；POC 扫描模块 6 已验收 / 1 未开始（BL-POC-006 指纹 SQLite 化草案待定优先级）。
+- 新增 docs/fscanx-web-部署运行手册.md：构建（前端先行铁律——go:embed 产物顺序）、部署目录布局（两二进制同目录联动）、登录（admin/admin123 与 token 重启失效语义）、binds.db/binds.yaml 双轨数据模型（手改吸收/墓碑注意事项）、典型使用流程、开发模式、安全边界与故障排查表；设计总览文档导航收录。
+- fscanx-web 登录认证（BL-POC-007，用户指令"现在需要登录，搞一个默认账号admin/admin123"）：免登录临时形态退役（main.ts 不再注入本地会话）——后端 /api/user/login 校验默认账号 admin/admin123 签发 crypto/rand 内存会话 token（进程重启失效），/api/user/logout 销毁 token；authMiddleware 对 /api/*（除登录）校验 Authorization 头（接受裸 token 与 Bearer 前缀），无效返回 200+{code:401} 信封——复用前端拦截器既有自动登出链路（permission.ts 守卫零改动）。附带收益：认证门封死跨站无预检盲写面。验证：单测 7/7、headless 产物版登录全链 9/9（未登录重定向/错误提示/登录/加载/刷新保持/登出/伪造 token 自动登出）、curl 重启失效与授权写/无 token 写 401。方法学教训：go build 必须在 web/build.sh 之后（embed 真源同步先行），否则二进制嵌旧前端假失败。登录页观感待用户浏览器确认。
+- 绑定关系页交互重构 + binds 存储层 SQLite 化 + POC 页快捷绑定（BL-POC-005，用户两轮 UX 反馈驱动 + 范围扩展拍板）：**绑定页浏览态/编辑态分离**（原表格全行内联编辑、点击产品名即弹候选下拉莫名其妙——改只读展示+每行编辑/删除按钮，下拉只在弹窗表单内出现；添加绑定从表尾插空行改弹窗表单；客户端分页 10/20/50；产品候选排序精确>前缀>子串+命名空间语义提示文案；同名产品拦截与引擎 MergeBinds 去重语义对齐）。**存储层 SQLite 化**：binds.db（modernc.org/sqlite v1.29.10 纯 Go，Go1.20 兼容）主存外置层 + binds.yaml 快照双轨——扫描器零改动（启动时照旧读 种子⊕binds.yaml）；同步机制=单向权威+手改吸收（每请求前比对文件 sha256 与 meta，不一致→全量吸收→重生成；文件缺失按 DB 重生成防误删；坏 yaml 显式报错）；API 改造 /api/binds_list、/api/binds_add（upsert-append）、/api/binds_edit、/api/binds_delete（按页面接口命名规范），PUT /api/binds 退役；**墓碑机制**修复 BL-POC-004 时代隐藏缺口——种子起源行（仅存在于 embed 种子）经合并视图编辑/删除会静默失效（界面成功引擎侧无效），现落 {product, pocs:[]} 墓碑条目使种子绑定真实失效，合并视图过滤墓碑。**POC 页快捷绑定**：编辑器头部"绑定产品"弹窗（已绑产品 tag 只读展示+多选新增），免跳绑定关系页。错误消息改 200+{code:1,message} 信封（原非 2xx 纯文本被 axios 丢弃，指导性错误到不了用户）。验证：单测 19/19（含墓碑三件套/幂等删除/handler 回归）、UI headless 产物版 27/27 零 console 错误、fscanx 实测闭环（绑定 D-link-DSL-2640B→poc 后扫描器对命中目标仅发该 poc 请求）。Reviewer 轮（sonnet 档 10 findings 1H/2M/7L）逐条修复复验全过。UI 观感待用户浏览器确认。
+
 ## 2026-11-15
 
 - 修复 exe 旁无 pocs/ 目录时的误报与黏行（BL-POC-002 回归）：initpoc 补约定目录存在性守卫（不存在=正常态静默跳过，原 filepath.Walk 首层 CreateFile 错误被当异常打印）；两处 poc 加载错误输出补换行（原与后续成功行黏在一行）；显式 -pocpath 路径错误保持可见并独立成行。

@@ -8,6 +8,9 @@ POC 扫描模块：修复并重构 Web POC 检测的触发与加载机制。起�
 | BL-POC-002 | 合并式 poc 加载 + 绑定关系外置 | P1 | 已完成 | 已验收 |
 | BL-POC-003 | 指纹定向触发管道 | P1 | 已完成 | 已验收 |
 | BL-POC-004 | 独立 fscanx-web 维护端一期 | P2 | 已完成 | 已验收 |
+| BL-POC-005 | 绑定关系页交互重构 + POC 页快捷绑定 | P1 | 已完成 | 已验收 |
+| BL-POC-006 | 指纹库 SQLite 存储化 | P2 | 未开始 | 未验收 |
+| BL-POC-007 | fscanx-web 登录认证（默认账号） | P1 | 已完成 | 已验收 |
 
 ## BL-POC-001 触发层修复：-poc 零请求止血
 
@@ -215,3 +218,156 @@ POC 扫描模块：修复并重构 Web POC 检测的触发与加载机制。起�
 - 2026-11-15：**多步执行语义 UI 修正（用户问"多步骤怎样才算验证成功"）**。核实 check.go 引擎事实：普通模式 DealWithRules 逐 rule 执行，任一步 expression 为 false 或 search 提取不到即 break 整体失败，**每步（含最后一步）都满足才输出 PocScan 成功行**；`rule.Continue` 仅爆破模式（sets 笛卡尔积 clusterpoc 路径）被消费（内置仅 backup-file/sql-file 2 个 sets 型 poc 使用），普通模式写了也不读。据此修正 UI 三处：步骤区标题加执行语义说明（任一步不满足即停止、每步都满足才算成功）、continue 开关改 isFuzzMode 条件显示（普通模式隐藏，避免无效字段误导，文案改"爆破模式专用：组合命中后继续尝试其余组合并逐条输出"）、search placeholder 补"提取不到则该步即失败"（search 是门槛不是软提取）。产物版 headless 验证：语义说明在、普通模式 continue 隐藏、search 文案已更新、零错误。
 - 2026-11-15：**步骤区页签化（用户建议：多步用"步骤 1/步骤 2"子页切换 + 页签 × 删除）**。el-card 纵向堆叠改为 el-tabs（type=card，closable 页签自带 ×，tab-remove 删除）；新增步骤自动跳到新页签；删除后激活页跟随原内容修正（删前页则前移、删当前页则停原位吃掉原下一步）；至少保留一步（× 拦截 + 提示）；打开/新建重置到第一页。交互链 headless 验证：初始单页签、+添加跳新页、各页内容独立、× 删除后页签与激活页正确、单步 × 拦截、零错误。
 - 2026-11-15：**编辑器排版纪律轮（用户反馈"字体大小和左右对齐乱乱的"，frontend-design 流程）**。病灶定位：CondTree 等多处控件未传 size=small（32px/14px 混进 small 的 24px/12px）、el-form inline 三套左起点（90px label 悬浮/顶格 flex/collapse 两列）、说明文字 12/13px 混杂。改造：全部控件统一 small（24px 高）；弃 el-form 改自定义 field 行（label 列统一 60px 右对齐）；区标题统一 section-title（13px/500）+ sub 说明（12px/secondary）；说明文字缩进 68px 对齐控件起点；垂直节奏 4px 基数；tabs 高度 34px、collapse 头 36px 对齐密度。量化验收：控件高度集合收敛 [0,24,32]→[24] 单值；label 宽度集合 [60] 单值；左基线度量——基本区 label/步骤区 label/变量区输入/headers 输入/区标题 x 坐标全部 673 同一坐标，hint 741=673+68 精确缩进；零错误。
+
+## BL-POC-005 绑定关系页交互重构 + POC 页快捷绑定
+
+- 模块：POC 扫描
+- 优先级：P1
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：绑定维护主流程可用性——浏览态零干扰（下拉只在显式编辑意图后出现）、添加/编辑走显式表单弹窗、行数增长可翻页、POC 维护免跳页直接绑定当前 POC；binds 存储层 SQLite 化后单条 CRUD、种子绑定可编辑可删除（墓碑）、手改文件自动吸收。
+- 关联模块文档：docs/modules/10-POC扫描模块.md
+- 关联计划：plans/2026-11-15-BL-POC-005-绑定UX与POC页快捷绑定.md
+- 关联代码：web/apps/admin/src/views/Binds/Binds.vue、web/apps/admin/src/views/Poc/Poc.vue
+- 验收状态：已验收
+
+### 方案（立项时必填）
+
+- **做什么**：绑定页表格从全行内联编辑改**只读展示**（产品名文本 + POC 名 tag），交互收敛为三个显式动作：添加绑定（弹窗表单）、行编辑（同一弹窗回填）、删除（确认即删）；产品名 autocomplete 与 POC 多选只存在于弹窗内，浏览态点击不弹任何下拉（用户拍板：编辑态才出现候选）。增删改确认即写盘外置 binds.yaml（批量保存按钮随未保存态消失而移除）；客户端分页（默认 20/页）；产品名候选排序改精确>前缀>子串 + 命名空间语义提示（绑定命中=Contains(指纹产品名, 绑定产品名)，写引擎不会输出的名字不生效）；同名产品在添加/编辑时拦截（与引擎 MergeBinds 按 product 去重语义对齐）。POC 页编辑器头部加"绑定产品"按钮（选中 POC 后可用）：弹窗展示该 POC 已绑产品（只读 tag）+ 多选新增，确认 GET→合并→PUT 写盘。
+- **为什么**：用户两轮实测反馈——①无翻页；②"添加绑定"是往表尾插空行不可发现，应改表单；③产品名输入框聚焦即弹"与当前产品名不一致"的候选（el-autocomplete 聚焦触发 + 子串模糊过滤全集），语义困惑且浏览态不该有交互控件；④POC 页无快捷绑定入口。
+- **怎么做**：纯前端改造（Binds.vue 只读表格+分页+内联 el-dialog CRUD、Poc.vue 绑定按钮+弹窗），后端零改动（GET/PUT /api/binds 全量覆盖契约不变，POC 页快捷绑定前端完成合并后 PUT）。
+- **为什么这么做**：浏览态与编辑态分离是用户明确要求（点击即弹下拉莫名其妙）；弹窗化 CRUD 后不再存在未保存态，批量保存按钮成为死 UI 故移除，确认即写盘消除"改了没保存"坑；否决服务端分页与单条绑定 API（数据量=种子 15 行+用户增量，PUT 全量契约已存在且为单用户本地维护端）；候选排序精确>前缀>子串从根上缓解"跳出不相关名字"观感而非仅靠文案解释。
+
+### 范围
+
+- web/apps/admin/src/views/Binds/Binds.vue（只读表格、分页、添加/编辑弹窗、删除确认、候选排序与文案）
+- web/apps/admin/src/views/Poc/Poc.vue（编辑器头部绑定按钮 + 绑定弹窗）
+- bash web/build.sh 产物构建 + go:embed 产物版 headless 终验
+
+### 不做
+
+- 后端 API 变更（GET/PUT /api/binds 契约不变）
+- 服务端分页
+- POC 页的解绑入口（移除走绑定关系页）
+- 产品名强制白名单校验（手输仍允许——指纹明文可自定义扩展，下拉只是候选）
+
+### 验收条件
+
+- [x] 绑定页表格浏览态零交互控件：点击产品名/POC 名/行不出现任何下拉；每行有编辑、删除按钮（headless 实测表格内 input/select/autocomplete 计数=0，20 行均有编辑/删除钮）
+- [x] 添加绑定走弹窗表单（产品名 autocomplete + POC 多选），确认后写盘 binds.yaml（实测添加 Nginx→2 poc，GET /api/binds_list 回读一致）
+- [x] 行编辑弹窗回填生效（回读验证）；同名产品在添加/编辑时被拦截并提示（实测改名 seeyon→seeyon-edit-check 回读生效后改回；重复添加弹 warning 且不产生第二条）
+- [x] 产品名候选排序：输入 nginx 时精确/前缀命中排前（Nginx 类）、纯子串靠后（实测候选序 ["nginx","nginx-admin","neusoft-senginx"]，前缀全部先于子串）；弹窗含命名空间语义提示文案
+- [x] 删除：确认后该条从 binds.yaml 消失（实测删除后回读无此产品）
+- [x] 行数 >20 时分页出现，切页/改页大小正常；增删改全量写盘不受当前页影响（实测 26 条→2 页，切页/10条每页/重载均正确，增删改不受当前页影响）
+- [x] POC 页选中 POC → 绑定产品弹窗（已绑产品只读 tag + 多选新增）→ 确认后 GET /api/binds_list 回读该 product 的 pocs 含此 POC 名（实测 ipTIME-X6003 绑定回读含当前 POC，重开弹窗 tag 展示）
+- [x] fscanx 实测闭环：新建绑定（指纹可命中产品 → 新 poc）落盘后重跑扫描器，定向发出新 poc 请求（实测绑定 D-link-DSL-2640B→poc-yaml-dlink-850l-info-leak，假目标页含指纹关键字，扫描器 `[+] load 13 binds` 消费 web 落盘文件，目标访问日志仅 首页+favicon 探测+该 poc 的 POST /hedwig.cgi 一条 poc 请求）
+- [x] bash web/build.sh 产物构建成功、go build ./cmd/fscanx-web 通过；headless 浏览器对 7758 产物版验证绑定页/POC 页交互链零 console 错误（go:embed all:static 产物版终验，实测 27/27 零 console/page/HTTP 错误）
+
+### 依赖
+
+- 无（BL-POC-004 已闭合，web 框架在仓）
+
+### 状态记录
+
+- 2026-11-15：立项（用户批准 P1，Mode B 修订两轮——v2 按用户拍板把"文案解释下拉语义"升级为"浏览态/编辑态分离 + 编辑按钮"交互模型；独立审查 agent 轮被用户打断，改为主会话基于亲读代码自查 A-H 八项事实声明，全部属实）。
+- 2026-11-16：**执行完成 + 范围扩展（用户批准：binds 存储层 SQLite 化纳入本 item，"指纹也可以这样做"记为 006 方向）**。交付三层：①前端交互——绑定页只读表格+分页（10/20/50）+添加/编辑共用弹窗+删除确认，浏览态零下拉；POC 页编辑器头部"绑定产品"弹窗；产品候选排序精确>前缀>子串+命名空间提示文案。②存储层——`cmd/fscanx-web/binds_db.go`：SQLite（modernc.org/sqlite v1.29.10，Go1.20 兼容线）主存外置层 + binds.yaml 快照双轨；同步机制=单向权威+手改吸收（每请求前比对文件 sha256 与 meta，不一致=被手改→全量吸收→重生成；文件缺失按 DB 重生成防误删；坏 yaml 显式报错）；API 改造为 /api/binds_list、/api/binds_add（upsert-append）、/api/binds_edit、/api/binds_delete，PUT /api/binds 退役。③墓碑机制——种子起源行（仅存在于 embed 种子）的编辑/删除：落 {product, pocs:[]} 墓碑条目，引擎 MergeBinds 同名覆盖后空 pocs=绑定失效（boundPocNames 的 add([]) 空操作），合并视图过滤墓碑不展示，扫描器零改动。**意外发现一（重要）**：种子起源行经合并视图编辑/删除会静默失效——此缺口 BL-POC-004 时代即存在（旧 PUT 全量覆盖同样删不掉种子条目，界面看似成功引擎侧无效），本轮墓碑机制修复；单测此前只测外置层 CRUD 未暴露。**意外发现二**：种子命名与指纹库命名空间存在漂移（种子 'seeyon' vs 指纹库 '致远互联-Seeyon-Server'），Contains 大小写不敏感语义下种子名仍可命中，无碍但记录在案。验证：单测 19/19（CRUD/吸收往返/墓碑三件套/幂等删除/handler 级回归）；UI headless 产物版 27/27 零 console 错误；fscanx 实测闭环（见验收条件末条）。
+- 2026-11-16：**Reviewer 独立验证轮（sonnet 档，10 findings：1H/2M/7L）→ 逐条修复后复验 27/27 全过**。HIGH 墓碑幂等漏洞修复：重复删除墓碑行会移除墓碑导致种子绑定复活——改为幂等成功保留墓碑；墓碑行作 original 改名同理保留墓碑。MEDIUM×2 修复：①快捷绑定到种子起源产品改为以种子 pocs 为基线追加（原实现单 poc 条目整条覆盖种子绑定）；②错误消息改 200+{code:1,message} 信封（原非 2xx 纯文本被 axios 丢弃成 status code 文案，指导性错误如"手改内容有误请修正"到不了用户）。LOW×5 择机修复：吸收对同名重复 product 后者覆盖（不再主键冲突锁死接口）、dbMutate 注释修正为"自愈靠下一次写操作无条件 flush"、readJSON 强制 application/json Content-Type（跨站无预检写请求被挡）、Poc.vue 部分失败提示"已绑定 x/y 项"、go.mod indirect 标记修正。**方法学记录（非产品 bug）**：headless playwright 信任点击与 Element Plus clickoutside/焦点时序存在竞态（DOM 监听触发但 Vue 处理器偶发不执行，probe9/10 实证），产品代码无涉——测试脚本以"点弹窗标题收尾 popper + 点击后校验效果补点"规避。
+- 2026-11-16：验收条件全勾（实测证据见各条），置已完成+待验收。UI 观感（排版/交互手感）待用户浏览器确认后验收闭合。
+- 2026-11-16：验收闭合（用户浏览器实测确认测试通过）。置已验收。
+
+## BL-POC-006 指纹库 SQLite 存储化
+
+- 模块：POC 扫描
+- 优先级：P2
+- 状态：未开始
+- 当前阶段：持续迭代
+- 价值：指纹维护从"textarea 整文手改 + 全文回写"升级为单条目 CRUD（增删改查按条目落库，免整文搬移）；SQLite 主存 + 明文 JSON 快照双轨后，手改文件自动吸收、重打包管线不变、扫描器零改动（与 BL-POC-005 的 binds 存储化同模式，方向用户已认可）。
+- 关联模块文档：docs/modules/10-POC扫描模块.md
+- 关联计划：—（未开始）
+- 关联代码：cmd/fscanx-web/binds_db.go（同模式参照）、cmd/fscanx-web/api_finger.go、mylib/finger/resources/、mylib/finger/packlib/
+- 验收状态：未验收
+
+### 方案（立项时必填）
+
+- **做什么**：参照 binds_db.go 模式把两份指纹明文（goby.json / fingers_http.json）的条目级维护迁入 SQLite（指纹库主存，按数据源分表、条目以 JSON blob 落库保结构零建模成本）：单条目增删改查 API；每次变更后按既有格式重生成明文 JSON（temp+rename 原子写）并记录哈希；读写前哈希对齐吸收手改（与 binds 同机制）；pack 重打包链路消费明文 JSON 不变（产物 .gz 供编译嵌入，扫描器零改动）；web 端指纹页从 textarea 整文编辑升级为条目列表 + 单条目表单/JSON 编辑。
+- **为什么**：现状指纹维护是"textarea 整文改 + 整文回写"——单条目修改要人肉定位数千条 JSON 中的目标段，格式敏感（BL-POC-004 曾踩 \u 转义/整体重序列化坑）；条目级 CRUD 后修改面收敛到单条目，格式由重生成器保证。用户在 BL-POC-005 验收轮明确认可同方向（"并且指纹也可以这样做"）。
+- **怎么做**：fingerprint.db（条目表 + meta 哈希表）→ 明文 JSON 重生成器（按源格式序列化，格式契约=pack 现行输入）→ 哈希吸收（同 binds）→ API 按页面接口命名规范（/api/finger_list 等）→ 前端条目列表页。
+- **为什么这么做**：与 binds 存储化同一分层决策（DB 主存 + 文件快照 + 哈希吸收 + 墓碑语义如需删指纹条目）；pack 管线与扫描器零改动（明文 JSON 仍是 pack 唯一输入）；否决"运行时外挂加载指纹"（用户既定拍板：指纹保持内嵌）。
+
+### 范围
+
+- cmd/fscanx-web/（finger_db.go 存储 + api_finger.go 改造）
+- 前端指纹页条目化改造
+- mylib/finger 明文 JSON 格式契约固化（重生成器与 pack 输入一致）
+
+### 不做
+
+- 指纹运行时外挂加载（保持编译嵌入）
+- 引擎 Match 逻辑变更
+- 指纹内容治理（误报清理等归 05 模块）
+
+### 验收条件
+
+- [ ] 单条目增删改后明文 JSON 重生成与 pack 字节兼容（pack 产物 md5 与手改等价基线一致）
+- [ ] 手改明文 JSON 被吸收进 DB（哈希对齐），坏 JSON 显式报错
+- [ ] 条目级 API 与 UI CRUD 实测闭环
+- [ ] headless 产物版交互链零 console 错误
+
+### 依赖
+
+- BL-POC-005（存储层模式与墓碑语义先例）
+
+### 状态记录
+
+- 2026-11-16：方向立项草案（用户在 BL-POC-005 范围确认时批注"并且指纹也可以这样做"）。优先级 P2 为草拟值，**待用户确认优先级后 committed 转 Mode D**。
+
+## BL-POC-007 fscanx-web 登录认证（默认账号）
+
+- 模块：POC 扫描
+- 优先级：P1
+- 状态：已完成
+- 当前阶段：持续迭代
+- 价值：维护端具备真实写能力（binds/poc/指纹改写），从免登录硬注入改为最小认证门——部署端口不再裸奔，写接口有身份门槛。
+- 关联模块文档：docs/modules/10-POC扫描模块.md
+- 关联计划：plans/2026-11-16-BL-POC-007-web登录认证.md
+- 关联代码：cmd/fscanx-web/auth.go、cmd/fscanx-web/main.go、web/apps/admin/src/main.ts、web/apps/admin/src/api/login/index.ts
+- 验收状态：已验收
+
+### 方案（立项时必填）
+
+- **做什么**：后端 `/api/user/login`（校验默认账号 admin/admin123，签发 crypto/rand 内存会话 token）+ `/api/user/logout`（销毁 token）；中间件对 `/api/*`（除 login）校验 Authorization token，无效返回 200+{code:401,message} 信封——前端拦截器既有链路自动 logout+回登录页（零前端守卫改动）。前端：登录 API 指向真实端点、删 main.ts 免登录硬注入、logoutApi 指向真实登出。
+- **为什么**：用户指令"现在需要登录，搞一个默认账号 admin/admin123"。免登录是 BL-POC-004 期临时形态（main.ts 注入 accessToken:'local'），维护端写能力增强后（005 起含 SQLite 主存 CRUD）认证缺位成为裸奔面。
+- **怎么做**：凭据常量 + 内存 token 表（进程生命周期，重启即失效，前端 401 信封自动登出再登录）；token 走既有 Authorization 头（拦截器已发送 userStore.token，接受裸 token 与 Bearer 前缀）。
+- **为什么这么做**：本地单用户维护端——否决多用户/角色/密码哈希存储/防爆破限速（成本与威胁不匹配；凭据即配置，改密码=改常量重编译或后续再参数化）；复用 401 信封让前端"会话过期自动登出"链路零改动（permission.ts 守卫与拦截器均已按该契约实现）；静态资源不设防（登录页本身要能加载）。
+
+### 范围
+
+- cmd/fscanx-web/auth.go（新：凭据/会话/登录登出/中间件）+ auth_test.go
+- cmd/fscanx-web/main.go（路由注册 + mux 包中间件）
+- web/apps/admin/src/api/login/index.ts（真实端点）、src/main.ts（删注入）
+
+### 不做
+
+- 多用户/角色权限模型
+- 密码可配置化（flag/env/存储）——后续有需要再参数化
+- HTTPS / 防爆破限速（本地回环工具语义）
+- 注册流程（框架模板残留组件不接后端）
+
+### 验收条件
+
+- [x] 错误凭据登录被拒并提示；admin/admin123 登录进入且 /api/routes 正常加载（实测 headless：wrongpass 提示"fscanx-web: 用户名或密码错误"，admin/admin123 登录后离开登录页、绑定页 15 种子行加载）
+- [x] 未登录直接访问页面路由重定向登录页；登录后刷新保持会话；服务端重启后旧 token 401 自动登出（实测 A1 重定向 /login?redirect=/binds/list；A5 刷新仍在；curl 登录→重启→同 token 调 /api/binds_list 返回 401）
+- [x] 未带/伪造 token 调 /api/* 返回 {code:401} 信封（实测伪造 token 注入 localStorage 刷新被清回登录页；curl 无 token 调 binds_add 返回 401——跨站盲写面同步封死）
+- [x] logout 后服务端 token 失效（单测 TestUserLogout_InvalidatesToken + headless A6/A7 登出回登录页、直访再被拦）
+- [x] go test 单测过（登录成功/失败/Content-Type 拒绝/登出失效/中间件拦截与放行/Bearer 前缀/静态与 login 白名单，7 测试全过）
+- [x] bash web/build.sh 产物版 headless：登录全链 9/9 零非预期 console 错误（错误密码的拦截器 throw 属预期行为已排除口径）
+
+### 依赖
+
+- BL-POC-005（写接口是被保护对象；401 信封机制先例）
+
+### 状态记录
+
+- 2026-11-16：用户指令"现在需要登录，那就搞一个默认账号admin/admin123"直接立项（视为范围批准，P1 立即执行）。免登录是 BL-POC-004 期临时形态（main.ts 注入 accessToken:'local'），permission.ts 守卫与拦截器的 401 登出链路本就按真实认证设计，本次只是补上服务端。
+- 2026-11-16：执行完成。交付：auth.go（凭据常量 admin/admin123 + crypto/rand 内存会话 token + /api/user/login|logout + authMiddleware：/api/* 除 login 白名单，无效 token 返 200+{code:401} 信封）；main.go 路由+中间件+横幅打印账号；前端登录/登出 API 换真实端点、删 main.ts 注入与未用 import。验证：单测 7/7、headless 产物版登录全链 9/9（重定向/错误提示/登录/加载/刷新保持/登出/再拦截/伪造 token 401 自动登出/零非预期错误）、curl 重启失效与授权写/无 token 写 401。**意外发现（方法学）**：构建顺序坑——go build 先于 web/build.sh 时二进制 embed 旧前端，浏览器拿旧 UI 造成假失败（登录提交打到 /mock/user/login），正确顺序=前端产物先行再 go build；与 go:embed 产物版终验教训同源已入记忆。附带收益：认证门同时封死了此前 reviewer 提到的跨站无预检盲写面。置已完成+待验收。
+- 2026-11-16：验收闭合（用户浏览器实测确认测试通过）。置已验收。

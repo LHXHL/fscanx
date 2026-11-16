@@ -7,6 +7,7 @@
 package main
 
 import (
+	"database/sql"
 	"embed"
 	"flag"
 	"fmt"
@@ -21,12 +22,13 @@ import (
 //go:embed all:static
 var staticFS embed.FS
 
-// server 维护端状态：目录定位与 CEL 环境。
+// server 维护端状态：目录定位、binds 存储与 CEL 环境。
 type server struct {
-	repoRoot   string    // fscanx 仓库根（指纹明文、pack 目标）
-	pocsDir    string    // 扫描器部署目录的外置 poc 目录（二进制旁 pocs/）
-	bindsPath  string    // 外置绑定关系文件（二进制旁 binds.yaml）
-	celEnv     *cel.Env  // 与 poc 求值同源的表达式环境（校验/反解析）
+	repoRoot  string   // fscanx 仓库根（指纹明文、pack 目标）
+	pocsDir   string   // 扫描器部署目录的外置 poc 目录（二进制旁 pocs/）
+	bindsPath string   // 外置绑定关系文件（二进制旁 binds.yaml，DB 变更后自动重生成的快照）
+	db        *sql.DB  // binds 主存储（SQLite，二进制旁 binds.db，见 binds_db.go）
+	celEnv    *cel.Env // 与 poc 求值同源的表达式环境（校验/反解析）
 }
 
 func main() {
@@ -51,6 +53,14 @@ func main() {
 		bindsPath: filepath.Join(exeDir, "binds.yaml"),
 		celEnv:    env,
 	}
+	dbPath := filepath.Join(exeDir, "binds.db")
+	db, err := openBindsDB(dbPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "初始化 binds 数据库失败:", err)
+		os.Exit(1)
+	}
+	s.db = db
+	defer db.Close()
 
 	static, _ := fs.Sub(staticFS, "static")
 	mux := http.NewServeMux()
@@ -59,14 +69,19 @@ func main() {
 	mux.HandleFunc("/api/pocs", s.listPocs)
 	mux.HandleFunc("/api/poc", s.pocHandler)
 	mux.HandleFunc("/api/validate", s.validateCEL)
-	mux.HandleFunc("/api/binds", s.bindsHandler)
+	mux.HandleFunc("/api/binds_list", s.bindsList)
+	mux.HandleFunc("/api/binds_add", s.bindsAdd)
+	mux.HandleFunc("/api/binds_edit", s.bindsEdit)
+	mux.HandleFunc("/api/binds_delete", s.bindsDelete)
 	mux.HandleFunc("/api/finger", s.fingerHandler)
 	mux.HandleFunc("/api/pack", s.postPack)
 	mux.HandleFunc("/api/products", s.listProducts)
 	mux.HandleFunc("/api/routes", s.listRoutes)
+	mux.HandleFunc("/api/user/login", s.userLogin)
+	mux.HandleFunc("/api/user/logout", s.userLogout)
 
-	fmt.Printf("fscanx-web 维护端\n  访问:   http://%s/\n  外置目录: %s\n  仓库根: %s\n", *addr, exeDir, *root)
-	if err := http.ListenAndServe(*addr, mux); err != nil {
+	fmt.Printf("fscanx-web 维护端\n  访问:   http://%s/ （默认账号 %s / %s）\n  外置目录: %s\n  仓库根: %s\n", *addr, authUsername, authPassword, exeDir, *root)
+	if err := http.ListenAndServe(*addr, s.authMiddleware(mux)); err != nil {
 		fmt.Fprintln(os.Stderr, "启动失败:", err)
 		os.Exit(1)
 	}

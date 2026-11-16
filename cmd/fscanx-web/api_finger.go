@@ -81,7 +81,7 @@ func (s *server) putFinger(w http.ResponseWriter, r *http.Request) {
 func (s *server) postPack(w http.ResponseWriter, r *http.Request) {
 	results, err := packlib.Run(s.repoRoot)
 	if err != nil {
-		httpErrorf(w, 500, "打包失败: %v", err)
+		httpErrorf(w, "打包失败: %v", err)
 		return
 	}
 	out := make([]map[string]interface{}, 0, len(results))

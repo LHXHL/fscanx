@@ -20,10 +20,13 @@
       <template #header>
         <div class="card-head">
           <span>编辑器{{ selName ? `：${selName}` : '' }}</span>
-          <el-radio-group v-model="mode" size="small">
-            <el-radio-button value="form">表单模式</el-radio-button>
-            <el-radio-button value="raw">源码模式</el-radio-button>
-          </el-radio-group>
+          <div class="head-actions">
+            <el-button size="small" :disabled="!selName" @click="openBind">绑定产品</el-button>
+            <el-radio-group v-model="mode" size="small">
+              <el-radio-button value="form">表单模式</el-radio-button>
+              <el-radio-button value="raw">源码模式</el-radio-button>
+            </el-radio-group>
+          </div>
         </div>
       </template>
 
@@ -173,6 +176,43 @@
         <el-button type="danger" plain :disabled="!selName" @click="remove">删除外置</el-button>
       </div>
     </el-card>
+
+    <!-- 绑定产品弹窗（BL-POC-005：当前 POC 快捷绑定，免跳绑定关系页） -->
+    <el-dialog v-model="bindDialogVisible" title="绑定产品" width="560px">
+      <div class="dlg-field">
+        <label>当前 POC</label>
+        <span class="dlg-value">{{ selName }}</span>
+      </div>
+      <div class="dlg-field">
+        <label>已绑产品</label>
+        <div class="dlg-value">
+          <template v-if="boundProducts.length">
+            <el-tag v-for="p in boundProducts" :key="p" size="small" class="poc-tag">{{ p }}</el-tag>
+          </template>
+          <span v-else class="dlg-empty">无（该 POC 尚未绑定任何产品）</span>
+        </div>
+      </div>
+      <div class="dlg-field">
+        <label>新增绑定</label>
+        <el-select
+          v-model="bindProducts"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          :reserve-keyword="false"
+          placeholder="从指纹库产品名选择（可输入过滤）"
+          style="flex: 1"
+        >
+          <el-option v-for="n in allProducts" :key="n" :label="n" :value="n" />
+        </el-select>
+      </div>
+      <div class="hint">移除绑定请到「绑定关系」页；确认后写盘 binds.yaml，重跑扫描器生效</div>
+      <template #footer>
+        <el-button size="small" @click="bindDialogVisible = false">取消</el-button>
+        <el-button type="primary" size="small" :loading="bindSaving" @click="confirmBind">确认并写盘</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -188,6 +228,7 @@ import {
   type CondNode,
   type PocItem
 } from '@/api/poc'
+import { bindsAddApi, getBindsListApi, listProductsApi } from '@/api/binds'
 import CondTree from './CondTree.vue'
 import { nodeToCel, pruneTree } from './predicates'
 
@@ -415,6 +456,54 @@ const remove = async () => {
   }
 }
 
+// ---- 绑定产品（BL-POC-005：当前 POC 快捷绑定，免跳绑定关系页）----
+const bindDialogVisible = ref(false)
+const bindSaving = ref(false)
+const bindProducts = ref<string[]>([])
+const allProducts = ref<string[]>([])
+const pocBinds = ref<Array<{ product: string; pocs: string[] }>>([])
+
+// 该 POC 已绑定的产品（只读展示；移除走绑定关系页）
+const boundProducts = computed(() => pocBinds.value.filter((b) => (b.pocs ?? []).includes(selName.value)).map((b) => b.product))
+
+const openBind = async () => {
+  bindProducts.value = []
+  try {
+    const [bindsRes, prodsRes] = await Promise.all([getBindsListApi(), listProductsApi()])
+    pocBinds.value = bindsRes.data.binds ?? []
+    allProducts.value = prodsRes.data.products ?? []
+    bindDialogVisible.value = true
+  } catch {
+    // 错误 toast 由请求拦截器 onError 统一展示
+  }
+}
+
+// 单条 upsert-append：服务端处理已存在（追加去重）/新建，免读全量客户端合并
+const confirmBind = async () => {
+  if (!bindProducts.value.length) return ElMessage.warning('至少选择一个产品')
+  bindSaving.value = true
+  try {
+    let okCount = 0
+    const failed: string[] = []
+    for (const prod of bindProducts.value) {
+      try {
+        await bindsAddApi(prod, [selName.value])
+        okCount++
+      } catch {
+        failed.push(prod) // 单条失败不中断余下；错误消息由拦截器 onError 展示
+      }
+    }
+    if (failed.length === 0) {
+      ElMessage.success(`已绑定 ${okCount} 项并写盘 binds.yaml，重跑扫描器生效`)
+      bindDialogVisible.value = false
+    } else {
+      ElMessage.warning(`已绑定 ${okCount}/${bindProducts.value.length} 项，失败：${failed.join('、')}`)
+    }
+  } finally {
+    bindSaving.value = false
+  }
+}
+
 onMounted(loadList)
 </script>
 
@@ -440,6 +529,39 @@ onMounted(loadList)
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.head-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 绑定弹窗字段行（与编辑器 field 行纪律一致：60px 右对齐 label） */
+.dlg-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+.dlg-field > label {
+  flex-shrink: 0;
+  width: 60px;
+  text-align: right;
+  font-size: 12px;
+  line-height: 24px;
+  color: var(--el-text-color-regular);
+}
+.dlg-value {
+  flex: 1;
+  font-size: 12px;
+  line-height: 24px;
+  word-break: break-all;
+}
+.dlg-empty {
+  color: var(--el-text-color-secondary);
+}
+.poc-tag {
+  margin: 1px 4px 1px 0;
 }
 
 /* 统一字段行：label 列 60px 右对齐，控件随行 */

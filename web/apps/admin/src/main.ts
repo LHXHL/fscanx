@@ -25,7 +25,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 
 import { setupPermission } from './permission'
-import { useUserStoreWithOut } from '@/store/modules/user'
 
 const setupMock = async () => {
   if (import.meta.env.PROD && import.meta.env.VITE_USE_MOCK === 'true') {
@@ -42,9 +41,8 @@ const setupAll = async () => {
 
   setupStore(app)
 
-  // 本地维护端免登录：直接注入会话（无权限模型，菜单走后端 /api/routes）
-  useUserStoreWithOut().setSession({ accessToken: 'local', user: { username: 'local' } })
-
+  // 登录认证（BL-POC-007）：会话由登录页 POST /api/user/login 建立，不再注入本地会话；
+  // 未登录由 permission.ts 守卫重定向 /login，会话过期由拦截器 401 信封自动登出
   await setupPermission()
 
   setupI18n(app)

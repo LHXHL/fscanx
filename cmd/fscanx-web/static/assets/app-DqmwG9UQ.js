@@ -1,1 +1,0 @@
-import{f as e,p as t}from"./permission-B4x5acZp.js";var n=t(`app`,{state:()=>({mobile:!1,pageLoading:!1,collapse:!1,layout:`sidebar`,isDark:!1}),actions:{setLayout(e){this.layout=e}},persist:{key:`vea-app-v2`,pick:[`collapse`,`layout`,`isDark`]}}),r=()=>n(e);export{r as n,n as t};
