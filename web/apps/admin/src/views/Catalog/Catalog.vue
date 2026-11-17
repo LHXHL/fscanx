@@ -7,7 +7,10 @@
             标准产品（{{ rows.length }} 条{{ hasExternal ? '，含外挂条目' : '，全部代码内置' }}）
             <el-tooltip placement="top" popper-class="help-tip">
               <template #content>
-                这里维护「产品叫什么（别名）+ 测什么（测试名单）」：别名让识别引擎把各种指纹写法统一成一个标准名输出；测试名单是指纹命中后定向执行的 POC。条目有两个存放位置——代码源文件（下次 go build 生效，随版本分发）或外挂文件（重跑扫描器即生效），编辑时可选择。
+                <div>这里维护「产品叫什么（别名）+ 测什么（测试名单）」：别名让识别引擎把各种指纹写法统一成一个标准名输出；测试名单是指纹命中后定向执行的 POC。</div>
+                <div style="margin-top: 6px">条目有两个存放位置，编辑时可选择：</div>
+                <div>· 代码源文件（下次 go build 生效，随版本分发）：{{ builtInPath || '未配置 -root，无法定位' }}</div>
+                <div>· 外挂文件（重跑扫描器即生效）：{{ externalPath || '未生成' }}</div>
               </template>
               <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
             </el-tooltip>
@@ -49,7 +52,8 @@
         <el-table-column label="存放位置" width="100" align="center">
           <template #default="scope">
             <el-tooltip
-              :content="scope.row.origin === 'built-in' ? '定义在代码源文件（catalog.yaml），改动下次 go build 后生效、随版本分发' : '保存在 fscanx-web 旁的外挂文件，重跑扫描器即生效'"
+              popper-class="help-tip"
+              :content="scope.row.origin === 'built-in' ? `${builtInPath || '未配置 -root，无法定位源文件'}（改动下次 go build 后生效、随版本分发）` : `${externalPath || '未生成外挂文件'}（重跑扫描器即生效）`"
               placement="top"
             >
               <el-tag :type="scope.row.origin === 'built-in' ? 'info' : 'success'" size="small">
@@ -181,6 +185,7 @@ defineOptions({ name: 'Catalog' })
 const rows = ref<CatalogEntryView[]>([])
 const hasExternal = ref(false)
 const builtInPath = ref('')
+const externalPath = ref('')
 const keyword = ref('')
 
 // 客户端搜索 + 分页（数据量=出厂 50 条+用户增量，服务端分页属过度设计，与 Binds 页先例一致）
@@ -216,6 +221,7 @@ const load = async () => {
   rows.value = res.data.entries ?? []
   hasExternal.value = res.data.has_external
   builtInPath.value = res.data.built_in_path ?? ''
+  externalPath.value = res.data.external_path ?? ''
   const maxPage = Math.max(1, Math.ceil(rows.value.length / pageSize.value))
   if (page.value > maxPage) page.value = maxPage
 }

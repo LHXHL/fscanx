@@ -8,9 +8,10 @@
           <el-button type="primary" size="small" @click="newPoc">新建</el-button>
         </div>
       </template>
-      <el-input v-model="keyword" placeholder="搜索名称..." clearable size="small" style="margin-bottom: 8px" />
+      <el-input v-model="keyword" placeholder="搜索名称/文件名..." clearable size="small" style="margin-bottom: 8px" />
       <el-table :data="filtered" highlight-current-row height="620" size="small" border @row-click="openPoc">
         <el-table-column prop="name" label="名称" show-overflow-tooltip />
+        <el-table-column prop="file" label="文件名" min-width="140" show-overflow-tooltip class-name="mono-col" />
         <el-table-column label="存放位置" width="130" prop="source">
           <template #default="scope">
             <el-tooltip :content="scope.row.source === 'external' ? '保存在外挂 pocs/ 目录，重跑扫描器即生效' : '保存在代码源文件，下次 go build 后生效'" placement="top">
@@ -25,7 +26,10 @@
     <el-card class="edit-card" shadow="never">
       <template #header>
         <div class="card-head">
-          <span>编辑器{{ selName ? `：${selName}` : '' }}</span>
+          <el-tooltip v-if="selName" placement="top" :content="selFile ? `当前文件：${selFile}` : '当前文件：—（新建未保存）'">
+            <span>编辑器：{{ selName }}</span>
+          </el-tooltip>
+          <span v-else>编辑器</span>
           <div class="head-actions">
             <el-button size="small" :disabled="!selName" @click="openBind">绑定产品</el-button>
             <el-radio-group v-model="mode" size="small">
@@ -312,7 +316,8 @@ const form = reactive({
 const setRows = ref<Array<{ key: string; value: string }>>([])
 const setListRows = ref<Array<{ key: string; valuesText: string }>>([])
 
-const filtered = computed(() => pocs.value.filter((p) => p.name.includes(keyword.value)))
+// 搜索同时匹配 poc 内部名与 yaml 文件名（两者经常不一致，按名找不到文件——BL-POC-012）
+const filtered = computed(() => pocs.value.filter((p) => p.name.includes(keyword.value) || (p.file ?? '').includes(keyword.value)))
 
 // 爆破模式（sets 列表变量存在时）：执行走 clusterpoc 笛卡尔积路径，continue 字段仅此模式生效
 const isFuzzMode = computed(() => setListRows.value.some((kv) => kv.key.trim() !== ''))
@@ -640,7 +645,7 @@ onMounted(loadList)
   height: calc(100vh - 110px);
 }
 .list-card {
-  width: 380px;
+  width: 430px;
   flex-shrink: 0;
 }
 .edit-card {
@@ -787,6 +792,11 @@ onMounted(loadList)
 }
 
 .mono :deep(textarea) {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+}
+/* 文件名列等宽字体（文件名是定位目标，与名称视觉区分） */
+:deep(.mono-col .cell) {
   font-family: Consolas, monospace;
   font-size: 12px;
 }

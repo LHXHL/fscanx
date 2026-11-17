@@ -2,6 +2,8 @@
 
 ## 2026-11-17
 
+- BL-POC-012 文件名可见性（纯前端展示层，P2）：POC 列表加「文件名」列（内置=embed 真实文件名/外挂=pocs/ 文件名，溢出悬浮+等宽字体列）、搜索同时匹配名称与文件名（placeholder 同步）、编辑器标题悬浮显示当前文件名、左列卡片 380→430 腾列宽；标准产品页「存放位置」tag 悬浮改具体完整路径（built_in_path/external_path，未配置 -root 空值兜底）+ 页头问号 tooltip 列出两个维护文件路径。零后端改动——file 与双路径字段本就随列表接口返回，前端只差展示；reviewer 独立验收 7 条全 PASS（vue-tsc 全量零错误），vite+go 双构建产物重嵌入。产物版实测待用户闭合。
+
 - BL-POC-009/BL-POC-011 验收闭合：用户真机实测通过（产物版浏览器，UI 观感+回归清单确认），控制台移除，POC 扫描模块 10/11 已验收。
 - BL-POC-011 web 维护端 UX 整理（纯展示层，P2）：三页 20+ 处平铺长文案按三分法收敛——后果警示保留内联一行（Catalog/Poc 保存位置提示）、字段/背景解释改问号 tooltip（复用全局 Icon mdi:help-circle 即 ContentWrap 范式；两条百字长提示 popper-class=help-tip 全局限宽 360px）、冗余文案删除（挂为别名 hint 与确认框文案重复）；框体统一——四弹窗 560/600/680/720→全 680px（用户批准单一档）、删 Finger 重复 .dlg-field 样式块（100px 级联覆盖 60px，三页 label 不一致根因）归一 60px、favicon md5/mmh3 label 改「图标 md5/mmh3」适配列宽、Poc 两个默认尺寸按钮入 small 体系、分页补 small、三表格统一 border、head-actions gap 统一 8px。vite build + go build 双过产物重嵌入；reviewer 独立验收 7 条全 PASS（APPROVE + 1 should-fix 已修：schema 锁定警示补回「或形态」语义防多 favicon 哈希触发场景描述失真）；文案→tooltip 映射表 23 项留档 plans/。
 
