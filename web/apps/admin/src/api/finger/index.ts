@@ -52,3 +52,9 @@ export const fingerDeleteApi = (file: string, id: number) => {
 export const packApi = () => {
   return request.post<{ status: string; results: PackResult[] }>({ url: '/api/pack' })
 }
+
+// 两指纹明文的产品名全集（后端 handler 在 api_finger.go listProducts；BL-POC-009 起
+// 供产品册候选辅助使用——注意这是"指纹写法"命名空间，与标准产品条目名不同）
+export const listProductsApi = () => {
+  return request.get<{ products: string[] }>({ url: '/api/products' })
+}

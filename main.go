@@ -18,6 +18,10 @@ func main() {
 	common.Flag(&Info)
 	common.Parse(&Info)
 
+	// BL-POC-009：外置产品册别名注入（二进制旁 catalog.yaml）——必须在指纹识别前
+	// （DoWebScan 归一输出依赖注入后的归一表），三个扫描分支共用这一次调用。
+	Plugins.InitEngineAliases()
+
 	// 检查是否有 --msc 参数（通过flag）
 	if common.MasscanMode {
 		var err error

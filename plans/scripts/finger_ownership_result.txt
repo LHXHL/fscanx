@@ -1,0 +1,13 @@
+[rows] 未归属行 A='Comtrend-Gigabit-802.11n-Router' B='sky-Router'
+[open] 归属弹窗打开：PASS
+[branch] 未归属初始态（仅归属方式选择，配置不平铺）：PASS
+[mode] 选择归属方式（自立）：PASS
+[self-std] 自立「验收测试产品T」→ 已归属分支切换：PASS
+[bind] 顺手绑定 coremail poc：PASS
+[mode] 选择归属方式（挂别名）：PASS
+[assign] 确认框映射改显示名文案（铁律5）：PASS
+[assign] 行 B 挂为「验收测试产品T」别名（归属列刷新）：PASS
+
+[console] 错误数（除 favicon）：0
+
+RESULT: ALL PASS

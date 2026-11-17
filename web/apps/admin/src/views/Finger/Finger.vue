@@ -28,9 +28,34 @@
       <el-table :data="items" highlight-current-row height="520" size="small" @row-click="(row: FingerEntryItem) => openEdit(row)">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="name" label="名称" show-overflow-tooltip />
-        <el-table-column label="操作" width="190">
+        <el-table-column label="产品归属" width="150">
+          <template #default="scope">
+            <el-tooltip
+              v-if="verdictOf(scope.row.name).relation === 'alias-of'"
+              :content="`该写法经别名归一后扫描输出为标准名「${verdictOf(scope.row.name).owner}」`"
+              placement="top"
+            >
+              <el-tag type="success" size="small">「{{ verdictOf(scope.row.name).owner }}」的别名</el-tag>
+            </el-tooltip>
+            <el-tag v-else-if="verdictOf(scope.row.name).relation === 'self'" type="primary" size="small">标准产品</el-tag>
+            <el-tooltip v-else-if="verdictOf(scope.row.name).relation === 'unassigned'" content="该写法未归属任何标准产品——识别将按原名输出、不会触发任何产品绑定；如需归一或绑定请到「标准产品」页维护" placement="top">
+              <el-tag type="warning" size="small">未归属</el-tag>
+            </el-tooltip>
+            <span v-else class="verdict-empty">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="所属产品测试" min-width="180">
+          <template #default="scope">
+            <template v-if="ownerPocsOf(scope.row.name).length">
+              <el-tag v-for="p in ownerPocsOf(scope.row.name)" :key="p" size="small" type="success" class="poc-tag">{{ p }}</el-tag>
+            </template>
+            <span v-else class="verdict-empty">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="250">
           <template #default="scope">
             <el-button size="small" @click.stop="openEdit(scope.row)">编辑</el-button>
+            <el-button size="small" type="primary" plain @click.stop="openOwnership(scope.row)">归属</el-button>
             <el-button size="small" @click.stop="copyEntry(scope.row)">复制</el-button>
             <el-button size="small" type="danger" plain @click.stop="removeEntry(scope.row)">删除</el-button>
           </template>
@@ -136,11 +161,99 @@
         <el-button type="primary" size="small" :loading="dlg.saving" @click="saveEntry">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 归属管理弹窗（BL-POC-009 指纹视角操作：指定归属 / 自立标准产品 / 顺手绑定） -->
+    <el-dialog v-model="ownDlg.visible" title="产品归属" width="600px">
+      <div class="dlg-field">
+        <label>当前写法</label>
+        <span class="dlg-value mono-text">{{ ownDlg.name }}（{{ engineSource }} 源）</span>
+      </div>
+      <div class="dlg-field">
+        <label>当前归属</label>
+        <div class="dlg-value">
+          <el-tag v-if="ownVerdict.relation === 'self'" type="primary" size="small">标准产品：{{ ownDlg.name }}</el-tag>
+          <el-tag v-else-if="ownVerdict.relation === 'alias-of' && ownEntry" type="success" size="small">「{{ ownVerdict.owner }}」的别名</el-tag>
+          <el-tag v-else type="warning" size="small">未归属（识别按原名输出，不触发任何绑定）</el-tag>
+        </div>
+      </div>
+
+      <!-- 已归属：显示测试名单 + 顺手绑定/移除 -->
+      <template v-if="ownEntry">
+        <div class="dlg-section">所属产品测试（指纹命中该产品后定向执行）</div>
+        <div class="dlg-field">
+          <label>测试名单</label>
+          <div class="dlg-value">
+            <template v-if="ownEntry.pocs?.length">
+              <el-tag v-for="p in ownEntry.pocs" :key="p" size="small" type="success" class="poc-tag" closable @close="unbindPoc(p)">
+                {{ p }}
+              </el-tag>
+            </template>
+            <span v-else class="dlg-empty">无（尚未绑定任何测试）</span>
+          </div>
+        </div>
+        <div class="dlg-field">
+          <label>追加绑定</label>
+          <!-- el-select-v2 虚拟化：POC 名单近万项，普通 el-select 全量渲染卡死弹窗（BL-POC-008 前科） -->
+          <el-select-v2
+            v-model="ownDlg.bindSelection"
+            multiple
+            filterable
+            collapse-tags
+            collapse-tags-tooltip
+            :reserve-keyword="false"
+            :options="pocOptions"
+            placeholder="选择要追加的 POC（可输入过滤）"
+            style="flex: 1"
+          />
+          <el-button type="primary" size="small" :loading="ownDlg.saving" @click="confirmBind">绑定</el-button>
+        </div>
+        <div class="dlg-hint">绑定保存到外挂产品册文件，重跑扫描器即生效；测试名单也可在「标准产品」页编辑</div>
+      </template>
+
+      <!-- 未归属：先选归属方式，再显示对应配置（避免两套表单平铺） -->
+      <template v-else>
+        <div class="dlg-field">
+          <label>归属方式</label>
+          <el-radio-group v-model="ownDlg.mode" size="small">
+            <el-radio-button value="assign">挂为已有产品的别名</el-radio-button>
+            <el-radio-button value="self">自立为新标准产品</el-radio-button>
+          </el-radio-group>
+        </div>
+        <template v-if="ownDlg.mode === 'assign'">
+          <div class="dlg-field">
+            <label>目标产品</label>
+            <el-select-v2
+              v-model="ownDlg.assignTarget"
+              filterable
+              clearable
+              :reserve-keyword="false"
+              :options="stdOptions"
+              placeholder="从标准产品选择（可输入过滤）"
+              style="flex: 1"
+            />
+            <el-button type="primary" size="small" :loading="ownDlg.saving" @click="confirmAssignAlias">挂为别名</el-button>
+          </div>
+          <div class="dlg-hint">挂为别名后，扫描输出将把该写法归一显示为目标标准名</div>
+        </template>
+        <template v-else-if="ownDlg.mode === 'self'">
+          <div class="dlg-field">
+            <label>标准名</label>
+            <el-input v-model="ownDlg.selfStdName" size="small" placeholder="新标准产品的标准名（识别命中后输出此名）" style="flex: 1" />
+            <el-button type="success" size="small" :loading="ownDlg.saving" @click="confirmSelfStd">自立</el-button>
+          </div>
+          <div class="dlg-hint">以该写法为别名新建标准产品；创建后可继续绑定测试</div>
+        </template>
+      </template>
+
+      <template #footer>
+        <el-button size="small" @click="ownDlg.visible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fingerAddApi,
@@ -151,6 +264,15 @@ import {
   packApi,
   type FingerEntryItem
 } from '@/api/finger'
+import { listPocsApi } from '@/api/poc'
+import {
+  catalogAddApi,
+  catalogEditApi,
+  catalogResolveApi,
+  getCatalogListApi,
+  type CatalogEntryView,
+  type ResolveVerdict
+} from '@/api/catalog'
 
 defineOptions({ name: 'Finger' })
 
@@ -170,11 +292,219 @@ const load = async () => {
     const res = await fingerListApi(file.value, keyword.value.trim(), page.value, size.value)
     items.value = res.data.items ?? []
     total.value = res.data.total ?? 0
+    await resolveOwnership() // 产品归属判定依赖当页条目名，列表刷新后重算
   } catch (e: any) {
     if (!e?.code) ElMessage.error(String(e)) // API 错误由拦截器统一 toast
   } finally {
     loading.value = false
   }
+}
+
+// ---- 产品归属（BL-POC-009 指纹视角）：三态判定 + 测试预览 + 归属操作（挂别名/自立标准产品/顺手绑定）----
+
+// 归属判定表（key=写法原名；同页重名条目判定结果一致，按名索引即可）
+const verdicts = ref<Record<string, ResolveVerdict>>({})
+// 产品册完整条目列表（归属操作与测试预览的数据源；出厂 50 条量小一次拉取）
+const catalogEntries = ref<CatalogEntryView[]>([])
+
+// resolve 的 source=引擎源名（alias 归一表的键空间）：goby.json→goby 引擎，fingers_http.json→fingers 引擎
+const engineSource = computed(() => (file.value === 'goby' ? 'goby' : 'fingers'))
+
+const resolveOwnership = async () => {
+  const names = [...new Set(items.value.map((i) => i.name))]
+  if (!names.length) {
+    verdicts.value = {}
+    return
+  }
+  try {
+    const res = await catalogResolveApi(names.map((n) => ({ source: engineSource.value, name: n })))
+    const map: Record<string, ResolveVerdict> = {}
+    for (const v of res.data.verdicts ?? []) map[v.name] = v
+    verdicts.value = map
+  } catch {
+    verdicts.value = {} // 归属判定失败不阻塞列表（列显示 —）；错误由拦截器 toast
+  }
+}
+
+const verdictOf = (name: string): ResolveVerdict => verdicts.value[name] ?? ({ source: '', name, owner: '', relation: 'unassigned' } as ResolveVerdict)
+
+// 归属标准产品的绑定测试（alias-of 归到 owner 名下；self 是自身；未归属为空。
+// 键 lower 化：owner 是引擎小写输出形态（alias.Compile ToLower），条目原名可能是混合大小写）
+const ownerPocsOf = (name: string): string[] => {
+  const v = verdictOf(name)
+  if (v.relation === 'unassigned') return []
+  const ownerName = v.owner || name
+  return catalogEntries.value.find((e) => e.name.toLowerCase() === ownerName.toLowerCase())?.pocs ?? []
+}
+
+const loadCatalogEntries = async () => {
+  try {
+    const res = await getCatalogListApi()
+    catalogEntries.value = res.data.entries ?? []
+  } catch {
+    // 预览列/归属操作数据缺失不影响主列表
+  }
+}
+
+// ---- 归属管理弹窗（方案承诺：可指定归属、自立标准产品、顺手绑定）----
+
+const ownDlg = reactive({
+  visible: false,
+  saving: false,
+  name: '', // 当前写法（指纹条目名）
+  mode: '' as '' | 'assign' | 'self', // 未归属态两步式：先选归属方式再显示对应配置
+  assignTarget: '', // 挂为别名：选中的标准产品
+  selfStdName: '', // 自立标准产品：标准名预填（可改）
+  bindSelection: [] as string[] // 顺手绑定：POC 多选
+})
+
+// 弹窗内当前归属（打开时从 catalogEntries 现算，操作后随刷新更新）
+const ownVerdict = computed(() => verdictOf(ownDlg.name))
+// 归属产品条目（alias-of 按 owner 匹配；self 按写法本身匹配；键 lower 化对齐引擎输出形态）
+const ownEntry = computed(() => {
+  const v = ownVerdict.value
+  const key = (v.relation === 'self' ? ownDlg.name : v.owner || '').toLowerCase()
+  return catalogEntries.value.find((e) => e.name.toLowerCase() === key)
+})
+// 标准产品候选（挂为别名的目标；排除已归属条目自身）
+const stdOptions = computed(() =>
+  catalogEntries.value
+    .filter((e) => !(ownEntry.value && e.name === ownEntry.value.name))
+    .map((e) => ({ label: e.name, value: e.name }))
+)
+// POC 候选（近万项，el-select-v2 虚拟化——普通 el-select 全量渲染卡死弹窗，BL-POC-008 前科）
+const pocOptions = ref<Array<{ label: string; value: string }>>([])
+
+const openOwnership = async (row: FingerEntryItem) => {
+  ownDlg.name = row.name
+  ownDlg.mode = ''
+  ownDlg.assignTarget = ''
+  ownDlg.selfStdName = row.name
+  ownDlg.bindSelection = []
+  await loadCatalogEntries() // 现拉保证拿到最新外置覆盖态
+  if (!pocOptions.value.length) {
+    try {
+      const res = await listPocsApi()
+      pocOptions.value = (res.data.pocs ?? []).map((p) => ({ label: p.name, value: p.name }))
+    } catch {
+      // POC 候选加载失败不阻塞弹窗（绑定区空候选）
+    }
+  }
+  ownDlg.visible = true
+}
+
+// 整条写回辅助：读条目 → 变换 → catalog_edit external（整条全量写出铁律：别名区原样携带）
+const writeEntry = async (target: string, mutate: (e: CatalogEntryView) => Partial<CatalogEntryView>) => {
+  const e = catalogEntries.value.find((x) => x.name === target)
+  if (!e) throw new Error(`条目「${target}」不存在`)
+  await catalogEditApi(target, 'external', {
+    name: e.name,
+    vendor: e.vendor,
+    product: e.product,
+    alias: e.alias ?? {},
+    pocs: e.pocs ?? [],
+    ...mutate(e)
+  })
+}
+
+// 挂为已有标准产品的别名（铁律 5：确认文案写明映射改显示名）
+const confirmAssignAlias = async () => {
+  if (ownDlg.saving) return // 防重入：进行中重复点击直接忽略（headless 补点竞态/手抖）
+  const target = ownDlg.assignTarget
+  if (!target) return ElMessage.warning('请先选择目标标准产品')
+  const src = engineSource.value
+  const e = catalogEntries.value.find((x) => x.name === target)
+  const names = e?.alias?.[src] ?? []
+  if (names.includes(ownDlg.name)) {
+    return ElMessage.warning(`「${ownDlg.name}」已在「${target}」的 ${src} 源别名区`)
+  }
+  try {
+    await ElMessageBox.confirm(
+      `把写法「${ownDlg.name}」挂为标准产品「${target}」的别名（${src} 源）？映射后扫描输出将把该写法归一显示为标准名「${target}」（归一既有行为）。`,
+      '挂为别名',
+      { type: 'warning' }
+    )
+  } catch {
+    return
+  }
+  ownDlg.saving = true
+  try {
+    await writeEntry(target, () => ({ alias: { ...(e?.alias ?? {}), [src]: [...names, ownDlg.name] } }))
+    ElMessage.success(`已挂为「${target}」的别名（保存到外挂文件），重跑扫描器生效`)
+    ownDlg.visible = false
+    await refreshOwnership()
+  } catch {
+    // 错误 toast 由拦截器统一展示
+  } finally {
+    ownDlg.saving = false
+  }
+}
+
+// 自立标准产品：以该写法为标准名新建条目（别名自动挂自己——天然满足防死条目铁律）
+const confirmSelfStd = async () => {
+  if (ownDlg.saving) return // 防重入：第一次请求进行中（含归属刷新）时忽略重复点击
+  const name = ownDlg.selfStdName.trim()
+  if (!name) return ElMessage.warning('标准名不能为空')
+  if (catalogEntries.value.some((e) => e.name === name)) {
+    return ElMessage.warning(`「${name}」已是标准产品，请在上方选择它挂为别名`)
+  }
+  ownDlg.saving = true
+  try {
+    await catalogAddApi({ name, alias: { [engineSource.value]: [ownDlg.name] }, pocs: [] })
+    ElMessage.success('已保存到外挂文件（重跑扫描器生效），可在下方顺手绑定测试')
+    await refreshOwnership() // 条目+归属判定都刷——verdict 不刷 ownEntry 仍 undefined，弹窗不切已归属分支（实测踩过）
+    ownDlg.assignTarget = ''
+  } catch {
+    // 错误 toast 由拦截器统一展示（含后端守卫 message）
+  } finally {
+    ownDlg.saving = false
+  }
+}
+
+// 顺手绑定：归属产品的 pocs 整条写回（追加去重）
+const confirmBind = async () => {
+  if (ownDlg.saving) return // 防重入
+  const e = ownEntry.value
+  if (!e) return
+  const cur = e.pocs ?? []
+  const added = ownDlg.bindSelection.filter((p) => !cur.includes(p))
+  if (!added.length) return ElMessage.warning('请选择未绑定的 POC')
+  ownDlg.saving = true
+  try {
+    await writeEntry(e.name, () => ({ pocs: [...cur, ...added] }))
+    ElMessage.success(`已绑定 ${added.length} 项到「${e.name}」（保存到外挂文件），重跑扫描器生效`)
+    ownDlg.bindSelection = []
+    await refreshOwnership()
+  } catch {
+    // 错误 toast 由拦截器统一展示
+  } finally {
+    ownDlg.saving = false
+  }
+}
+
+const unbindPoc = async (poc: string) => {
+  const e = ownEntry.value
+  if (!e) return
+  try {
+    await ElMessageBox.confirm(`从「${e.name}」的测试名单移除「${poc}」？`, '移除绑定', { type: 'warning' })
+  } catch {
+    return
+  }
+  ownDlg.saving = true
+  try {
+    await writeEntry(e.name, () => ({ pocs: (e.pocs ?? []).filter((p) => p !== poc) }))
+    await refreshOwnership()
+  } catch {
+    // 错误 toast 由拦截器统一展示
+  } finally {
+    ownDlg.saving = false
+  }
+}
+
+// 操作后刷新：归属列 + 测试预览列（catalogEntries 先刷，verdict 再判）
+const refreshOwnership = async () => {
+  await loadCatalogEntries()
+  await resolveOwnership()
 }
 
 const reload = () => {
@@ -420,7 +750,10 @@ const pack = async () => {
   }
 }
 
-onMounted(reload)
+onMounted(() => {
+  reload()
+  loadCatalogEntries()
+})
 </script>
 
 <style scoped>
@@ -448,6 +781,52 @@ onMounted(reload)
   font-family: Consolas, monospace;
   font-size: 12px;
   white-space: pre-wrap;
+}
+.poc-tag {
+  margin: 1px 4px 1px 0;
+}
+.verdict-empty {
+  color: var(--el-text-color-secondary);
+}
+
+/* 归属弹窗（排版纪律同 POC/Binds 页弹窗：60px 右对齐 label + 区块小标题） */
+.dlg-section {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  margin: 12px 0 4px;
+  padding-left: 68px;
+}
+.dlg-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+.dlg-field > label {
+  flex-shrink: 0;
+  width: 60px;
+  text-align: right;
+  font-size: 12px;
+  line-height: 24px;
+  color: var(--el-text-color-regular);
+}
+.dlg-value {
+  flex: 1;
+  font-size: 12px;
+  line-height: 24px;
+  word-break: break-all;
+}
+.dlg-empty {
+  color: var(--el-text-color-secondary);
+}
+.dlg-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin: 2px 0 4px 68px;
+}
+.mono-text {
+  font-family: Consolas, monospace;
 }
 
 /* 弹窗字段行：60px 右对齐 label（与 POC 页 dlg-field 纪律一致） */

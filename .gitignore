@@ -28,9 +28,18 @@ web/node_modules/
 web/apps/*/dist*/
 web/**/node_modules/
 web/**/.cache/
-cmd/fscanx-web/static/assets/
+cmd/fscanx-web/static/
 
 # 运行时数据与本地产物
 binds.db
 binds.yaml
 finger.db
+
+# BL-POC-009 运行时外置层与过程备份（出厂源 mylib/finger/resources/catalog.yaml 不受影响）
+catalog.db
+/catalog.yaml
+/catalog.yaml.bak
+fscanx-web.exe~
+plans/*.tmp.yaml
+plans/old-*.yaml
+binds.db.migrated

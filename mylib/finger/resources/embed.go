@@ -10,8 +10,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed aliases.yaml
+//go:embed catalog.yaml
 var AliasesData []byte
+
+// CatalogData 出厂产品册（catalog.yaml）原始字节：别名归一与 POC 预置绑定同源文件——
+// alias 包按 Alias 结构解析（pocs 字段宽松解析忽略，见 alias/catalog_tolerance_test.go），
+// PocScan 按 name+pocs 投影独立解析提取绑定兜底名单（BL-POC-009）。
+//go:embed catalog.yaml
+var CatalogData []byte
 
 //go:embed port.yaml
 var PortData []byte // yaml format

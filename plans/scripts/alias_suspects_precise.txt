@@ -1,0 +1,47 @@
+绑定条目 16 个；unassigned 全量 7658；精筛：
+
+=== 疑似漏收（与绑定条目别名存在包含关系，39 条）===
+  [fingers] 'ace'  ⊂ weblogic（别名 'Weblogic_interface_7001'）
+  [fingers] 'vmware horizon'  ⊂ vmware（别名 'vmware'）
+  [fingers] 'vmware oneaccess'  ⊂ vmware（别名 'vmware'）
+  [fingers] 'vmware secure file transfer'  ⊂ vmware（别名 'vmware'）
+  [fingers] '心通达OA'  ⊂ 通达 OA（别名 '通达 OA'）
+  [goby] 'CISCO-Nexus-Data-Broker'  ⊂ nexus（别名 'nexus'）
+  [goby] 'HITACHI-Cosminexus'  ⊂ nexus（别名 'nexus'）
+  [goby] 'Nexus-3000-Switch'  ⊂ nexus（别名 'nexus'）
+  [goby] 'Nexus-Router'  ⊂ nexus（别名 'nexus'）
+  [goby] 'PHP'  ⊂ thinkphp（别名 'ThinkPHP-YFCMF'）
+  [goby] 'SAS'  ⊂ jboss（别名 'JBoss-AS'）
+  [goby] 'VMware-Authentication Service'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-ESX'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-HCX'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-Horizon'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-Horizon-DaaS'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-Identity-Manager'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-VirtualCenter'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-vCenter'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-vFabric'  ⊂ vmware（别名 'vmware'）
+  [goby] 'VMware-vRealize-Automation-Appliance'  ⊂ vmware（别名 'vmware'）
+  [goby] 'Yilong Tong - Data Leak Protection (DLP)'  ⊂ 通达 OA（别名 'tongda'）
+  [goby] 'paloalto-VMware'  ⊂ vmware（别名 'vmware'）
+  [goby] 'thin'  ⊂ thinkphp（别名 'ThinkPHP-YFCMF'）
+  [goby] 'vmware-Carbon-Black-EDR'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-ESXi'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-NSX'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-Server-2'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-Site-Recovery-Manager'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-Spring-Batch'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-SpringBoot-Framework'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-Tanzu-Observability'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-Workspace-ONE-Access'  ⊂ vmware（别名 'vmware'）
+  [goby] 'vmware-vRealize'  ⊂ vmware（别名 'vmware'）
+  [goby] '心通达OA'  ⊂ 通达 OA（别名 '通达 OA'）
+  [goby] '用友-U8远程'  ⊂ 用友 U8 OA（别名 '用友-U8'）
+  [goby] '用友U8-CDM'  ⊂ 用友 U8 OA（别名 '用友-U8'）
+  [goby] '用友U8-CRM客户关系管理系统'  ⊂ 用友 U8 OA（别名 '用友-U8'）
+  [goby] '用友U8C'  ⊂ 用友 U8 OA（别名 '用友-U8'）
+=== 用户裁决（2026-11-17）===
+- 致远系 7 条（fingers 5 + goby 2）：确认为 Seeyon 同产品异名 → 已补录出厂册「用友 Seeyon OA」
+  别名区（fingers +5 / goby 源新建 +2），resolve 实测全部 alias-of；防回归锁 TestCatalogSeeyonZhiyuanCoverage。
+- 心通达OA（fingers/goby 各 1）：用户裁决「心通达OA和通达OA不是一个产品」→ 不补录，维持
+  未归属（识别按原名输出、不触发通达测试）。此条从候选永久排除。

@@ -1,0 +1,10 @@
+fingers  用友致远oa         -> alias-of   用友 seeyon oa
+fingers  致远OA-A6        -> alias-of   用友 seeyon oa
+fingers  致远OA-A8        -> alias-of   用友 seeyon oa
+fingers  致远oa A6        -> alias-of   用友 seeyon oa
+fingers  致远oa A8        -> alias-of   用友 seeyon oa
+goby     致远OA-A6        -> alias-of   用友 seeyon oa
+goby     致远OA-A8        -> alias-of   用友 seeyon oa
+fingers  心通达OA          -> unassigned 
+goby     心通达OA          -> unassigned 
+goby     Weaver OA      -> unassigned 

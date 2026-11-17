@@ -1,0 +1,5 @@
+[3a] 外置条目新建：code=0
+[3b] 外置别名注入 resolve：relation=alias-of owner=验收外置产品q PASS
+[3c] 外置条目清理：code=0
+[4b] 指纹全集名空别名放行：code=0 PASS
+[4c] 放行条目已清理

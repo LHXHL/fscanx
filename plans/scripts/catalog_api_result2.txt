@@ -1,0 +1,11 @@
+[2] external 覆盖：code=0 E:\code\go\fscanx\catalog.yaml
+[2a] 快照落盘：True（E:\code\go\fscanx\catalog.yaml）
+[2b] 快照条目 pocs 含新绑定：PASS
+[2c] 快照条目别名区整条携带：PASS
+[2d] 合并视图 origin 翻转：PASS
+[3] 外置别名注入 resolve：relation=unassigned owner= FAIL
+[4a] 空别名守卫拒绝：PASS msg=fscanx-web: 「验收不存在产品ZZZ」不在指纹输出名全集且未挂任何别名——识别引擎永远报不
+[4b] 指纹全集名空别名放行/拒绝：code=1 msg=fscanx-web: 「acceptance-self-std-test」不在
+[C1] 删外置覆盖（出厂回落）：code=0
+[C2] 出厂定义回落：PASS
+[C3] 快照现状：exists=True（含出厂删除墓碑行=删除标记，绑定行为=纯出厂）

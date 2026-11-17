@@ -144,10 +144,16 @@ func TestPutPoc_TargetBuiltIn_Guards(t *testing.T) {
 		}
 	})
 	t.Run("内置库不存在的名", func(t *testing.T) {
+		// 语义演进（用户裁决：web 新建资产可选"下次 go build 生效"）：embed 无此名不再拒绝——
+		// 仓库源文件不存在 = 创建新文件（详细三场景见 TestPocPutBuiltInNewFile 等）
 		s := newPocTestServer(t)
 		rec := putPocRaw(t, s, map[string]interface{}{"mode": "raw", "name": "poc-yaml-brand-new", "target": "built-in", "yaml": pocYAML("poc-yaml-brand-new", "/x")})
-		if !strings.Contains(rec.Body.String(), "内置库中不存在") {
-			t.Errorf("want not-in-embed rejection, got: %s", rec.Body.String())
+		if strings.Contains(rec.Body.String(), `"code":1`) {
+			t.Errorf("want create success, got: %s", rec.Body.String())
+		}
+		target := filepath.Join(s.repoRoot, "PocScan", "pocs", sanitizeName("poc-yaml-brand-new")+".yml")
+		if _, err := os.Stat(target); err != nil {
+			t.Errorf("内置源新文件未创建: %v", err)
 		}
 	})
 }
@@ -165,5 +171,67 @@ func TestPutPoc_GroupsForm(t *testing.T) {
 	rec2 := putPocRaw(t, s, map[string]interface{}{"mode": "raw", "name": kibanaName, "target": "external", "yaml": "name: " + kibanaName + "\n"})
 	if !strings.Contains(rec2.Body.String(), "rules/groups 均为空") {
 		t.Errorf("empty rules+groups should be rejected, got: %s", rec2.Body.String())
+	}
+}
+
+// ---- 新建/转正写内置源（用户裁决：web 新建资产可选"下次 go build 生效"）----
+
+// TestPocPutBuiltInNewFile embed 无此名 + 仓库源文件不存在 → 创建新文件（新建/转正写入）。
+func TestPocPutBuiltInNewFile(t *testing.T) {
+	s := newPocTestServer(t)
+	name := "poc-yaml-brand-new-internal"
+	rec := putPocRaw(t, s, map[string]interface{}{
+		"mode": "raw", "name": name, "yaml": pocYAML(name, "/x"), "target": "built-in", "file": "",
+	})
+	if strings.Contains(rec.Body.String(), `"code":1`) {
+		t.Fatalf("新建写入内置源被拒: %s", rec.Body.String())
+	}
+	target := filepath.Join(s.repoRoot, "PocScan", "pocs", sanitizeName(name)+".yml")
+	raw, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("内置源新文件未创建: %v", err)
+	}
+	if !strings.Contains(string(raw), "name: "+name) {
+		t.Fatalf("新文件内容不符: %s", string(raw))
+	}
+}
+
+// TestPocPutBuiltInSameNameConsistent embed 无此名 + 仓库源文件同名且 name 一致 → 允许编辑
+// （编辑未编译的仓库文件，与 getPoc built-in 读仓库最新源同语义）。
+func TestPocPutBuiltInSameNameConsistent(t *testing.T) {
+	s := newPocTestServer(t)
+	name := "poc-yaml-uncompiled-repo-poc"
+	target := filepath.Join(s.repoRoot, "PocScan", "pocs", sanitizeName(name)+".yml")
+	mustWrite(t, target, pocYAML(name, "/old"))
+	rec := putPocRaw(t, s, map[string]interface{}{
+		"mode": "raw", "name": name, "yaml": pocYAML(name, "/new"), "target": "built-in", "file": "",
+	})
+	if strings.Contains(rec.Body.String(), `"code":1`) {
+		t.Fatalf("编辑未编译仓库文件被拒: %s", rec.Body.String())
+	}
+	raw, _ := os.ReadFile(target)
+	if !strings.Contains(string(raw), "/new") {
+		t.Fatal("仓库文件内容未更新")
+	}
+}
+
+// TestPocPutBuiltInSameNameConflict embed 无此名 + 仓库源文件同名但内容是其他 POC → 拒绝
+// （防覆盖错文件），且原文件字节不动。
+func TestPocPutBuiltInSameNameConflict(t *testing.T) {
+	s := newPocTestServer(t)
+	name := "poc-yaml-conflicting-file"
+	other := "poc-yaml-some-other-poc"
+	target := filepath.Join(s.repoRoot, "PocScan", "pocs", sanitizeName(name)+".yml")
+	mustWrite(t, target, pocYAML(other, "/other"))
+	before, _ := os.ReadFile(target)
+	rec := putPocRaw(t, s, map[string]interface{}{
+		"mode": "raw", "name": name, "yaml": pocYAML(name, "/x"), "target": "built-in", "file": "",
+	})
+	if !strings.Contains(rec.Body.String(), `"code":1`) {
+		t.Fatalf("同名异内容覆盖未被拒绝: %s", rec.Body.String())
+	}
+	after, _ := os.ReadFile(target)
+	if string(before) != string(after) {
+		t.Fatal("拒绝写入后原文件字节被改动")
 	}
 }

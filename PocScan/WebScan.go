@@ -46,9 +46,24 @@ func PocScan(info *common.HostInfo) {
 			names = append(names, n)
 		}
 	}
+	// 绑定名单路径按名精确索引取 poc（BL-POC-009）：修 filterPoc Contains 子串扩张的
+	// 重复执行（名字互为前缀的两个 poc 会被同带出来）；AllPocs 经 pocCollector 同名
+	// 去重（外置覆盖内置），name 唯一，map 索引安全。-pocname/all 路径的 filterPoc
+	// Contains 模糊语义保持不变（BL-POC-001 既有承诺）。
+	pocIndex := make(map[string]*lib.Poc, len(AllPocs))
+	for _, p := range AllPocs {
+		pocIndex[p.Name] = p
+	}
 	for _, name := range names {
-		pocinfo.PocName = name
-		Execute(pocinfo)
+		p, ok := pocIndex[name]
+		if !ok {
+			continue // 绑定名单引用了不存在的 poc 名（外置 binds 手写笔误），静默跳过
+		}
+		req := buildPocRequest(pocinfo.Target)
+		if req == nil {
+			return
+		}
+		lib.CheckMultiPoc(req, []*lib.Poc{p}, common.PocNum)
 	}
 }
 
@@ -63,11 +78,22 @@ func alwaysPocNames() (names []string) {
 }
 
 func Execute(PocInfo common.PocInfo) {
-	req, err := http.NewRequest("GET", PocInfo.Target, nil)
-	if err != nil {
-		errlog := fmt.Sprintf("[-] webpocinit %v %v", PocInfo.Target, err)
-		common.LogError(errlog)
+	req := buildPocRequest(PocInfo.Target)
+	if req == nil {
 		return
+	}
+	pocs := filterPoc(PocInfo.PocName)
+	lib.CheckMultiPoc(req, pocs, common.PocNum)
+}
+
+// buildPocRequest 构造 POC 基准请求（Target 已由 PocScan 入口剥 path 到 scheme://host，
+// rule.Path 直接作为全路径拼接）。头设置原样自 Execute 提取（BL-POC-009 绑定名单精确
+// 索引路径共用）。
+func buildPocRequest(target string) *http.Request {
+	req, err := http.NewRequest("GET", target, nil)
+	if err != nil {
+		common.LogError(fmt.Sprintf("[-] webpocinit %v %v", target, err))
+		return nil
 	}
 	req.Header.Set("User-agent", common.UserAgent)
 	req.Header.Set("Accept", common.Accept)
@@ -75,8 +101,7 @@ func Execute(PocInfo common.PocInfo) {
 	if common.Cookie != "" {
 		req.Header.Set("Cookie", common.Cookie)
 	}
-	pocs := filterPoc(PocInfo.PocName)
-	lib.CheckMultiPoc(req, pocs, common.PocNum)
+	return req
 }
 
 // initpoc 三层合并加载 poc（BL-POC-002）：内置 embed → 二进制目录 pocs/ → -pocpath 追加。

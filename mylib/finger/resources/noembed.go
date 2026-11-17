@@ -10,6 +10,8 @@ import (
 
 var AliasesData []byte
 
+var CatalogData []byte
+
 var PortData []byte // json format
 var PrePort *utils.PortPreset
 

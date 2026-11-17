@@ -1,11 +1,9 @@
 package main
 
-// binds API（BL-POC-005 SQLite 化）：按页面接口命名规范四端点——
-//   GET  /api/binds_list   返回 内置种子 ⊕ DB 外置层 的生效视图（展示用）
-//   POST /api/binds_add    添加绑定（upsert-append：产品存在则追加去重 pocs）
-//   POST /api/binds_edit   编辑绑定（original 定位，支持改名）
-//   POST /api/binds_delete 删除绑定
-// 增删改走 DB 单条事务，每次变更后自动重生成二进制旁 binds.yaml（扫描器消费文件，零改动）。
+// binds API（BL-POC-005 SQLite 化）——**BL-POC-009 起路由退役**（绑定页升级为标准产品页，
+// catalog_* 端点承接；binds.db/binds.yaml 存量经 migrateLegacyBinds 一次性迁移）。
+// handler 与存储函数保留：binds_db_test 历史回归继续覆盖（墓碑幂等/吸收/种子行语义等
+// 机制在 catalog 侧有对应实现，此侧测试作为同族机制的参照基线）。
 // 错误统一 200 + {code:1, message} 信封（见 httpErrorf）；读写前 absorbBindsFile 对齐手改。
 
 import (

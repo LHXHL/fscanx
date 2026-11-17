@@ -24,14 +24,17 @@ import (
 //go:embed all:static
 var staticFS embed.FS
 
-// server 维护端状态：目录定位、binds/指纹存储与 CEL 环境。
+// server 维护端状态：目录定位、binds/产品册/指纹存储与 CEL 环境。
 type server struct {
-	repoRoot  string   // fscanx 仓库根（指纹明文、pack 目标）
-	pocsDir   string   // 扫描器部署目录的外置 poc 目录（二进制旁 pocs/）
-	bindsPath string   // 外置绑定关系文件（二进制旁 binds.yaml，DB 变更后自动重生成的快照）
-	db        *sql.DB  // binds 主存储（SQLite，二进制旁 binds.db，见 binds_db.go）
-	fingerDB  *sql.DB  // 指纹条目主存储（SQLite，二进制旁 finger.db，见 finger_db.go，BL-POC-006）
-	celEnv    *cel.Env // 与 poc 求值同源的表达式环境（校验/反解析）
+	repoRoot          string   // fscanx 仓库根（指纹明文、pack 目标、出厂产品册内置源）
+	pocsDir           string   // 扫描器部署目录的外置 poc 目录（二进制旁 pocs/）
+	bindsPath         string   // 旧外置绑定文件（binds.yaml，存量迁移源，BL-POC-009 起不再更新）
+	bindsDBPath       string   // 旧 binds.db 路径（迁移源）
+	catalogPath       string   // 外置产品册文件（二进制旁 catalog.yaml，扫描器消费的快照）
+	builtInCatalogPath string  // 出厂产品册内置源（-root 下 mylib/finger/resources/catalog.yaml，写回目标）
+	db                *sql.DB  // 产品册外置层主存储（SQLite，二进制旁 catalog.db，见 catalog_db.go，BL-POC-009）
+	fingerDB          *sql.DB  // 指纹条目主存储（SQLite，二进制旁 finger.db，见 finger_db.go，BL-POC-006）
+	celEnv            *cel.Env // 与 poc 求值同源的表达式环境（校验/反解析）
 }
 
 func main() {
@@ -51,19 +54,26 @@ func main() {
 		os.Exit(1)
 	}
 	s := &server{
-		repoRoot:  *root,
-		pocsDir:   filepath.Join(exeDir, "pocs"),
-		bindsPath: filepath.Join(exeDir, "binds.yaml"),
-		celEnv:    env,
+		repoRoot:           *root,
+		pocsDir:            filepath.Join(exeDir, "pocs"),
+		bindsPath:          filepath.Join(exeDir, "binds.yaml"),
+		bindsDBPath:        filepath.Join(exeDir, "binds.db"),
+		catalogPath:        filepath.Join(exeDir, "catalog.yaml"),
+		builtInCatalogPath: filepath.Join(*root, "mylib", "finger", "resources", "catalog.yaml"),
+		celEnv:             env,
 	}
-	dbPath := filepath.Join(exeDir, "binds.db")
-	db, err := openBindsDB(dbPath)
+	cdb, err := openCatalogDB(filepath.Join(exeDir, "catalog.db"))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "初始化 binds 数据库失败:", err)
+		fmt.Fprintln(os.Stderr, "初始化产品册数据库失败:", err)
 		os.Exit(1)
 	}
-	s.db = db
-	defer db.Close()
+	s.db = cdb
+	defer cdb.Close()
+	// 存量迁移（BL-POC-009）：binds.db / binds.yaml → 产品册 entries，一次性、幂等防护
+	if err := migrateLegacyBinds(cdb, s.catalogPath, s.bindsDBPath, s.bindsPath); err != nil {
+		fmt.Fprintln(os.Stderr, "存量绑定迁移失败:", err)
+		os.Exit(1)
+	}
 
 	fdb, err := openFingerDB(filepath.Join(exeDir, "finger.db"))
 	if err != nil {
@@ -80,10 +90,12 @@ func main() {
 	mux.HandleFunc("/api/pocs", s.listPocs)
 	mux.HandleFunc("/api/poc", s.pocHandler)
 	mux.HandleFunc("/api/validate", s.validateCEL)
-	mux.HandleFunc("/api/binds_list", s.bindsList)
-	mux.HandleFunc("/api/binds_add", s.bindsAdd)
-	mux.HandleFunc("/api/binds_edit", s.bindsEdit)
-	mux.HandleFunc("/api/binds_delete", s.bindsDelete)
+	// 产品册 API（BL-POC-009 三视角；旧 binds_* 端点随绑定页退役，存量数据经 migrateLegacyBinds 迁移）
+	mux.HandleFunc("/api/catalog_list", s.catalogList)
+	mux.HandleFunc("/api/catalog_add", s.catalogAdd)
+	mux.HandleFunc("/api/catalog_edit", s.catalogEdit)
+	mux.HandleFunc("/api/catalog_delete", s.catalogDelete)
+	mux.HandleFunc("/api/catalog_resolve", s.catalogResolve)
 	mux.HandleFunc("/api/finger_list", s.fingerList)
 	mux.HandleFunc("/api/finger_add", s.fingerAdd)
 	mux.HandleFunc("/api/finger_edit", s.fingerEdit)

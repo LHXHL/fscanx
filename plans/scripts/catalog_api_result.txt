@@ -1,0 +1,7 @@
+[0] 出厂条目取得：alias 源数=4 pocs 数=2
+[1] built-in 写回：code=0 path=E:\code\go\fscanx\mylib\finger\resources\catalog.yaml
+[1a] 别名区完整性：源数 4（前 4），原有别名保留=False
+[1b] 原别名零丢失：PASS
+[1c] 新别名写入：PASS
+[1d] pocs 零丢失：PASS
+[R] 出厂源文件已还原

@@ -68,14 +68,15 @@ func TestLoadBinds(t *testing.T) {
 	})
 }
 
-// TestBindsSeed 内置种子可解析且非空（BL-POC-003：种子兜底保证智能定向不因缺外置文件失效）。
+// TestBindsSeed 内置兜底可解析且非空（BL-POC-003：出厂兜底保证智能定向不因缺外置文件失效；
+// BL-POC-009 起种子源 = 出厂产品册 catalog.yaml 的 pocs 段投影）。
 func TestBindsSeed(t *testing.T) {
-	binds, err := parseBinds([]byte(bindsSeed))
+	binds, err := catalogSeed()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(binds) == 0 {
-		t.Fatal("binds seed is empty")
+		t.Fatal("catalog binds is empty")
 	}
 	for _, b := range binds {
 		if b.Product == "" || len(b.Pocs) == 0 {

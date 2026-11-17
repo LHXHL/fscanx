@@ -1,6 +1,8 @@
 :: go install github.com/goreleaser/goreleaser@latest
 :: goreleaser build  --snapshot  --clean
 
+go run ./mylib/finger/cmd/pack
+
 set CGO_ENABLED=0
 set GOOS=windows
 set GOARCH=386

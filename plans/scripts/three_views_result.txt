@@ -1,0 +1,13 @@
+[login] 登录跳转完成 url=http://127.0.0.1:7758/#/poc/list
+[catalog] 列表渲染（首页出厂条目可见）：PASS
+[catalog] 新建弹窗（标准名/别名/候选辅助）：PASS
+[catalog] 搜索过滤（泛微）：PASS
+[catalog] 编辑弹窗双位置（代码源文件/外挂文件）：PASS
+[finger] 产品归属列渲染：PASS；三态之一可见：PASS
+[finger] 所属产品测试列：PASS
+[poc] 绑定标准产品弹窗：PASS
+[poc] 候选=标准产品：PASS
+
+[console] 错误数（除 favicon）：0
+
+RESULT: ALL PASS

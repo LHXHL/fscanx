@@ -1,0 +1,564 @@
+=== 两指纹明文全集归属分布（验收条件③实测） ===
+[goby] total=7198 alias-of=34 self=7 unassigned=7157
+[fingers] total=524 alias-of=11 self=5 unassigned=508
+
+=== 疑似漏收候选（unassigned 且含出厂绑定条目关键词，559 条）===
+  [fingers] Keycloak
+  [fingers] Micro-OA
+  [fingers] RuoYi Office-办公一体化平台
+  [fingers] adb broadband s.p.a.
+  [fingers] alfresco
+  [fingers] avtech ip surveillance
+  [fingers] blackboard
+  [fingers] boaserver
+  [fingers] confluence
+  [fingers] cyberoam
+  [fingers] gitlab
+  [fingers] hitron technologies inc.
+  [fingers] jenkins
+  [fingers] lancom
+  [fingers] luma surveillance
+  [fingers] material dashboard
+  [fingers] netdata dashboard
+  [fingers] oasys OA
+  [fingers] octoprint
+  [fingers] owncloud
+  [fingers] paloalto
+  [fingers] sangfor
+  [fingers] sap netweaver
+  [fingers] slack-instance
+  [fingers] sophos cyberoam
+  [fingers] syncthru web service
+  [fingers] vmware horizon
+  [fingers] vmware oneaccess
+  [fingers] vmware secure file transfer
+  [fingers] 九思软件-OA
+  [fingers] 信呼oa
+  [fingers] 兰德网络-O2OA
+  [fingers] 勾股OA
+  [fingers] 华天动力协同OA系统
+  [fingers] 宝塔
+  [fingers] 心通达OA
+  [fingers] 深信服edr
+  [fingers] 深信服上网行为管理系统
+  [fingers] 深信服下一代防火墙
+  [fingers] 深信服设备
+  [fingers] 然之OA
+  [fingers] 用友-YonBIP
+  [fingers] 用友-YonBIP-数据应用服务模块
+  [fingers] 用友-畅捷通-畅捷CRM
+  [fingers] 用友致远oa
+  [fingers] 致远OA-A6
+  [fingers] 致远OA-A8
+  [fingers] 致远oa A6
+  [fingers] 致远oa A8
+  [fingers] 致远互联-AnalyticsCloud
+  [fingers] 若依管理系统
+  [fingers] 通达信
+  [fingers] 金和OA-C6
+  [fingers] 金蝶OA-AI EBC协同云
+  [goby] 263 Cloud Communication - Conference Management Center
+  [goby] 3G conference network - video system
+  [goby] 78OA
+  [goby] AAKUAN - Attendance System
+  [goby] ABT-deep security gateway
+  [goby] APACHE-Druid
+  [goby] APACHE-Shiro
+  [goby] APC Performance Evaluation System
+  [goby] APC alarm maintenance system
+  [goby] APD-video surveillance
+  [goby] ATLAS-3000 video conferencing system
+  [goby] ATLASSIAN-Confluence
+  [goby] Adobe-Experience-Manager
+  [goby] Advanced-Electron-Forum
+  [goby] Aethra-Radvision Video Conference
+  [goby] Akiva-WebBoard
+  [goby] Alarmability - Electronic Evidence Management System
+  [goby] Alarmability - Fire Mobile Electronic Evidence Management
+  [goby] Alibaba-DTS operation and maintenance platform
+  [goby] Alliance-Web-Platform
+  [goby] Anchiva - Next Generation Firewall
+  [goby] Ancient River Electrotechnics - Router
+  [goby] And Jia Software-OA Collaborative Office System
+  [goby] ArvanCloud
+  [goby] Avaya-MCU video conferencing system
+  [goby] Avaya-Scopia Video Conference
+  [goby] Aventail-SSL-VPN-Concentrator
+  [goby] BROADCOM-Advanced-Threat-Protection
+  [goby] BROADCOM-CA-PAM
+  [goby] BROADCOM-Layer7-API-Gateway
+  [goby] BROADCOM-Layer7-Live-API-Creator
+  [goby] BROADCOM-SG-S500
+  [goby] BROADCOM-Symantec-EDR
+  [goby] BROADLIGHT-Residential-Gateway
+  [goby] BTXA-desensitizing system
+  [goby] Barracuda-Link-Balancer
+  [goby] Barracuda-LoadBalancer
+  [goby] Bihewei High Performance Intelligent Application Safety Gateway
+  [goby] Blackboard companies
+  [goby] BlueCoat-PacketShaper
+  [goby] BlueCoat-ProxySG
+  [goby] BlueCoat-SG300
+  [goby] BlueCoat-SG600
+  [goby] BlueCoat-SG8100
+  [goby] BlueCoat-SG900
+  [goby] Boa-WebServer
+  [goby] Bocom-video surveillance
+  [goby] Bosch-DiBos
+  [goby] Bosch-flexidome-video surveillance
+  [goby] Brickcom-video surveillance
+  [goby] BroadWin-WebAccess
+  [goby] Broadband-Home-Gateway
+  [goby] Broadband-Network-OS
+  [goby] Broadband-Residential-Gateway
+  [goby] Broadband-Router
+  [goby] Broadcom-BFC-CableHome
+  [goby] Broadcom-BFC-CableModem
+  [goby] Broadcom-Foundry-Networks products
+  [goby] Broadcom-Home-Gateway
+  [goby] Broadcom-Netiron router
+  [goby] Broadcom-brocade- switch
+  [goby] Burning-Board-Lite
+  [goby] CANCOSOFT-Asset Management System
+  [goby] CHANCE-i-DiViS-DVR
+  [goby] CISCO-Email-Security-Appliance-C690
+  [goby] CISCO-Email-Security-Virtual-Appliance-C600V
+  [goby] CISCO-Nexus-Data-Broker
+  [goby] CISCO-TelePresence-MCU-4510
+  [goby] CISCO-TelePresence视频会议
+  [goby] CTOP - Collaborative Office OA
+  [goby] Call-OA system
+  [goby] Central Coal Works - Coal Mine Safety Production Risk Monitoring Early Warning System
+  [goby] China Telecom - Tianyi Broadband Government Network
+  [goby] China Unicom - Conference Catheter
+  [goby] China Unicom - OS operation and maintenance
+  [goby] China control Zhijia - Intelligent Operation and Maintenance Platform
+  [goby] Chongqing Baiding-Baiding OA
+  [goby] Cinda-OA
+  [goby] Cirrus_gate- Data Governance and Security Management Platform
+  [goby] Cisco-Broadband-Access-Center
+  [goby] Cisco-Codian Video Conference
+  [goby] Cisco-VPN-3000-Concentrator
+  [goby] Cisco-XNC
+  [goby] Cloud House - Network Conference
+  [goby] Collabtive
+  [goby] Comanche
+  [goby] Conference management system
+  [goby] CougarConference- Video Conference
+  [goby] Creating Yingfeng - School Office OA System
+  [goby] DHC-OA system
+  [goby] Danchuang Technology-BPM Management Platform
+  [goby] Dasan-video surveillance
+  [goby] Dell-KACE-Appliance
+  [goby] DianCMS
+  [goby] Digital-Surveillance-System
+  [goby] EAZYTEC- Financial Credit System
+  [goby] EMC-Documentum-Webtop
+  [goby] ENC-300
+  [goby] ENCORE_NETWORKS-Company Products
+  [goby] EUESOFT - Attendance Software
+  [goby] Earth Classics - Maintenance Reconstruction Information Platform
+  [goby] Easy, Tianchuang-Bugfree
+  [goby] Eman - Made Manyongyouacturing Execution System
+  [goby] Endong - Video Conference
+  [goby] FNET-HTTP-Freescale-Embedded-Web-Server
+  [goby] FORESCOUT-Administration
+  [goby] File-Upload-Manager
+  [goby] Financial performance evaluation system
+  [goby] Financial staff management system
+  [goby] First Year - Finance Software
+  [goby] Flying Sight - Video Conference System
+  [goby] Fortinet-CoyotePoint-Load-Balancer
+  [goby] French compilation information system
+  [goby] GOLDENCIS-NACP Network Access Control System
+  [goby] Gadspot-NC1000-L10
+  [goby] Genew-NC5200C
+  [goby] GitLab
+  [goby] GoAccess-Log Analysis Tool
+  [goby] GoAhead
+  [goby] GoAhead-Webs
+  [goby] Google-Search-Appliance
+  [goby] HHDIGITAL-video surveillance
+  [goby] HITACHI-Cosminexus
+  [goby] HP-B6000-StoreOnce
+  [goby] HP-Onboard-Administrator
+  [goby] HP-SiteScope
+  [goby] HPE-OfficeConnect-Switch
+  [goby] HSE Emergency Command APP
+  [goby] Haitian Software - Haitian OA
+  [goby] Hanwang - Human Face Recognition Attendance Data Inquiry System
+  [goby] Headline Encyclopedia - HDWIKI
+  [goby] Heavenly Letter-TopApp-load balancing
+  [goby] Heng Yitong - Electronic Attendance System
+  [goby] HikVision-IVMS-7200 mobile video surveillance platform
+  [goby] HikVision-Video Encoding Equipment Access Gateway
+  [goby] Hisome-video surveillance
+  [goby] Hitachi-Maintenance-Utility
+  [goby] Hong Kong Broadband-Sudu-Server
+  [goby] Hua Tian Power -Oa8000
+  [goby] HuaWei-FusionCloud-Desktop
+  [goby] HuaWei-videoconferencing-terminal
+  [goby] Huawei-FusionCompute Management System
+  [goby] Huawei-RBT Gateway Management System
+  [goby] Huawei-ViewPoint Video Conference
+  [goby] Huaxun Ark - Concentrated Wireless Controller
+  [goby] Hygieia-Dashboard
+  [goby] IDCOS-CloudBoot cloud boot loader platform
+  [goby] ISPY-video surveillance
+  [goby] Ikonboard
+  [goby] Incapsula
+  [goby] Industrial Control Safety Holiday Governance Project System
+  [goby] Information operation and maintenance support system
+  [goby] Inhpe-OA
+  [goby] IntelBras-video surveillance
+  [goby] Intelligent operation and maintenance management system
+  [goby] Invision-IP.Board
+  [goby] Invision-PowerBoard
+  [goby] JDOWNLOADER
+  [goby] JFinalOA
+  [goby] JOIN_CHEER - a long-purpose financial form
+  [goby] JXJ-video surveillance
+  [goby] Jenkins
+  [goby] Join_Cheer - Long Territories Financial Statements
+  [goby] JuanCloud-camera
+  [goby] Juniper-BTI-7000
+  [goby] Juniper-Load-Balancer
+  [goby] KJ65N Coal Mine Remote Monitoring Safety Early Warning System
+  [goby] Kedacom-Video Conference
+  [goby] Kedacom-video surveillance
+  [goby] KeyCloak-identity authentication system
+  [goby] Koala-Web-Server
+  [goby] LANCOM-1784VA
+  [goby] LANCOM-1821n-Wireless
+  [goby] LANCOM-1906VA
+  [goby] LANCOM-883-VoIP
+  [goby] LANCOM-884-VoIP-(over-ISDN)
+  [goby] LANCOM-L-321agn-Wireless
+  [goby] LANCOM-VPN
+  [goby] LANCOM-VPN-1711
+  [goby] LANCOM-VPN-1781EF
+  [goby] LANCOM-VPN-1781EW
+  [goby] LANCOM-WIRELESS equipment
+  [goby] LANCOM-WLC-4006
+  [goby] LANCOM-firewall
+  [goby] LANCOM-设备
+  [goby] LG-HU80KA-KR
+  [goby] Lancome Technology - Lan Eye Threat Perception System
+  [goby] Landray-Eis Wisdom Collaborative Platform
+  [goby] Lenovo-NC printer
+  [goby] LifeSize-video conference
+  [goby] LinkBroad-YunGW
+  [goby] LinkedCare-e tooth the teeth upload
+  [goby] Linksys-Broadband-Firewall-Router
+  [goby] Love office-OA
+  [goby] Maintenance and transformation information platform
+  [goby] Maintenance insurance - product
+  [goby] MantisBT
+  [goby] Maop-OA
+  [goby] March-video surveillance
+  [goby] Micro-OA
+  [goby] Microsoft-Azure-Function
+  [goby] Microsoft-Exchange-Server-2016-CU8
+  [goby] Mobile OA
+  [goby] Mobile office OA
+  [goby] Moxa-Async-Server
+  [goby] Moxa-OnCell-Web-Console
+  [goby] NC-LINK-300M-11N-Wireless-Router
+  [goby] NCAST-product
+  [goby] NCH-FlexiServer
+  [goby] NCSA-HTTPd
+  [goby] NOALYSS
+  [goby] National New Health - Medical Insurance Audit System
+  [goby] National New Health - Medical Insurance Decision Support System
+  [goby] NcFTPd
+  [goby] Nearby Science & Technology - Patrol Management Software
+  [goby] NetApp-NetCache-Appliance
+  [goby] Netposa-mobile video surveillance
+  [goby] New point OA
+  [goby] Nexus-3000-Switch
+  [goby] Nexus-Router
+  [goby] North Mingyun - IT operation and maintenance platform
+  [goby] Nuance-SafeCom
+  [goby] Octopussy
+  [goby] Officescan
+  [goby] Omeeting-OM video conference
+  [goby] One-meter OA
+  [goby] OpenCMS
+  [goby] OpenConf
+  [goby] Operation and Maintenance Center Integrated Management System
+  [goby] Operation and maintenance application server
+  [goby] Operation and maintenance audit system
+  [goby] Oracle-Enterprise-Performance-Management-System
+  [goby] PHPOpenChat
+  [goby] POLY-DST-MCS-Video Conference
+  [goby] POLY-Video Conference Server
+  [goby] PaloAlto-Firewall
+  [goby] PaloAlto-GlobalProtect
+  [goby] PaloAlto-Networks-SSO
+  [goby] Panasonic-Maintenance-Utility
+  [goby] Panmine-E-Weaver
+  [goby] Panpu Software - Construction of Construction Engineering OA
+  [goby] Pc4Uploader
+  [goby] Pengwei OA
+  [goby] Peplink-Balance-Series
+  [goby] Petrochemicals - Coal gasification equipment Process Management and Remote Service Platform
+  [goby] Power launch-DTCMS
+  [goby] Purveyor-Encrypt-WebServer
+  [goby] QuesCom-Qportal
+  [goby] REACH Rare -DSS-ENC-1100
+  [goby] REACH Rare-DSS-ENC-100
+  [goby] RICOH-Maintenance
+  [goby] RICOH-NRG-Maintenance
+  [goby] RSYNC
+  [goby] RackStar-Server-Appliance-OS
+  [goby] Realvnc - Enterprise Edition
+  [goby] Reliance-4-Control-Server
+  [goby] Review_board- Products
+  [goby] Rise_Broadband-WRT500
+  [goby] RuoYi Office-办公一体化平台
+  [goby] Ruvar-OA
+  [goby] SANGFOR-M5000-AC
+  [goby] SANGFOR-M5100
+  [goby] SANGFOR-M5500
+  [goby] SANGFOR-M5X00
+  [goby] SANGFOR-P5100
+  [goby] SANGFOR-S5100
+  [goby] SANGFOR-WOC-Report-Center
+  [goby] SANGFOR-应用交付管理系统
+  [goby] SANGFOR-运维安全管理系统
+  [goby] SANGFOR-集中管理系统
+  [goby] SMCWBR14T-G-Wireless-Broadband-Router
+  [goby] SNC_DCP-Dispatcher
+  [goby] SONICWALL-Network-Security-Appliance
+  [goby] SONY-Network-Camera-SNC-EP520
+  [goby] SONY-Network-Camera-SNC-EP550
+  [goby] SONY-Network-Camera-SNC-f
+  [goby] SONY-PCS video conferencing system
+  [goby] SONY-SNC-CX600W
+  [goby] SONY-SNC-DH110T
+  [goby] SONY-SNC-EP521
+  [goby] SONY-SNC-EP580
+  [goby] SONY-SNC-ER550
+  [goby] SONY-SNC-ER580
+  [goby] SONY-SNC-ER585
+  [goby] SONY-SNC-VM772R
+  [goby] SONY-SNC-WR600
+  [goby] SONY-SNC-WR630
+  [goby] SOPHOS-Cyberoam-CR100iNG
+  [goby] SOPHOS-Cyberoam-CR25iNG
+  [goby] SUNCERE-air quality monitoring platform
+  [goby] Salien-Performance Management Platform
+  [goby] SangFor - Application Performance Management
+  [goby] SangFor - Internet Behavior Management System
+  [goby] SangFor - Next Generation Firewall Data Center
+  [goby] SangFor - Situation Performance Analysis Platform
+  [goby] SangFor- Behavioral Management or Identity Authentication System
+  [goby] SangFor- Internet optimization management
+  [goby] SangFor- Virtualization Management Platform
+  [goby] SangFor- behavior perception system
+  [goby] SangFor- tampermatch system
+  [goby] SangFor-Application Delivery Reporting System
+  [goby] SangFor-Terminal Detection Response Platform EDR
+  [goby] SangFor-firewall product
+  [goby] Sangfor companies products
+  [goby] Sangfor-BBC branch business management system
+  [goby] Sangfor-Data Center
+  [goby] Sangfor-IPSec-VPN
+  [goby] Sangfor-SSL-VPN
+  [goby] Sanning Star - OA Enterprise Intelligent Office Automation System
+  [goby] Satellite broadband operation service platform
+  [goby] Science Technology - Regional Management Information System
+  [goby] Searzer Software - Searzer OA
+  [goby] ShopNC
+  [goby] ShoreTel-Converged-Conferencing
+  [goby] Siemens-SCALANCE-M873
+  [goby] Siemens-SCALANCE-M875
+  [goby] Siemens-SCALANCE-X
+  [goby] Siemens-Scalance-M800
+  [goby] Sino-Science Internet WIANG-Safe Access Gateway
+  [goby] Sino-Science Internet Wuli-Firewall
+  [goby] Sino-Science Internet, Safety Control System
+  [goby] Sino-Science Network-Ansec Operation and Management System
+  [goby] Sino-Science-4A Operation Fortress Machine System
+  [goby] Skyeye-OA
+  [goby] SmartOA 
+  [goby] Snap-Appliance-Server
+  [goby] Soft Excellence - Sns Share Community
+  [goby] SoftinBox-ServerDiff load balancing
+  [goby] Sophos-Cyberoam-SSLVPN
+  [goby] Sophos-Email-Appliance
+  [goby] Sophos-Web-Appliance
+  [goby] Sophos-cyberoam products
+  [goby] Special information -527 light conference
+  [goby] Stream media encoder
+  [goby] Super - Video Conference
+  [goby] Support-Incident-Tracker
+  [goby] Synchronet-BBS
+  [goby] Synchronet-FTP
+  [goby] Synchronet-Mail-Server
+  [goby] Synjones - Jinlong Card Finance Card Website Query Subsystem
+  [goby] TAICHEN-video surveillance
+  [goby] TASS-Operation and Maintenance Management Audit System
+  [goby] TKH-video surveillance
+  [goby] TP_LINK- Financial System
+  [goby] Team_Board- Products
+  [goby] Techbridge-Cloud Conference
+  [goby] Techbridge-video surveillance
+  [goby] Telecom customer broadband address query system
+  [goby] Telecom risk governance platform
+  [goby] Tencent - Enterprise Edition QQ
+  [goby] Tencent - enterprise mailbox
+  [goby] Tencent-CDN
+  [goby] Tencent-Eagle Box Monitoring Center
+  [goby] Tencent-Foxmail-Server
+  [goby] Tencent-QQ chat
+  [goby] Tencent-QQMail
+  [goby] Tencent-TencentCOS
+  [goby] TeveoLive-Video-Broadcast-Software
+  [goby] Three Degree Software-OA System
+  [goby] Thunisoft - Attendance Management System
+  [goby] Tianci Technology-TQ2440
+  [goby] Tiandin letter -TopApp-LB-load balancing system
+  [goby] Tiandong letter - abnormal flow management and resistance service system
+  [goby] Tianrencin -Web application firewall
+  [goby] Tianroncraft - Data Protection System
+  [goby] Tianroncraft - Data Security Management System
+  [goby] TightVNC
+  [goby] Torch gas monitoring and fuel gas balance optimization system
+  [goby] Tradekorea-video surveillance
+  [goby] Trend-AdSubtract-proxy
+  [goby] TrueConf-Video Conference
+  [goby] UIN-Cloud Conference
+  [goby] UniView-video surveillance
+  [goby] V2-video conference
+  [goby] VMware-Authentication Service
+  [goby] VMware-ESX
+  [goby] VMware-HCX
+  [goby] VMware-Horizon
+  [goby] VMware-Horizon-DaaS
+  [goby] VMware-Identity-Manager
+  [goby] VMware-VirtualCenter
+  [goby] VMware-vCenter
+  [goby] VMware-vFabric
+  [goby] VMware-vRealize-Automation-Appliance
+  [goby] VNC
+  [goby] VPON-video surveillance
+  [goby] Vicon-video surveillance
+  [goby] VictorySoft-Performance Management System
+  [goby] Video Surveillance
+  [goby] Video conferencing system
+  [goby] Vidyo-video conferencing system
+  [goby] Viewing - Video Conference
+  [goby] Visec-video surveillance
+  [goby] Vision-video surveillance
+  [goby] WSNCM-Internet of Things Supply Chain and Financial Risk Management Service System
+  [goby] WSNCM-dynamic warehouse system
+  [goby] Water Turbine - Water Conservancy Information Monitoring Platform
+  [goby] WebGoat
+  [goby] Whale cloud - TRADERENCRM
+  [goby] WisePower-OA
+  [goby] WishOA
+  [goby] Xiang Xiang Software - Xiangu OA
+  [goby] Yealink- Video Conference
+  [goby] YouPHPTube-Encoder
+  [goby] Yuge - Medical remote influence diagnosis and treatment system
+  [goby] Yun-BroadView-APM
+  [goby] ZKTECO - Attendance Management
+  [goby] ZKTECO-Attendance Management System
+  [goby] ZOOM-video conference
+  [goby] Zevenet - load balancing
+  [goby] Zhiyuan Interconnection - Sheyon-Server
+  [goby] Zhiyuan Internet-FE
+  [goby] boastMachine
+  [goby] ciphermail-Email-Encryption-Gateway
+  [goby] clipboard.js
+  [goby] cyberoam-SSL-VPN
+  [goby] druid-server
+  [goby] eagleeyescctv
+  [goby] ecwapoa
+  [goby] gSOAP
+  [goby] greencms
+  [goby] ionCube-PHP-Accelerator
+  [goby] kindred-loadbalancer
+  [goby] kingdee-OA
+  [goby] noVNC
+  [goby] oasys OA
+  [goby] octoprint
+  [goby] paloalto-PA-500
+  [goby] paloalto-PA-820
+  [goby] paloalto-VMware
+  [goby] phpmoadmin
+  [goby] reALVNC-远程管理
+  [goby] syncloud
+  [goby] teradata-nCluster
+  [goby] vmware-Carbon-Black-EDR
+  [goby] vmware-ESXi
+  [goby] vmware-NSX
+  [goby] vmware-Server-2
+  [goby] vmware-Site-Recovery-Manager
+  [goby] vmware-Spring-Batch
+  [goby] vmware-SpringBoot-Framework
+  [goby] vmware-Tanzu-Observability
+  [goby] vmware-Workspace-ONE-Access
+  [goby] vmware-vRealize
+  [goby] webtrust-Cert
+  [goby] yongyou - Business War Practice Platform
+  [goby] yongyou - Online Mall
+  [goby] yongyou - Smart Factory
+  [goby] yongyou - Time and Space KSOA
+  [goby] yongyou-ECLIENT
+  [goby] yongyou-GRP-RMIS system
+  [goby] yongyou-IM -ISM
+  [goby] 九思软件-OA
+  [goby] 云网OA（YimiOA）
+  [goby] 京伦科技-OA
+  [goby] 信呼OA
+  [goby] 兰德网络-O2OA
+  [goby] 勾股OA
+  [goby] 华天动力OA 8000
+  [goby] 华天动力协同OA系统
+  [goby] 启莱OA
+  [goby] 宝塔-Linux控制面板
+  [goby] 心通达OA
+  [goby] 易软天创-ranzhi-OA
+  [goby] 用友-ERP-NC
+  [goby] 用友-NC 4.X版本
+  [goby] 用友-NC 5.X版本
+  [goby] 用友-NC 6.X版本
+  [goby] 用友-NC-Cloud
+  [goby] 用友-PLM-企业产品创新管理平台
+  [goby] 用友-U8远程
+  [goby] 用友-U9
+  [goby] 用友-YonBIP
+  [goby] 用友-YonBIP-数据应用服务模块
+  [goby] 用友-政务GRP-A++Cloud 政府财务云
+  [goby] 用友-时空KSOA
+  [goby] 用友-畅捷通-CCERP
+  [goby] 用友-畅捷通-畅捷CRM
+  [goby] 用友-移动系统管理
+  [goby] 用友GRP-U8-Cloud
+  [goby] 用友GRP-U8-行政事业内控管理软件
+  [goby] 用友GRP-U8-高校内控管理软件
+  [goby] 用友NC-Cloud
+  [goby] 用友U8-CDM
+  [goby] 用友U8-CRM客户关系管理系统
+  [goby] 用友U8C
+  [goby] 用友U9C
+  [goby] 联达OA
+  [goby] 致远OA-A6
+  [goby] 致远OA-A8
+  [goby] 致远互联-AnalyticsCloud
+  [goby] 致远互联-DEE中间件
+  [goby] 致远互联-DEE可视化配置平台
+  [goby] 致远互联-FE协作办公平台
+  [goby] 致远互联-M1移动端
+  [goby] 致远互联-M3移动端
+  [goby] 致远互联-OA
+  [goby] 致远互联-Seeyon-Server
+  [goby] 致远互联-电子政务协同管理平台G6
+  [goby] 若依-RuoYi
+  [goby] 蓝凌-EIS智慧协同平台
+  [goby] 速达软件-OA
+  [goby] 金和OA-C6
+  [goby] 金和网络-金和OA
+  [goby] 金蝶OA-AI EBC协同云

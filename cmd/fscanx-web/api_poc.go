@@ -356,31 +356,41 @@ func (s *server) putPoc(w http.ResponseWriter, r *http.Request) {
 		}
 		targetPath = filepath.Join(s.pocsDir, sanitizeName(req.Name)+".yml")
 	case "built-in":
-		embedFile, _, found := embedPocByName(p.Name)
-		if !found {
-			httpErrorf(w, "内置库中不存在 %s（新建或改名的 POC 只能保存到外置 pocs/）", p.Name)
-			return
-		}
-		// 改名守卫：打开的是 A 文件却要写进 B 的内置源文件（改名为另一内置已有名）→ 拒
-		if req.File != "" && req.File != embedFile {
-			httpErrorf(w, "检测到重命名（%s → %s），内置源写回不支持改名，请保存到外置 pocs/", req.File, embedFile)
-			return
-		}
 		if s.repoRoot == "" {
 			httpErrorf(w, "未配置 -root，无法写回内置源，仅可保存到外置 pocs/")
 			return
 		}
-		targetPath = s.builtinSourcePath(embedFile)
-		if _, err := os.Stat(targetPath); err != nil {
-			httpErrorf(w, "内置源文件不存在: %s（-root 未指向本仓库或版本不一致），仅可保存到外置 pocs/", targetPath)
-			return
-		}
-		// 内容同一性守卫：-root 指向其他版本检出时同文件名可能装的是别的 POC，覆盖即改错文件
-		if raw, err := os.ReadFile(targetPath); err == nil {
-			var cur lib.Poc
-			if err := yaml.Unmarshal(raw, &cur); err != nil || cur.Name == "" || cur.Name != p.Name {
-				httpErrorf(w, "内置源文件 %s 当前内容解析异常或为其他 POC（name=%q），为避免覆盖错误文件已拒绝；可保存到外置 pocs/", targetPath, cur.Name)
+		embedFile, _, found := embedPocByName(p.Name)
+		if found {
+			// embed 已有该名：编辑既有内置 POC——改名守卫（打开 A 文件却写进 B 的内置源文件 → 拒）
+			if req.File != "" && req.File != embedFile {
+				httpErrorf(w, "检测到重命名（%s → %s），既有内置源写回不支持改名，请保存到外置 pocs/", req.File, embedFile)
 				return
+			}
+			targetPath = s.builtinSourcePath(embedFile)
+			if _, err := os.Stat(targetPath); err != nil {
+				httpErrorf(w, "内置源文件不存在: %s（-root 未指向本仓库或版本不一致），仅可保存到外置 pocs/", targetPath)
+				return
+			}
+			// 内容同一性守卫：-root 指向其他版本检出时同文件名可能装的是别的 POC，覆盖即改错文件
+			if raw, err := os.ReadFile(targetPath); err == nil {
+				var cur lib.Poc
+				if err := yaml.Unmarshal(raw, &cur); err != nil || cur.Name == "" || cur.Name != p.Name {
+					httpErrorf(w, "内置源文件 %s 当前内容解析异常或为其他 POC（name=%q），为避免覆盖错误文件已拒绝；可保存到外置 pocs/", targetPath, cur.Name)
+					return
+				}
+			}
+		} else {
+			// embed 无此名：新建 / 外挂转内置 / 改名转内置——目标按 name 解析仓库源文件：
+			// 不存在 = 创建（下次编译随版本分发）；存在且 name 一致 = 编辑未编译的仓库文件
+			//（getPoc built-in 读仓库最新源同语义）；存在但 name 不一致 = 拒绝（防覆盖错文件）
+			targetPath = s.builtinSourcePath(sanitizeName(p.Name) + ".yml")
+			if raw, err := os.ReadFile(targetPath); err == nil {
+				var cur lib.Poc
+				if err := yaml.Unmarshal(raw, &cur); err != nil || cur.Name == "" || cur.Name != p.Name {
+					httpErrorf(w, "内置源目录已存在同名文件 %s 且内容是其他 POC（name=%q），为避免覆盖错误文件已拒绝；可保存到外置 pocs/", targetPath, cur.Name)
+					return
+				}
 			}
 		}
 	default:

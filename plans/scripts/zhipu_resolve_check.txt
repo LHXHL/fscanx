@@ -1,0 +1,12 @@
+fingers  用友致远oa         -> unassigned
+fingers  致远OA-A6        -> unassigned
+fingers  致远OA-A8        -> unassigned
+fingers  致远oa A6        -> unassigned
+fingers  致远oa A8        -> unassigned
+goby     致远OA-A6        -> unassigned
+goby     致远OA-A8        -> unassigned
+fingers  心通达OA          -> unassigned
+goby     心通达OA          -> unassigned
+
+用友 Seeyon OA 出厂测试数: 11  个
+通达 OA 出厂测试数: 5  个

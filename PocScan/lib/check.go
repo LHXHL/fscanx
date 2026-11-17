@@ -25,22 +25,17 @@ type Task struct {
 }
 
 func CheckMultiPoc(req *http.Request, pocs []*Poc, workers int) {
+	// workers<=0（-num 0 或测试进程未跑 flag.Parse 的零值）会让下方 tasks<- 永久阻塞
+	// （零消费者），保守回退单 worker。
+	if workers <= 0 {
+		workers = 1
+	}
 	tasks := make(chan Task)
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					fmt.Printf("[ERROR] Goroutine panic: %v\n", r)
-				}
-			}()
 			for task := range tasks {
-				isVul, _, name := executePoc(task.Req, task.Poc)
-				if isVul {
-					result := fmt.Sprintf("[+] PocScan %s %s %s", task.Req.URL, task.Poc.Name, name)
-					common.LogSuccess(result)
-				}
-				wg.Done()
+				runPocTask(task, &wg)
 			}
 		}()
 	}
@@ -54,6 +49,23 @@ func CheckMultiPoc(req *http.Request, pocs []*Poc, workers int) {
 	}
 	wg.Wait()
 	close(tasks)
+}
+
+// runPocTask 单任务执行：recover 与 wg.Done 都挂任务级 defer——panic 不断 worker 生命、
+// 不丢 Done。原实现 recover 在 goroutine 顶层、wg.Done 在循环体内，任一 poc 触发引擎
+// panic 即 worker 死亡 + Done 跳过 → wg.Wait 永久挂死（BL-POC-009 执行轮探针实证）。
+func runPocTask(task Task, wg *sync.WaitGroup) {
+	defer wg.Done()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("[ERROR] Goroutine panic: %v\n", r)
+		}
+	}()
+	isVul, _, name := executePoc(task.Req, task.Poc)
+	if isVul {
+		result := fmt.Sprintf("[+] PocScan %s %s %s", task.Req.URL, task.Poc.Name, name)
+		common.LogSuccess(result)
+	}
 }
 
 func executePoc(oReq *http.Request, p *Poc) (bool, error, string) {

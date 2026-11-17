@@ -352,6 +352,18 @@ func (s *server) postPack(w http.ResponseWriter, r *http.Request) {
 // listProducts 提取两指纹明文的产品名全集（绑定编辑器下拉数据源；
 // 键=引擎数据源 name 字段，与 binds.product 同命名空间）。
 func (s *server) listProducts(w http.ResponseWriter, r *http.Request) {
+	set := s.fingerprintNameSet()
+	products := make([]string, 0, len(set))
+	for n := range set {
+		products = append(products, n)
+	}
+	sort.Strings(products)
+	writeJSON(w, map[string]interface{}{"products": products})
+}
+
+// fingerprintNameSet 两指纹明文的 name 全集（产品册"自标准名"合法性校验用——
+// 名字在全集内 = 识别引擎会原样输出它，空别名条目也非死条目）。
+func (s *server) fingerprintNameSet() map[string]bool {
 	set := map[string]bool{}
 	for name := range fingerFiles {
 		path, _ := s.fingerPath(name)
@@ -369,12 +381,7 @@ func (s *server) listProducts(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	products := make([]string, 0, len(set))
-	for n := range set {
-		products = append(products, n)
-	}
-	sort.Strings(products)
-	writeJSON(w, map[string]interface{}{"products": products})
+	return set
 }
 
 // ---- 助手（api_binds.go 等共用）----

@@ -20,8 +20,8 @@ func (s *server) listRoutes(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, []map[string]interface{}{
 		group("/poc", "/poc/list", "Poc", meta("POC 管理", "mdi:bug"),
 			leaf("list", "views/Poc/Poc", "PocList", meta("POC 管理", "mdi:bug"))),
-		group("/binds", "/binds/list", "Binds", meta("绑定关系", "mdi:link-variant"),
-			leaf("list", "views/Binds/Binds", "BindsList", meta("绑定关系", "mdi:link-variant"))),
+		group("/catalog", "/catalog/list", "Catalog", meta("标准产品", "mdi:link-variant"),
+			leaf("list", "views/Catalog/Catalog", "CatalogList", meta("标准产品", "mdi:link-variant"))),
 		group("/finger", "/finger/edit", "Finger", meta("指纹库", "mdi:fingerprint"),
 			leaf("edit", "views/Finger/Finger", "FingerEdit", meta("指纹库", "mdi:fingerprint"))),
 	})
