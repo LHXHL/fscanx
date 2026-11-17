@@ -824,7 +824,7 @@ onMounted(() => {
 }
 .dlg-field {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   margin: 8px 0;
 }
