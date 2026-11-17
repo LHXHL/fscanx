@@ -9,7 +9,7 @@
         </div>
       </template>
       <el-input v-model="keyword" placeholder="搜索名称..." clearable size="small" style="margin-bottom: 8px" />
-      <el-table :data="filtered" highlight-current-row height="620" size="small" @row-click="openPoc">
+      <el-table :data="filtered" highlight-current-row height="620" size="small" border @row-click="openPoc">
         <el-table-column prop="name" label="名称" show-overflow-tooltip />
         <el-table-column label="存放位置" width="130" prop="source">
           <template #default="scope">
@@ -46,9 +46,11 @@
           <div class="field">
             <label>无条件扫描</label>
             <el-switch v-model="form.always" size="small" />
+            <el-tooltip placement="top" content="always：不依赖指纹命中，空 -pocname 智能定向时也执行（如 .git 目录探测）">
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
           </div>
         </div>
-        <div class="hint">always：不依赖指纹命中，空 -pocname 智能定向时也执行（如 .git 目录探测）</div>
 
         <!-- 变量（set/sets） -->
         <el-collapse style="margin: 4px 0 10px">
@@ -56,7 +58,12 @@
             <div class="vars-grid">
               <div>
                 <div class="vars-head">
-                  <span>set：单值变量（值是表达式，如 randomInt(1,9999)）</span>
+                  <span class="sec-title-text">
+                    set：单值变量
+                    <el-tooltip placement="top" content="值是表达式，如 randomInt(1,9999)">
+                      <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+                    </el-tooltip>
+                  </span>
                   <el-button size="small" @click="setRows.push({ key: '', value: '' })">+ 变量</el-button>
                 </div>
                 <div v-for="(kv, i) in setRows" :key="i" class="cond-row">
@@ -67,7 +74,12 @@
               </div>
               <div>
                 <div class="vars-head">
-                  <span>sets：列表变量（值一行一个）</span>
+                  <span class="sec-title-text">
+                    sets：列表变量
+                    <el-tooltip placement="top" content="值一行一个">
+                      <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+                    </el-tooltip>
+                  </span>
                   <el-button size="small" @click="setListRows.push({ key: '', valuesText: '' })">+ 变量</el-button>
                 </div>
                 <div v-for="(kv, i) in setListRows" :key="i" class="cond-row">
@@ -82,7 +94,12 @@
 
         <!-- 步骤（多步利用链，顺序执行） -->
         <div class="section-title">
-          <span>请求步骤（{{ form.steps.length }} 步）<span class="sub">｜按序执行：任一步不满足即停止、整体不命中；每步都满足才算验证成功</span></span>
+          <span class="sec-title-text">
+            请求步骤（{{ form.steps.length }} 步）
+            <el-tooltip placement="top" content="按序执行：任一步不满足即停止、整体不命中；每步都满足才算验证成功">
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
+          </span>
           <el-button type="primary" size="small" @click="addStep">+ 添加步骤</el-button>
         </div>
         <el-tabs v-model="activeStep" type="card" closable @tab-remove="removeStep">
@@ -112,9 +129,11 @@
             <div class="field" v-if="isFuzzMode">
               <label>遍历输出</label>
               <el-switch v-model="st.cont" size="small" />
+              <el-tooltip placement="top" content="continue（爆破模式专用）：组合命中后继续尝试其余组合并逐条输出">
+                <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+              </el-tooltip>
             </div>
           </div>
-          <div v-if="isFuzzMode" class="hint">continue（爆破模式专用）：组合命中后继续尝试其余组合并逐条输出</div>
 
           <!-- headers -->
           <div class="section-title">
@@ -134,7 +153,10 @@
           </div>
           <div class="field field-block">
             <label>变量提取</label>
-            <el-input v-model="st.search" size="small" placeholder="search 正则：提取变量供后续步骤引用；留空跳过，填了但提取不到则该步即失败" />
+            <el-input v-model="st.search" size="small" placeholder="正则提取变量，供后续步骤引用" />
+            <el-tooltip placement="top" content="search：留空跳过；填了但提取不到则该步即失败">
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
           </div>
 
           <!-- 匹配条件 -->
@@ -183,10 +205,10 @@
           <el-radio-button value="built-in">代码源文件（下次 go build 生效）</el-radio-button>
           <el-radio-button value="external">外挂 pocs/（重跑扫描器生效）</el-radio-button>
         </el-radio-group>
-        <el-button type="primary" :loading="saving" @click="save">
+        <el-button type="primary" size="small" :loading="saving" @click="save">
           {{ saveTarget === 'built-in' ? '保存到代码源文件' : '保存到外挂 pocs/' }}
         </el-button>
-        <el-button type="danger" plain :disabled="!selName || selSource === 'built-in'" @click="remove">删除外置</el-button>
+        <el-button type="danger" plain size="small" :disabled="!selName || selSource === 'built-in'" @click="remove">删除外置</el-button>
       </div>
       <div v-if="saveTarget === 'built-in'" class="hint" style="margin-left: 0">
         写入代码源文件 PocScan/pocs/，重新编译后随二进制生效；在此之前当前运行的扫描器行为不变
@@ -194,7 +216,7 @@
     </el-card>
 
     <!-- 绑定产品弹窗（BL-POC-009 产品册语义：候选=标准产品列表，整条写回外置层；可增可删） -->
-    <el-dialog v-model="bindDialogVisible" title="绑定标准产品" width="560px">
+    <el-dialog v-model="bindDialogVisible" title="绑定标准产品" width="680px">
       <div class="dlg-field">
         <label>当前 POC</label>
         <span class="dlg-value">{{ selName }}</span>
@@ -224,8 +246,10 @@
           placeholder="从标准产品选择（可输入过滤）"
           style="flex: 1"
         />
+        <el-tooltip placement="top" content="绑定后指纹命中该产品时定向执行此 POC（保存到外挂产品册文件，重跑扫描器生效）；缺别名条目识别报不出，绑了不命中">
+          <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+        </el-tooltip>
       </div>
-      <div class="hint">绑定后指纹命中该产品时定向执行此 POC（保存到外挂产品册文件，重跑扫描器生效）；缺别名条目识别报不出，绑了不命中</div>
       <template #footer>
         <el-button size="small" @click="bindDialogVisible = false">取消</el-button>
         <el-button type="primary" size="small" :loading="bindSaving" @click="confirmBind">确认绑定</el-button>
@@ -630,7 +654,7 @@ onMounted(loadList)
 }
 .head-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -707,10 +731,15 @@ onMounted(loadList)
   font-weight: 500;
   color: var(--el-text-color-primary);
 }
-.section-title .sub {
-  font-size: 12px;
-  font-weight: 400;
+/* 区标题/列头文字 + 悬浮提示问号图标 */
+.sec-title-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.help-icon {
   color: var(--el-text-color-secondary);
+  cursor: help;
 }
 .vars-head {
   display: flex;

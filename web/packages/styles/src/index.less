@@ -13,3 +13,8 @@
 .el-popup-parent--hidden {
   width: 100% !important;
 }
+
+// 长文案悬浮提示限宽（tooltip popper 传送至 body，页面 scoped 样式够不到，须全局类）
+.help-tip {
+  max-width: 360px;
+}

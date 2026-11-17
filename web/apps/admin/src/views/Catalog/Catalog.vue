@@ -3,21 +3,21 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-head">
-          <span>标准产品（{{ rows.length }} 条{{ hasExternal ? '，含外挂条目' : '，全部代码内置' }}）</span>
+          <span class="head-title">
+            标准产品（{{ rows.length }} 条{{ hasExternal ? '，含外挂条目' : '，全部代码内置' }}）
+            <el-tooltip placement="top" popper-class="help-tip">
+              <template #content>
+                这里维护「产品叫什么（别名）+ 测什么（测试名单）」：别名让识别引擎把各种指纹写法统一成一个标准名输出；测试名单是指纹命中后定向执行的 POC。条目有两个存放位置——代码源文件（下次 go build 生效，随版本分发）或外挂文件（重跑扫描器即生效），编辑时可选择。
+              </template>
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
+          </span>
           <div class="head-actions">
             <el-input v-model="keyword" size="small" placeholder="搜索标准名/别名/测试名..." clearable style="width: 220px" />
             <el-button type="primary" size="small" @click="openAdd">+ 新建标准产品</el-button>
           </div>
         </div>
       </template>
-
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        title="这里维护「产品叫什么（别名）+ 测什么（测试名单）」：别名让识别引擎把各种指纹写法统一成一个标准名输出；测试名单是指纹命中后定向执行的 POC。条目有两个存放位置——代码源文件（下次 go build 生效，随版本分发）或外挂文件（重跑扫描器即生效），编辑时可选择。"
-        style="margin-bottom: 10px"
-      />
 
       <el-table :data="pagedRows" size="small" border>
         <el-table-column label="标准名" min-width="180">
@@ -72,6 +72,7 @@
         :total="filtered.length"
         :page-sizes="[10, 20, 50]"
         layout="total, sizes, prev, pager, next"
+        size="small"
         style="margin-top: 10px; justify-content: flex-end"
       />
     </el-card>
@@ -88,7 +89,12 @@
         <el-input v-model="form.product" size="small" placeholder="产品模块名（可空，如 e-cology）" style="flex: 1" />
       </div>
 
-      <div class="dlg-section">别名（识别引擎把以下写法归一到标准名）</div>
+      <div class="dlg-section">
+        别名（识别引擎把以下写法归一到标准名）
+        <el-tooltip placement="top" content="绑定命中依赖「识别输出 = 标准名」——产品在指纹库里的每个真实写法都应收进对应源的别名区">
+          <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+        </el-tooltip>
+      </div>
       <div class="dlg-field">
         <label>候选辅助</label>
         <!-- el-select-v2：指纹写法全集近万项，普通 el-select 全量渲染会卡顿（BL-POC-008 前科） -->
@@ -106,7 +112,6 @@
         </el-select>
         <el-button size="small" @click="addAliasFromCandidate">添加</el-button>
       </div>
-      <div class="dlg-hint">绑定命中依赖「识别输出 = 标准名」——产品在指纹库里的每个真实写法都应收进对应源的别名区</div>
       <div v-for="s in aliasSourceRows" :key="s" class="dlg-field">
         <label>{{ s }}</label>
         <el-input
@@ -121,7 +126,12 @@
         <el-button v-if="!FIXED_ALIAS_SOURCES.includes(s)" link type="danger" size="small" @click="removeAliasSource(s)">删源</el-button>
       </div>
 
-      <div class="dlg-section">测试名单（指纹命中后定向执行的 POC）</div>
+      <div class="dlg-section">
+        测试名单（指纹命中后定向执行的 POC）
+        <el-tooltip placement="top" content="绑定命中宽松匹配（含子串）：绑「泛微」可覆盖泛微系产品；命中后仅执行名单内 POC">
+          <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+        </el-tooltip>
+      </div>
       <div class="dlg-field">
         <label>POC 列表</label>
         <el-select-v2
@@ -136,7 +146,6 @@
           style="flex: 1"
         />
       </div>
-      <div class="dlg-hint">绑定命中宽松匹配（含子串）：绑「泛微」可覆盖泛微系产品；命中后仅执行名单内 POC</div>
 
       <!-- 保存位置（新建/编辑都可选：外挂文件立即生效 / 代码源文件下次 go build 生效） -->
       <div class="dlg-field">
@@ -417,11 +426,24 @@ onMounted(async () => {
 
 /* 弹窗区块小标题（别名区/测试名单分组） */
 .dlg-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 500;
   color: var(--el-text-color-primary);
   margin: 12px 0 4px;
   padding-left: 68px;
+}
+/* 页标题行 + 悬浮提示问号图标 */
+.head-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.help-icon {
+  color: var(--el-text-color-secondary);
+  cursor: help;
 }
 
 /* 弹窗字段行：68px 右对齐 label + 控件随行（与 Binds/POC 页排版纪律一致） */

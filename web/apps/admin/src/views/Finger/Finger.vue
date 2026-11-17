@@ -3,7 +3,15 @@
     <el-card shadow="never">
       <template #header>
         <div class="card-head">
-          <span>指纹库（{{ file === 'goby' ? 'goby.json' : 'fingers_http.json' }}｜{{ total }} 条）</span>
+          <span class="head-title">
+            指纹库（{{ file === 'goby' ? 'goby.json' : 'fingers_http.json' }}｜{{ total }} 条）
+            <el-tooltip placement="top" popper-class="help-tip">
+              <template #content>
+                条目化编辑：单条增删改复制，未动条目字节零漂移；改动落明文快照 → 一键重打包 → 重新编译 fscanx 生效（指纹保持编译嵌入）。手改明文 JSON 会被自动吸收进库。
+              </template>
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
+          </span>
           <div class="head-actions">
             <el-select v-model="file" size="small" style="width: 200px" @change="reload">
               <el-option label="goby.json（文本指纹）" value="goby" />
@@ -17,15 +25,7 @@
         </div>
       </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        title="条目化编辑：单条增删改复制，未动条目字节零漂移；改动落明文快照 → 一键重打包 → 重新编译 fscanx 生效（指纹保持编译嵌入）。手改明文 JSON 会被自动吸收进库。"
-        style="margin-bottom: 10px"
-      />
-
-      <el-table :data="items" highlight-current-row height="520" size="small" @row-click="(row: FingerEntryItem) => openEdit(row)">
+      <el-table :data="items" highlight-current-row height="520" size="small" border @row-click="(row: FingerEntryItem) => openEdit(row)">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="name" label="名称" show-overflow-tooltip />
         <el-table-column label="产品归属" width="150">
@@ -79,22 +79,26 @@
     </el-card>
 
     <!-- 条目编辑/新增弹窗：表单模式（schema 内）与原文模式（超 schema 降级/兜底） -->
-    <el-dialog v-model="dlg.visible" :title="dlg.isAdd ? '新增条目' : `编辑条目 #${dlg.id}`" width="720px">
+    <el-dialog v-model="dlg.visible" :title="dlg.isAdd ? '新增条目' : `编辑条目 #${dlg.id}`" width="680px">
       <el-alert
         v-if="!dlg.isAdd && !dlg.schemaOk"
         type="warning"
         :closable="false"
         show-icon
-        title="该条目含表单 schema 外字段或形态（如 default_port/非 favicon 规则），已锁定原文模式编辑——字段零丢失"
+        title="该条目含表单外字段或形态（如 default_port、多 favicon 哈希），已锁定原文模式编辑，字段零丢失"
         style="margin-bottom: 8px"
       />
       <div class="dlg-field">
         <label>编辑模式</label>
         <el-radio-group v-model="dlg.mode" size="small" :disabled="dlg.isAdd || !dlg.schemaOk">
           <el-radio-button value="form">表单模式</el-radio-button>
-          <el-radio-button value="raw">原文模式</el-radio-button>
+          <el-tooltip placement="top" content="整条 JSON 原文编辑（内容即所写；保存校验 JSON 对象 + name 非空）">
+            <el-radio-button value="raw">原文模式</el-radio-button>
+          </el-tooltip>
         </el-radio-group>
-        <span v-if="dlg.isAdd" class="sub">新增走表单结构化；原文形态条目请复制相近条目后切原文编辑</span>
+        <el-tooltip v-if="dlg.isAdd" placement="top" content="新增走表单结构化；原文形态条目请复制相近条目后切原文编辑">
+          <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+        </el-tooltip>
       </div>
 
       <div v-if="dlg.mode === 'form'" v-show="dlg.schemaOk || dlg.isAdd">
@@ -106,7 +110,9 @@
           <div class="dlg-field">
             <label>特别关注</label>
             <el-switch v-model="gobyForm.focus" size="small" />
-            <span class="sub">focus：命中时输出 [*产品名] 高亮</span>
+            <el-tooltip placement="top" content="focus：命中时输出 [*产品名] 高亮">
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
           </div>
           <div class="dlg-field">
             <label>logic</label>
@@ -120,10 +126,11 @@
             <label>{{ String.fromCharCode(97 + i) }}</label>
             <el-input v-model="r.label" size="small" placeholder="label" style="width: 90px" />
             <el-input v-model="r.feature" size="small" placeholder="特征（响应中包含的子串）" style="flex: 1" class="mono" />
-            <el-switch v-model="r.is_equal" size="small" active-text="全等" />
+            <el-tooltip placement="top" content="关=排除条件（响应含该特征则不命中）">
+              <el-switch v-model="r.is_equal" size="small" active-text="全等" />
+            </el-tooltip>
             <el-button link type="danger" size="small" @click="gobyForm.rules.splice(i, 1)">删</el-button>
           </div>
-          <div class="hint">is_equal=false 为排除条件（响应含该特征则不命中）</div>
         </template>
         <template v-else>
           <div class="dlg-field">
@@ -133,6 +140,9 @@
           <div class="dlg-field">
             <label>特别关注</label>
             <el-switch v-model="fingersForm.focus" size="small" />
+            <el-tooltip placement="top" content="focus：命中时输出 [*产品名] 高亮">
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
           </div>
           <div class="dlg-field">
             <label>link</label>
@@ -143,17 +153,16 @@
             <el-input v-model="fingersForm.tagText" size="small" type="textarea" :rows="2" placeholder="一行一个标签（如 cloud）" style="flex: 1" />
           </div>
           <div class="dlg-field">
-            <label>favicon md5</label>
+            <label>图标 md5</label>
             <el-input v-model="fingersForm.md5" size="small" placeholder="图标 md5（icon_hash.html 计算）" style="flex: 1" class="mono" />
           </div>
           <div class="dlg-field">
-            <label>favicon mmh3</label>
+            <label>图标 mmh3</label>
             <el-input v-model="fingersForm.mmh3Text" size="small" type="textarea" :rows="2" placeholder="一行一个 mmh3 值（可为负）" style="flex: 1" class="mono" />
           </div>
         </template>
       </div>
       <div v-show="dlg.mode === 'raw'">
-        <div class="hint" style="margin-left: 0; margin-bottom: 4px">整条 JSON 原文编辑（内容即所写；保存校验 JSON 对象 + name 非空）</div>
         <el-input v-model="dlg.rawText" type="textarea" :rows="16" spellcheck="false" class="mono" />
       </div>
       <template #footer>
@@ -163,7 +172,7 @@
     </el-dialog>
 
     <!-- 归属管理弹窗（BL-POC-009 指纹视角操作：指定归属 / 自立标准产品 / 顺手绑定） -->
-    <el-dialog v-model="ownDlg.visible" title="产品归属" width="600px">
+    <el-dialog v-model="ownDlg.visible" title="产品归属" width="680px">
       <div class="dlg-field">
         <label>当前写法</label>
         <span class="dlg-value mono-text">{{ ownDlg.name }}（{{ engineSource }} 源）</span>
@@ -206,8 +215,10 @@
             style="flex: 1"
           />
           <el-button type="primary" size="small" :loading="ownDlg.saving" @click="confirmBind">绑定</el-button>
+          <el-tooltip placement="top" content="绑定保存到外挂产品册文件，重跑扫描器即生效；测试名单也可在「标准产品」页编辑">
+            <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+          </el-tooltip>
         </div>
-        <div class="dlg-hint">绑定保存到外挂产品册文件，重跑扫描器即生效；测试名单也可在「标准产品」页编辑</div>
       </template>
 
       <!-- 未归属：先选归属方式，再显示对应配置（避免两套表单平铺） -->
@@ -233,15 +244,16 @@
             />
             <el-button type="primary" size="small" :loading="ownDlg.saving" @click="confirmAssignAlias">挂为别名</el-button>
           </div>
-          <div class="dlg-hint">挂为别名后，扫描输出将把该写法归一显示为目标标准名</div>
         </template>
         <template v-else-if="ownDlg.mode === 'self'">
           <div class="dlg-field">
             <label>标准名</label>
             <el-input v-model="ownDlg.selfStdName" size="small" placeholder="新标准产品的标准名（识别命中后输出此名）" style="flex: 1" />
+            <el-tooltip placement="top" content="以该写法为别名新建标准产品；创建后可继续绑定测试">
+              <Icon icon="mdi:help-circle" :size="14" class="help-icon" />
+            </el-tooltip>
             <el-button type="success" size="small" :loading="ownDlg.saving" @click="confirmSelfStd">自立</el-button>
           </div>
-          <div class="dlg-hint">以该写法为别名新建标准产品；创建后可继续绑定测试</div>
         </template>
       </template>
 
@@ -757,7 +769,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 排版纪律同 POC/Binds 页：small 控件（24px）、60px label 右对齐、13px 区标题、零 console 容忍 */
+/* 排版纪律同 POC 页：small 控件（24px）、60px label 右对齐、13px 区标题、零 console 容忍 */
 .finger-page {
   padding: 12px;
 }
@@ -770,6 +782,16 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+/* 页标题行 + 悬浮提示问号图标 */
+.head-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.help-icon {
+  color: var(--el-text-color-secondary);
+  cursor: help;
 }
 .mono :deep(textarea),
 .mono :deep(input) {
@@ -789,8 +811,11 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-/* 归属弹窗（排版纪律同 POC/Binds 页弹窗：60px 右对齐 label + 区块小标题） */
+/* 归属弹窗（排版纪律同 POC 页弹窗：60px 右对齐 label + 区块小标题） */
 .dlg-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 500;
   color: var(--el-text-color-primary);
@@ -820,38 +845,7 @@ onMounted(() => {
 .dlg-empty {
   color: var(--el-text-color-secondary);
 }
-.dlg-hint {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin: 2px 0 4px 68px;
-}
 .mono-text {
   font-family: Consolas, monospace;
-}
-
-/* 弹窗字段行：60px 右对齐 label（与 POC 页 dlg-field 纪律一致） */
-.dlg-field {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 8px 0;
-}
-.dlg-field > label {
-  flex-shrink: 0;
-  width: 100px;
-  text-align: right;
-  font-size: 12px;
-  line-height: 24px;
-  color: var(--el-text-color-regular);
-}
-.hint {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin: 2px 0 4px 108px;
-}
-.sub {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 24px;
 }
 </style>

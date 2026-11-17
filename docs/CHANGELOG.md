@@ -2,6 +2,9 @@
 
 ## 2026-11-17
 
+- BL-POC-009/BL-POC-011 验收闭合：用户真机实测通过（产物版浏览器，UI 观感+回归清单确认），控制台移除，POC 扫描模块 10/11 已验收。
+- BL-POC-011 web 维护端 UX 整理（纯展示层，P2）：三页 20+ 处平铺长文案按三分法收敛——后果警示保留内联一行（Catalog/Poc 保存位置提示）、字段/背景解释改问号 tooltip（复用全局 Icon mdi:help-circle 即 ContentWrap 范式；两条百字长提示 popper-class=help-tip 全局限宽 360px）、冗余文案删除（挂为别名 hint 与确认框文案重复）；框体统一——四弹窗 560/600/680/720→全 680px（用户批准单一档）、删 Finger 重复 .dlg-field 样式块（100px 级联覆盖 60px，三页 label 不一致根因）归一 60px、favicon md5/mmh3 label 改「图标 md5/mmh3」适配列宽、Poc 两个默认尺寸按钮入 small 体系、分页补 small、三表格统一 border、head-actions gap 统一 8px。vite build + go build 双过产物重嵌入；reviewer 独立验收 7 条全 PASS（APPROVE + 1 should-fix 已修：schema 锁定警示补回「或形态」语义防多 favicon 哈希触发场景描述失真）；文案→tooltip 映射表 23 项留档 plans/。
+
 - BL-POC-009 新建资产双位置通道补齐（用户质疑新建只有单一"保存到外挂"按钮）：产品册 catalog_add 支持 target=built-in（出厂源文本追加+三重防护+.bak 备份）；POC 新建/外置转内置放开（embed 无名→按 name 解析仓库源文件：不存在=创建/同名一致=编辑未编译文件/异内容=拒绝防覆盖，既有守卫全保留）；前端新建/编辑统一双位置 radio + POC 保存区文案白话化。测试四条新增全 PASS、BL-POC-008 过时断言按语义演进更新，五包全绿。
 - BL-POC-009 写回文本手术重构 + 外挂条目转正 + 文案白话化（用户三项裁决）：①转正通道——外挂条目 target=built-in 走追加语义（出厂源追加+外挂同名行清理+origin 翻转），编辑弹窗双位置对外挂条目开放；②写回改文本级手术——顶层条目边界切块+逐块 yaml 解析匹配（块顶层是序列，解析目标须切片取首元素）+命中区间字节替换，注释/排版/未动条目零漂移，三重防护（定位失败报错不写/全文解析校验/原子写），API 端到端实测注释保留+原文前缀零漂移；修复此前"写回重排全文件格式丢注释"缺陷（曾致出厂册头注释丢失，已手工恢复）；③文案全改白话——出厂/外置→代码内置/外挂文件（来源列带生效方式 tooltip，POC 列表来源列同步），保存按钮/确认框/hint 跟随。测试三条新增全 PASS、三视角回归 ALL PASS 零 console。
 - BL-POC-009 别名完整性裁决闭合 + 旧绑定关系页退役（用户裁决/指令）：致远系 7 条写法（fingers 5+goby 2）补录出厂册「用友 Seeyon OA」别名区（fingers+5/goby 源新建+2）——resolve 实测全 alias-of、全量精筛候选 46→39、防回归锁 TestCatalogSeeyonZhiyuanCoverage（出厂册 embed 需重编译对已部署扫描器生效）；心通达OA 裁决非通达产品不补录（维持未归属，候选永久排除）；删除 views/Binds/Binds.vue + api/binds/index.ts（binds API 死代码），listProductsApi 迁 api/finger，三视角 11 项回归 ALL PASS。

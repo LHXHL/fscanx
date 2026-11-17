@@ -3,12 +3,12 @@
 - 模块：POC 扫描
 - 优先级：P1
 - 状态：已完成
-- 当前阶段：待验收
+- 当前阶段：持续迭代
 - 价值：修复绑定关系静默失效（中文名标准产品的出厂绑定从未发出、界面绑定可绑到引擎不会输出的名字上且无提示），并把"产品叫什么（别名）+ 测什么（测试名单）"统一为一个产品对象，以三视角（指纹 / POC / 标准产品）维护——绑定操作前置到资产编辑现场。
 - 关联模块文档：docs/modules/10-POC扫描模块.md
 - 关联计划：plans/2026-11-17-BL-POC-009-产品册.md
 - 关联代码：mylib/finger/resources/catalog.yaml、mylib/finger/alias/alias.go、PocScan/binds.go、PocScan/WebScan.go、Plugins/catalog_inject.go、cmd/fscanx-web/api_catalog.go、cmd/fscanx-web/catalog_db.go、web/apps/admin/src/views/Catalog/Catalog.vue、web/apps/admin/src/views/Finger/Finger.vue、web/apps/admin/src/views/Poc/Poc.vue
-- 验收状态：待验收
+- 验收状态：已验收
 
 ### 方案（立项时必填）
 
@@ -78,3 +78,5 @@
 - 2026-11-17：**对抗式复审轮（用户指令：业务逻辑正确/鲁棒/幂等自查）——6 项发现全修复**。①同名双块防御：源文件被手改成两个同名条目（异常态）时只替换首个会静默残留旧块且全文校验发现不了——replaceCatalogEntryInText 改先全量扫描统计同名数，0=数据文本不一致 / >1=异常态，均报错不写（TestCatalogEditBuiltInRejectsDuplicateBlocks 锁定）。②CRLF 行尾适配：git autocrlf 物化 CRLF 的源文件写回新块为 LF 会产生混合行尾——渲染块按源文件行尾风格适配（TestCatalogEditBuiltInCRLFLineEndings）。③墓碑压制内置写回：出厂条目被删（外挂墓碑）后写回内置源，写回成功但被墓碑压制 UI 不可见——found 路径写回成功后精准清理外挂墓碑行（非墓碑覆盖行=合法语义不动）（TestCatalogEditBuiltInClearsTombstone）。④转正幂等：首次转正后再以 target=built-in 编辑同名条目自动走替换语义（baseline 已含）不产生重复条目——语义天然成立+测试锁定（TestCatalogEditBuiltInPromoteIdempotent）。⑤**转正条目窗口期删除缺口**（复审最大收获）：isBuiltInEntry/builtInEntry/builtInTombstone 走 embed 基线而写回基线是 -root 源文件优先——转正条目重编译前 embed 不含 → UI 删除报"不存在"。修复：server 路径出厂判定统一走 baseline（isBuiltInEntryBase/builtInEntryBase/isTombstoneRowBase/builtInTombstone→tombstoneOf 纯函数），迁移路径 insertLegacyBinds 保留 embed 语义。⑥missing_alias 误标：判定只查 len(alias)==0 未排除"自标准名"合法形态——kingsoft/vmware 等出厂条目被误标警示。修复：排除名字在指纹输出名全集的条目（toEntryView 改 server 方法），API 实测误标清零（TestToEntryViewSelfStdNoWarning）。另修 catalog_list build_hint 旧术语文案。转正 hint 补窗口期警示（"在此之前该条目在扫描器中暂不生效"）。五包测试全绿 + 三视角回归 ALL PASS 零 console。
 
 - 2026-11-17：**新建资产双位置通道补齐（用户质疑：为什么新建只有一个"保存到外挂"按钮）**。历史设计（BL-POC-008）把"写内置源"定位为"修改已存在的内置资产"，新建一律仅外挂——按用户两件事模型（web 维护→改代码源文件等 go build）判定不合理，三处补齐：①产品册 catalog_add 支持 target=built-in（catalogAddBuiltIn：出厂源文本追加+三重防护+.bak 备份，不落外挂层，hint 窗口期警示）；②POC 新建/外置转内置放开——embed 无此名不再硬拒，按 name 解析仓库源文件：不存在=创建（下次编译随版本）/同名一致=编辑未编译仓库文件（getPoc built-in 同语义）/同名异内容=拒绝（防覆盖错文件），既有守卫（-root/内容同一性/原子写）全部保留；③前端双位置 UI 统一——Catalog.vue 新建弹窗"保存位置"radio（hint 区分新建直写/转正/编辑三语境）、Poc.vue 编辑器 radio 放开到全部编辑器态（v-if selSource===built-in&&selFile → formLoaded）+保存区文案白话（代码源文件/外挂 pocs/）。测试：POC 新建内置三场景（创建/编辑未编译仓库文件/同名异内容拒绝字节不动）+产品册 add-built-in（注释保留/原文前缀零漂移/外挂层不落行）全 PASS；BL-POC-008 旧断言"embed 不存在→拒绝"按语义演进更新（注释标明）。五包全绿+三视角回归 ALL PASS 零 console。
+
+- 2026-11-17：**用户真机实测通过（产物版浏览器，UI 观感确认），验收闭合**。九条验收条件全勾、状态记录各轮实测证据在案（httptest 端到端/API 实测/headless 11 项/vet+test 五包全绿）；用户同轮实测 BL-POC-011 UI 改造时三视角页面一并走过。遗留裁决（致远系 7 条补录/心通达OA 不收）已于写回手术轮闭合，无未决项。
