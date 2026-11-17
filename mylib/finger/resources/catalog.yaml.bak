@@ -1,0 +1,546 @@
+# 出厂产品册（BL-POC-009：aliases.yaml + binds-seed.yaml 合并重刷）。
+# 条目 = 标准名 + 别名（各指纹源写法归一到标准名）+ 测试名单（pocs，绑定兜底）。
+# 顶层保持列表结构（引擎解析 []*Alias 的前提）；pocs 为引擎忽略的扩展字段。
+# 由 plans/scripts/gen_catalog.go 生成草稿，经人工核对后固化。
+- name: CTOP OA
+  vendor: ctop
+  product: OA
+  alias:
+    fingerprinthub:
+    - CTOP OA
+    fingers:
+    - CTOP OA
+- name: IBOS企业协同管理软件
+  vendor: IBOS
+  product: collaborative
+  alias:
+    ehole:
+    - IBOS企业协同管理软件
+    fingers:
+    - IBOS企业协同管理软件
+- name: LemonOA
+  vendor: mossle
+  product: OA
+  alias:
+    fingerprinthub:
+    - LemonOA
+    fingers:
+    - LemonOA
+- name: PHPOA
+  vendor: phpoa
+  product: OA
+  alias:
+    ehole:
+    - PHPOA
+    fingerprinthub:
+    - PHPOA
+    fingers:
+    - PHPOA
+- name: TopOffice
+  vendor: topoffice
+  product: OA
+  alias:
+    fingerprinthub:
+    - TopOffice
+    fingers:
+    - TopOffice
+- name: block tanggo
+  alias:
+    tanggo:
+    - html5
+    - javadoc
+- name: coremail
+  alias:
+    goby:
+    - Coremail-邮件系统
+  pocs:
+  - poc-yaml-coremail-cnvd-2019-16798
+- name: discuz
+  vendor: discuz
+  product: discuz
+  alias:
+    ehole:
+    - Discuz!
+    fingerprinthub:
+    - discuz
+    fingers:
+    - discuz
+    goby:
+    - Discuz
+    wappalyzer:
+    - Discuz!
+- name: ibm-db2 database
+  vendor: ibm
+  product: db2
+  alias:
+    goby:
+    - IBM-DB2 database
+- name: jboss
+  alias:
+    fingers:
+    - jboss application server 7
+    goby:
+    - JBoss-5.0
+    - JBoss-AS
+    - JBoss-EAP
+  pocs:
+  - poc-yaml-CVE-2017-7504-Jboss-serialization-RCE
+  - poc-yaml-jboss-cve-2010-1871
+  - poc-yaml-jboss-unauth
+- name: kingsoft
+  alias:
+    goby:
+    - 猎鹰安全-金山V8+终端安全系统
+  pocs:
+  - poc-yaml-kingsoft-v8-default-password
+  - poc-yaml-kingsoft-v8-file-read
+- name: nexus
+  alias:
+    fingers:
+    - sonatype nexus repository manager
+    goby:
+    - Nexus-Repository-Manager
+  pocs:
+  - poc-yaml-nexus-cve-2019-7238
+  - poc-yaml-nexus-cve-2020-10199
+  - poc-yaml-nexus-cve-2020-10204
+  - poc-yaml-nexus-default-password
+  - poc-yaml-nexusdb-cve-2020-24571-path-traversal
+- name: qizhi
+  alias:
+    ehole:
+    - 齐治堡垒机
+    fingers:
+    - 齐治堡垒机
+    goby:
+    - Qi Zhi Technology - Fortress
+  pocs:
+  - poc-yaml-qizhi-fortressaircraft-unauthorized
+- name: redis
+  vendor: Redis
+  product: Redis
+  alias:
+    goby:
+    - Redis
+- name: thinkphp
+  alias:
+    goby:
+    - ThinkPHP
+    - ThinkPHP-YFCMF
+  pocs:
+  - poc-yaml-thinkphp-v6-file-write
+  - poc-yaml-thinkphp5-controller-rce
+  - poc-yaml-thinkphp5023-method-rce
+- name: tomcat
+  vendor: apache
+  product: tomcat
+  alias:
+    ehole:
+    - Apache Tomcat
+    fingerprinthub:
+    - apache-tomcat
+    fingers:
+    - tomcat
+    goby:
+    - Apache-Tomcat
+    tanggo:
+    - tomcat默认页面
+    - apachetomcat
+    - apache_tomcat
+    wappalyzer:
+    - Apache Tomcat
+- name: vmware
+  alias:
+    goby:
+    - VMware-vCenter
+  pocs:
+  - poc-yaml-CVE-2022-22954-VMware-RCE
+  - poc-yaml-vmware-vcenter-arbitrary-file-read
+  - poc-yaml-vmware-vcenter-cve-2021-21985-rce
+  - poc-yaml-vmware-vcenter-unauthorized-rce-cve-2021-21972
+  - poc-yaml-vmware-vrealize-cve-2021-21975-ssrf
+- name: weblogic
+  alias:
+    goby:
+    - BEA-WebLogic-Server
+    - Weblogic_interface_7001
+  pocs:
+  - poc-yaml-weblogic-console-weak
+  - poc-yaml-weblogic-cve-2017-10271
+  - poc-yaml-weblogic-cve-2019-2725
+  - poc-yaml-weblogic-cve-2019-2729-1
+  - poc-yaml-weblogic-cve-2019-2729-2
+  - poc-yaml-weblogic-cve-2020-14750
+  - poc-yaml-weblogic-ssrf
+- name: zabbix
+  alias:
+    goby:
+    - ZABBIX-监控系统
+  pocs:
+  - poc-yaml-zabbix-authentication-bypass
+  - poc-yaml-zabbix-cve-2016-10134-sqli
+  - poc-yaml-zabbix-default-password
+- name: 万户 OA
+  vendor: whir
+  product: OA
+  alias:
+    ehole:
+    - 万户 OA
+    fingerprinthub:
+    - whir-oa
+    fingers:
+    - 万户 OA
+    goby:
+    - Whir-OA
+- name: 东华OA系统
+  vendor: donghua
+  product: OA
+  alias:
+    fingerprinthub:
+    - 东华OA系统
+    fingers:
+    - 东华OA系统
+- name: 中望OA
+  vendor: xtoa
+  product: OA
+  alias:
+    fingerprinthub:
+    - 中望OA
+    fingers:
+    - 中望OA
+- name: 九思OA
+  vendor: jiusi
+  product: OA
+  alias:
+    fingerprinthub:
+    - 九思OA
+    fingers:
+    - 九思OA
+    - 九思协同办公系统
+- name: 京伦OA
+  vendor: jinglun
+  product: OA
+  alias:
+    fingerprinthub:
+    - 京伦OA
+    fingers:
+    - 京伦OA
+- name: 信达OA
+  vendor: xdoa
+  product: OA
+  alias:
+    fingerprinthub:
+    - 信达OA
+    fingers:
+    - 信达OA
+- name: 凤凰办公OA
+  vendor: fenghuang
+  product: OA
+  alias:
+    fingerprinthub:
+    - 凤凰办公OA
+    fingers:
+    - 凤凰办公OA
+- name: 华天 动力OA
+  vendor: huatian
+  product: 动力OA
+  alias:
+    ehole:
+    - 华天 动力OA
+    fingerprinthub:
+    - huatian-oa
+    fingers:
+    - 华天 动力OA
+    goby:
+    - Huatian-OA
+- name: 华天动力协同OA办公系统
+  vendor: huatian
+  product: collaborative
+  alias:
+    ehole:
+    - 华天动力OA
+    fingerprinthub:
+    - 华天动力协同OA办公系统
+    fingers:
+    - 华天动力协同OA办公系统
+    - 华天动力OA
+- name: 协众OA
+  vendor: cnoa
+  product: OA
+  alias:
+    ehole:
+    - 协众OA
+    fingerprinthub:
+    - 协众OA
+    fingers:
+    - 协众OA
+    - 协众软件-协众OA
+    goby:
+    - CNOA
+    - 协众软件-协众OA
+- name: 协达 OA
+  vendor: xietong
+  product: OA
+  alias:
+    fingerprinthub:
+    - 协达 OA
+    fingers:
+    - 协达 OA
+- name: 山大鲁能 OA
+  vendor: sanda
+  product: OA
+  alias:
+    fingerprinthub:
+    - 山大鲁能 OA
+    fingers:
+    - 山大鲁能 OA
+- name: 帆软 FineReport
+  vendor: fanruan
+  product: FineReport
+  alias:
+    ehole:
+    - 帆软 FineReport
+    fingerprinthub:
+    - fanruan-finereport
+    fingers:
+    - 帆软 FineReport
+    goby:
+    - FineReport
+- name: 泛微 e-cology
+  vendor: weaver
+  product: e-cology
+  alias:
+    ehole:
+    - 泛微 e-cology
+    - ecology
+    - 泛微 OA
+    fingerprinthub:
+    - ecology泛微e-office
+    - ecology-oa
+    fingers:
+    - 泛微 e-cology
+    goby:
+    - 泛微-协同办公OA
+  pocs:
+  - poc-yaml-weaver-E-Cology-getSqlData-sqli
+  - poc-yaml-weaver-oa-arbitrary-file-upload
+- name: 泛微 e-mobile
+  vendor: weaver
+  product: e-mobile
+  alias:
+    ehole:
+    - 泛微 e-mobile
+    fingerprinthub:
+    - ecology泛微e-mobile
+    fingers:
+    - 泛微 e-mobile
+    goby:
+    - 泛微-EMobile
+- name: 泛微 e-office
+  vendor: weaver
+  product: e-office
+  alias:
+    goby:
+    - 泛微-EOffice
+  pocs:
+  - poc-yaml-weaver-oa-eoffice-v9-upload-getshell
+- name: 泛微 云桥e-bridge
+  vendor: weaver
+  product: e-bridge
+  alias:
+    ehole:
+    - 泛微 云桥e-bridge
+    fingerprinthub:
+    - ecology泛微云桥e-bridge
+    fingers:
+    - 泛微 云桥e-bridge
+    goby:
+    - 泛微-云桥e-Bridge
+  pocs:
+  - poc-yaml-weaver-ebridge-file-read
+- name: 泛普软件 建筑工程施工OA
+  vendor: phpcms
+  product: construction
+  alias:
+    ehole:
+    - 泛普 建筑工程施工OA
+    fingers:
+    - 泛普软件 建筑工程施工OA
+    goby:
+    - Phpcms
+- name: 用友 GRP-U8
+  vendor: yonyou
+  product: GRP-U8
+  alias:
+    ehole:
+    - 用友 GRP-U8
+    fingerprinthub:
+    - yonyou-grp-u8
+    fingers:
+    - 用友 GRP-U8
+    goby:
+    - 用友GRP-U8
+- name: 用友 NC
+  vendor: yonyou
+  product: NC
+  alias:
+    ehole:
+    - 用友NC
+    - YONYOU NC
+    fingerprinthub:
+    - yonyou-ufida-nc
+    fingers:
+    - 用友NC
+    goby:
+    - UFIDA NC
+- name: 用友 RMIS
+  vendor: yonyou
+  product: RMIS
+  alias:
+    fingerprinthub:
+    - yonyou-rmis
+    fingers:
+    - 用友 RMIS
+- name: 用友 Seeyon OA
+  vendor: yonyou
+  product: Seeyon OA
+  alias:
+    ehole:
+    - 致远OA
+    fingerprinthub:
+    - yonyou-seeyon-oa
+    fingers:
+    - 用友 Seeyon OA
+    - 用友致远oa
+    - 致远OA-A6
+    - 致远OA-A8
+    - 致远oa A6
+    - 致远oa A8
+    goby:
+    - 致远OA-A6
+    - 致远OA-A8
+  pocs:
+  - poc-yaml-seeyon-a6-employee-info-leak
+  - poc-yaml-seeyon-a6-test-jsp-sql
+  - poc-yaml-seeyon-ajax-unauthorized-access
+  - poc-yaml-seeyon-cnvd-2020-62422-readfile
+  - poc-yaml-seeyon-oa-a8-m-information-disclosure
+  - poc-yaml-seeyon-oa-cookie-leak
+  - poc-yaml-seeyon-session-leak
+  - poc-yaml-seeyon-setextno-jsp-sql
+  - poc-yaml-seeyon-unauthoried
+  - poc-yaml-seeyon-wooyun-2015-0108235-sqli
+  - poc-yaml-seeyon-wooyun-2015-148227
+- name: 用友 TurboCRM
+  vendor: yonyou
+  product: TurboCRM
+  alias:
+    fingerprinthub:
+    - yonyou-turbocrm
+    fingers:
+    - 用友 TurboCRM
+- name: 用友 U8 Cloud
+  vendor: yonyou
+  product: U8 Cloud
+  alias:
+    ehole:
+    - 用友 U8 Cloud
+    fingerprinthub:
+    - yonyou-u8-cloud
+    fingers:
+    - 用友 U8 Cloud
+- name: 用友 U8 OA
+  vendor: yonyou
+  product: U8 OA
+  alias:
+    fingers:
+    - 用友U8
+    goby:
+    - 用友U8
+    - 用友-U8
+  pocs:
+  - poc-yaml-yongyou-u8-oa-sqli
+- name: 红帆 Ioffice
+  vendor: hongfan
+  product: Ioffice
+  alias:
+    fingerprinthub:
+    - 红帆 Ioffice
+    fingers:
+    - ioffice
+- name: 红帆 OA
+  vendor: hongfan
+  product: OA
+  alias:
+    ehole:
+    - 红帆 OA
+    fingerprinthub:
+    - hongfan-oa
+    fingers:
+    - 红帆 OA
+    goby:
+    - Hongfan-OA
+- name: 网康 NS-ASG应用安全网关
+  vendor: networktech
+  product: NS-ASG
+  alias:
+    fingerprinthub:
+    - 网康 NS-ASG应用安全网关
+    fingers:
+    - 网康 NS-ASG应用安全网关
+- name: 蓝凌 OA
+  vendor: landray
+  product: OA
+  alias:
+    ehole:
+    - 蓝凌 OA
+    fingerprinthub:
+    - landray-oa
+    fingers:
+    - 蓝凌 OA
+    - 蓝凌OA-EKP
+    goby:
+    - LandRay-OA system
+    - 蓝凌OA-EKP
+  pocs:
+  - poc-yaml-landray-oa-custom-jsp-fileread
+- name: 通达 OA
+  vendor: tongda
+  product: OA
+  alias:
+    ehole:
+    - 通达 OA
+    - Tongda
+    - 通达OA
+    fingerprinthub:
+    - tongda-oa
+    fingers:
+    - 通达 OA
+    - tongda
+    goby:
+    - Tongda-OA
+    - TDXK-通达OA
+  pocs:
+  - poc-yaml-tongda-meeting-unauthorized-access
+  - poc-yaml-tongda-oa-v11.9-api.ali.php-fileupload
+  - tongda-insert-sql-inject
+  - tongda-user-session-disclosure
+  - tongda-v2017-uploadfile
+- name: 金蝶云 星空
+  vendor: kingdee
+  product: 星空
+  alias:
+    ehole:
+    - 金蝶云星空
+    fingerprinthub:
+    - kingdee-cloud
+    fingers:
+    - 金蝶云星空
+    goby:
+    - Kingdee Cloud
+- name: ZZZCMS
+  alias:
+    goby:
+    - ZZZCMS
+  pocs:
+  - poc-yaml-zzcms-zsmanage-sqli

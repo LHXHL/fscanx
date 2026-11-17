@@ -538,3 +538,9 @@
     - 金蝶云星空
     goby:
     - Kingdee Cloud
+- name: ZZZCMS
+  alias:
+    goby:
+    - ZZZCMS
+  pocs:
+  - poc-yaml-zzcms-zsmanage-sqli

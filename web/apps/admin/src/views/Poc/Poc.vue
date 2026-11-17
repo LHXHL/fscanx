@@ -199,7 +199,7 @@
         <el-input v-model="rawYaml" type="textarea" :rows="26" spellcheck="false" class="mono" />
       </div>
 
-      <div style="margin-top: 12px">
+      <div class="save-actions">
         <!-- 保存位置（新建/编辑都可选：外挂 pocs/ 重跑扫描器生效 / 代码源文件下次 go build 生效） -->
         <el-radio-group v-if="formLoaded" v-model="saveTarget" size="small" style="margin-right: 12px">
           <el-radio-button value="built-in">代码源文件（下次 go build 生效）</el-radio-button>
@@ -793,5 +793,12 @@ onMounted(loadList)
 .cel-preview :deep(textarea) {
   font-family: Consolas, monospace;
   color: var(--el-color-success);
+}
+
+.save-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
 }
 </style>
